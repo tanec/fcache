@@ -1,5 +1,5 @@
 #include "Config.h"
 
 int main() {
-    printf(fcache_VERSION_MAJOR);
+    printf(VERSION_MAJOR);
 }

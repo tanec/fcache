@@ -1,2 +1,2 @@
-#define fcache_VERSION_MAJOR @fcache_VERSION_MAJOR@
-#define fcache_VERSION_MINOR @fcache_VERSION_MINOR@
+#define VERSION_MAJOR @fcache_VERSION_MAJOR@
+#define VERSION_MINOR @fcache_VERSION_MINOR@
