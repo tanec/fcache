@@ -9,6 +9,8 @@ include(FindPkgConfig)
 
 configure_file ("Config.h.in" "src/Config.h")
 
-add_subdirectory(src)
-#add_subdirectory(test)
+include_directories (src)
+add_definitions()
+add_executable (fcache src/fcache.c)
+
 enable_testing()
