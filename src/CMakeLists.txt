@@ -1,5 +1,6 @@
 include_directories (.)
 add_definitions()
-#link_libraries(event curl)
+find_package(cgicc)
+link_libraries(cgicc)
 add_executable (fcache fcache.c)
 #add_custom_command()
