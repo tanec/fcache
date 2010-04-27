@@ -8,12 +8,12 @@ enable_language("CXX")
 include(FindPkgConfig)
 
 pkg_search_module(CURL REQUIRED libcurl)
-pkg_search_module(CGICC libcgicc)
 
-configure_file ("Config.h.in" "Config.h")
+configure_file ("Config.h.in"  "${CMAKE_BINARY_DIR}/conf/Config.h")
 
-include_directories (src)
+include_directories (src ${CMAKE_BINARY_DIR}/conf)
+
 add_definitions()
-add_executable (fcache src/fcache.c src/common.h Config.h)
+add_executable (fcache src/fcache.c)
 
 enable_testing()
