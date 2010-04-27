@@ -1,5 +1,7 @@
 #include "Config.h"
+#include <stdio.h>
 
 int main() {
-    printf(VERSION_MAJOR);
+    serve();
+    return 0;
 }
