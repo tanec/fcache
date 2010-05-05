@@ -13,5 +13,8 @@ message("found libevent: ${EVENT_LIB}, ${EVENT_INC}")
 add_library(EVENT event-api.c)
 target_link_libraries(EVENT ${EVENT_LIB})
 
+add_library(STRING fc_string.c)
+add_library(LOG log.c)
+
 add_executable (fcache fcache.c event-api.c)
-target_link_libraries(fcache  FASTCGI CURL EVENT)
+target_link_libraries(fcache  FASTCGI CURL EVENT LOG STRING)
