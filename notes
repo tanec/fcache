@@ -31,3 +31,11 @@ however, so in practice, there's little reason not to use mmap.
 shm in Linux is typically implemented via a /dev/shm file that gets mmapped, 
 so, performance should be equivalent -- I'd go with mmap (w/MAP_ANON and MAP_SHARED as you mention) 
 for simplicity, if I know portability is no issue as you say's the case for you.
+
+In the Solaris 2.x operating system, the most efficient way to implement 
+shared memory applications is to rely on the mmap() function and on the system's 
+native virtual memory facility. Solaris 2.x also supports System V shared memory, 
+which is another way to let multiple processes attach a segment of physical memory 
+to their virtual address spaces. When write access is allowed for more than one process, 
+an outside protocol or mechanism such as a semaphore can be used 
+to prevent inconsistencies and collisions. 
