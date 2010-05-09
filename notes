@@ -1,0 +1,33 @@
+echo 134217728 > /proc/sys/kernel/shmmax；
+　　#说明：这里的值为内存的一半；
+　　#如果系统内存是256M，则值为134217728 ；
+　　#如果系统内存是512M，则值为268435456；
+
+1) There is always a kernel internal mount which you will not see at
+   all. This is used for shared anonymous mappings and SYSV shared
+   memory. 
+
+   This mount does not depend on CONFIG_TMPFS. If CONFIG_TMPFS is not
+   set the user visible part of tmpfs is not build, but the internal
+   mechanisms are always present.
+
+2) glibc 2.2 and above expects tmpfs to be mounted at /dev/shm for
+   POSIX shared memory (shm_open, shm_unlink). Adding the following
+   line to /etc/fstab should take care of this:
+
+    tmpfs       /dev/shm        tmpfs   defaults        0 0
+
+   Remember to create the directory that you intend to mount tmpfs on
+   if necessary (/dev/shm is automagically created if you use devfs).
+
+   This mount is _not_ needed for SYSV shared memory. The internal
+   mount is used for that. (In the 2.3 kernel versions it was
+   necessary to mount the predecessor of tmpfs (shm fs) to use SYSV
+   shared memory)
+
+If memory serves, the only reason to use SysV/POSIX over mmap is portability. 
+In particularly older Unix systems don't support MAP_ANON. Solaris, Linux, the BSDs and OS X do, 
+however, so in practice, there's little reason not to use mmap.
+shm in Linux is typically implemented via a /dev/shm file that gets mmapped, 
+so, performance should be equivalent -- I'd go with mmap (w/MAP_ANON and MAP_SHARED as you mention) 
+for simplicity, if I know portability is no issue as you say's the case for you.
