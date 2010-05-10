@@ -39,3 +39,23 @@ which is another way to let multiple processes attach a segment of physical memo
 to their virtual address spaces. When write access is allowed for more than one process, 
 an outside protocol or mechanism such as a semaphore can be used 
 to prevent inconsistencies and collisions. 
+
+
+
+
+
+# Google Sparse Hash - http://code.google.com/p/google-sparsehash/
+The Google SparseHash project contains several C++ hash-map implementations in use at Google, 
+with different performance characteristics, including an implementation that optimizes for space 
+and one that optimizes for speed. 
+The memory-optimized one is extremely memory-efficient with only 2 bits/entry of overhead.
+
+# SunriseDD - http://www.sunrisetel.net/software/devtools/sunrise-data-dictionary.shtml
+An open source C library for hash table storage of arbitrary data objects with lock-free lookups, 
+built-in reference counting and guaranteed order iteration. The library can participate in external 
+reference counting systems or use its own built-in reference counting. It comes with a variety of hash 
+functions and allows the use of runtime supplied hash functions via callback mechanism. 
+Source code is well documented.
+
+# uthash - http://uthash.sourceforge.net/
+This is an easy-to-use hash table for C structures.
