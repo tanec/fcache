@@ -8,7 +8,7 @@
 void
 die(int code, char* msg)
 {
-  printf("exit(%d): %s\n", code, msg);
+  fprintf(stderr, "exit(%d): %s\n", code, msg);
   exit(code);
 }
 
