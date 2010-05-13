@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include "Config.h"
 #include "fastcgi-api.h"
@@ -11,11 +13,13 @@
 #include "fcache.h"
 
 setting_t settings;
+stat_summary_t stat_mem, stat_fs, stat_http, stat_auth;
 
 int
 main(int argc, char**argv)
 {
   int c;
+  struct rlimit rlim;
 
   //defaults
   settings.daemon = 1;
@@ -82,6 +86,26 @@ main(int argc, char**argv)
     default: return 1;
     }
   }
+
+  /*
+   * If needed, increase rlimits to allow as many connections
+   * as needed.
+   */
+  if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) {
+      fprintf(stderr, "failed to getrlimit number of files\n");
+      exit(EX_OSERR);
+  } else {
+      int maxfiles = settings.maxconns;
+      if (rlim.rlim_cur < maxfiles)
+          rlim.rlim_cur = maxfiles;
+      if (rlim.rlim_max < rlim.rlim_cur)
+          rlim.rlim_max = rlim.rlim_cur;
+      if (setrlimit(RLIMIT_NOFILE, &rlim) != 0) {
+          fprintf(stderr, "failed to set rlimit for open files. Try running as root or requesting smaller maxconns value.\n");
+          exit(EX_OSERR);
+      }
+  }
+
 
   if (settings.daemon)
     daemonize(1,1);
