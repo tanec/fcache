@@ -1,4 +1,5 @@
 add_library(FASTCGI  fastcgi-api.c)
+add_library(UTIL  util.c)
 
 pkg_search_module(CURL REQUIRED libcurl)
 include_directories(${CURL_INCLUDE_DIRS})
@@ -16,5 +17,5 @@ target_link_libraries(EVENT ${EVENT_LIB})
 add_library(STRING fc_string.c)
 add_library(LOG log.c)
 
-add_executable (fcache fcache.c event-api.c)
-target_link_libraries(fcache  FASTCGI CURL EVENT LOG STRING)
+add_executable (fcache fcache.c)
+target_link_libraries(fcache  FASTCGI EVENT LOG STRING  UTIL)

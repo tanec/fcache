@@ -1,3 +1,6 @@
+#include <sys/types.h>
+#include <stdarg.h>
+#include <unistd.h>
 #include "log.h"
 
 void log_stderr(err_t err, const char *fmt, ...)
