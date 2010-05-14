@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "util.h"
+#include "md5.h"
 
 pid_t
 daemonize(int dochdir, int doclose)
@@ -35,4 +36,22 @@ daemonize(int dochdir, int doclose)
   }
 
   return sid;
+}
+
+void
+md5sum(const void *ptr, int size, char *buf)
+{
+  int i;
+  unsigned char digest[16];
+  md5_state_t ms;
+
+  md5_init(&ms);
+  md5_append(&ms, (md5_byte_t *)ptr, size);
+  md5_finish(&ms, (md5_byte_t *)digest);
+
+  char *wp = buf;
+  for(i = 0; i < 16; i++){
+    wp += sprintf(wp, "%02x", digest[i]);
+  }
+  *wp = '\0';
 }

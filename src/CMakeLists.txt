@@ -16,6 +16,7 @@ target_link_libraries(EVENT ${EVENT_LIB})
 
 add_library(LOG log.c)
 add_library(SMALLOC smalloc.c)
+add_library(MD5 md5.c)
 
 add_executable (fcache fcache.c)
-target_link_libraries(fcache  FASTCGI EVENT LOG UTIL SMALLOC)
+target_link_libraries(fcache  FASTCGI EVENT LOG UTIL SMALLOC MD5)
