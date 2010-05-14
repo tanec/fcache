@@ -14,9 +14,8 @@ message("found libevent: ${EVENT_LIB}, ${EVENT_INC}")
 add_library(EVENT event-api.c)
 target_link_libraries(EVENT ${EVENT_LIB})
 
-add_library(STRING fc_string.c)
 add_library(LOG log.c)
 add_library(SMALLOC smalloc.c)
 
 add_executable (fcache fcache.c)
-target_link_libraries(fcache  FASTCGI EVENT LOG STRING  UTIL SMALLOC)
+target_link_libraries(fcache  FASTCGI EVENT LOG UTIL SMALLOC)

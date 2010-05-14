@@ -1,8 +1,6 @@
 #ifndef LOG_H
 #define LOG_H
 
-#include "fc_string.h"
-
 typedef int err_t;
 
 #define MAX_ERROR_NUM   2048
