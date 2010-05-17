@@ -10,6 +10,7 @@
 #include "event-api.h"
 #include "log.h"
 #include "util.h"
+#include "skiplist.h"
 #include "fcache.h"
 
 setting_t settings;
@@ -20,6 +21,7 @@ main(int argc, char**argv)
 {
   int c;
   struct rlimit rlim;
+  skiplist_t *cache;
 
   //defaults
   settings.daemon = 1;
@@ -113,6 +115,8 @@ main(int argc, char**argv)
   
   
   // Initialization
+  cache = sl_alloc();
+
   // prepare shared memory
   // daemonlize, check and fork
   while(1) {
