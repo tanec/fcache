@@ -115,7 +115,7 @@ main(int argc, char**argv)
   
   
   // Initialization
-  cache = sl_alloc();
+  cache = sl_alloc(NULL);
 
   // prepare shared memory
   // daemonlize, check and fork
