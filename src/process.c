@@ -12,22 +12,22 @@ extern reader_t read_mem, read_file, read_net;
 void
 process(request_t *req, response_t *resp)
 {
-    bool cache_after_response = false;
-    page_t *data = NULL;
+  bool cache_after_response = false;
+  page_t *data = NULL;
 
-    data = (*read_mem.read)(req);
-    if (data == NULL) {
-        data = (*read_file.read)(req);
-        cache_after_response = true;
+  data = (*read_mem.read)(req);
+  if (data == NULL) {
+    data = (*read_file.read)(req);
+    cache_after_response = true;
+  }
+  if (data == NULL) {
+    data = (*read_net.read)(req);
+    cache_after_response = true;
+  }
+  if (data != NULL) {
+    //TODO
+    if (cache_after_response) {
+      (*read_mem.cache)(req, data);
     }
-    if (data == NULL) {
-        data = (*read_net.read)(req);
-        cache_after_response = true;
-    }
-    if (data != NULL) {
-        //TODO
-        if (cache_after_response) {
-            (*read_mem.cache)(req, data);
-        }
-    }
+  }
 }

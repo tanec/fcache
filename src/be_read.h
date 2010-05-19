@@ -6,8 +6,8 @@
 #include <sys/types.h>
 
 typedef struct {
-    size_t pos, len;
-    uint8_t* data;
+  size_t pos, len;
+  uint8_t* data;
 } stream_t;
 
 bool    readbool(stream_t *);
