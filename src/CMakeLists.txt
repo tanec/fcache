@@ -14,7 +14,6 @@ message("found libevent: ${EVENT_LIB}, ${EVENT_INC}")
 add_library(EVENT event-api.c)
 target_link_libraries(EVENT ${EVENT_LIB})
 
-add_library(LOG log.c)
 add_library(SMALLOC smalloc.c)
 add_library(MD5 md5.c)
 
@@ -35,7 +34,10 @@ add_library(READNET read_net.c)
 #########################################
 
 add_library(PROCESS process.c)
-target_link_libraries(PROCESS  READMEM READFILE READNET)
+target_link_libraries(PROCESS MD5 READMEM READFILE READNET)
+
+add_library(SETTING settings.c)
+add_library(LOG log.c)
 
 add_executable (fcache fcache.c)
-target_link_libraries(fcache  FASTCGI EVENT LOG UTIL PROCESS)
+target_link_libraries(fcache  SETTING FASTCGI EVENT LOG UTIL PROCESS)
