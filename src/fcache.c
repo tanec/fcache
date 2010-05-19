@@ -10,18 +10,21 @@
 #include "event-api.h"
 #include "log.h"
 #include "util.h"
-#include "skiplist.h"
+#include "md5.h"
+
+
 #include "fcache.h"
+#include "process.h"
 
 setting_t settings;
 stat_summary_t stat_mem, stat_fs, stat_http, stat_auth;
+
 
 int
 main(int argc, char**argv)
 {
   int c;
   struct rlimit rlim;
-  skiplist_t *cache;
 
   //defaults
   settings.daemon = 1;
@@ -37,7 +40,7 @@ main(int argc, char**argv)
   while (-1 != (c = getopt(argc, argv,
 			   "D"  /*do not goto daemon mode*/
                            "I:" /*interface to bind*/
-			   "p:" /* TCP port number to listen on */
+                           "p:" /* TCP port number to listen on */
 			   "s:" /* unix socket path to listen on */
 
 			   "c:"  /* max simultaneous connections */
@@ -115,8 +118,8 @@ main(int argc, char**argv)
   
   
   // Initialization
-  cache = sl_alloc(NULL);
 
+process(NULL, NULL);
   // prepare shared memory
   // daemonlize, check and fork
   while(1) {

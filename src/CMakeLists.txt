@@ -17,9 +17,25 @@ target_link_libraries(EVENT ${EVENT_LIB})
 add_library(LOG log.c)
 add_library(SMALLOC smalloc.c)
 add_library(MD5 md5.c)
+
 add_library(MAP tmap.c)
 add_library(SKIPLIST skiplist.c)
 target_link_libraries(SKIPLIST  SMALLOC)
 
+########################################
+add_library(READER reader.c)
+
+add_library(READMEM read_mem.c)
+target_link_libraries(READMEM  SKIPLIST)
+
+add_library(BEREAD be_read.c)
+add_library(READFILE read_file.c)
+
+add_library(READNET read_net.c)
+#########################################
+
+add_library(PROCESS process.c)
+target_link_libraries(PROCESS  READMEM READFILE READNET)
+
 add_executable (fcache fcache.c)
-target_link_libraries(fcache  FASTCGI EVENT LOG UTIL SMALLOC MAP SKIPLIST MD5)
+target_link_libraries(fcache  FASTCGI EVENT LOG UTIL PROCESS)
