@@ -326,3 +326,25 @@ md5_finish(md5_state_t *pms, md5_byte_t digest[16])
   for (i = 0; i < 16; ++i)
     digest[i] = (md5_byte_t)(pms->abcd[i >> 2] >> ((i & 3) << 3));
 }
+
+void
+md5_digest(const void *ptr, int size, md5_byte_t digest[16])
+{
+  md5_state_t ms;
+
+  md5_init(&ms);
+  md5_append(&ms, (md5_byte_t *)ptr, size);
+  md5_finish(&ms, (md5_byte_t *)digest);
+}
+
+int
+md5_compare(md5_byte_t digest1[16], md5_byte_t digest2[16])
+{
+    int i;
+    for(i=0; i<16; i++) {
+        if (digest1[i] == digest2[i])
+            continue;
+        return digest1[i] - digest2[i];
+    }
+    return 0;
+}

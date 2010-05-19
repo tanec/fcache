@@ -24,6 +24,5 @@
 #define STRIP_TAG(v, tag) ((v) & ~tag)
 
 pid_t daemonize(int, int);
-void md5sum(const void *, int, char *);
 
 #endif // UTIL_H
