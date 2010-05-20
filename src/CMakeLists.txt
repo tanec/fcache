@@ -19,7 +19,7 @@ add_library(MD5 md5.c)
 
 add_library(MAP tmap.c)
 add_library(SKIPLIST skiplist.c)
-target_link_libraries(SKIPLIST  SMALLOC)
+target_link_libraries(SKIPLIST  SMALLOC MAP)
 
 ########################################
 add_library(READER reader.c)
@@ -29,13 +29,11 @@ target_link_libraries(READMEM  SKIPLIST)
 
 add_library(BEREAD be_read.c)
 add_library(READFILE read_file.c)
-target_link_libraries(READFILE  BEREAD)
-
-add_library(READNET read_net.c)
+target_link_libraries(READFILE  BEREAD READER)
 #########################################
 
 add_library(PROCESS process.c)
-target_link_libraries(PROCESS MD5 READMEM READFILE READNET)
+target_link_libraries(PROCESS MD5 READMEM READFILE)
 
 add_library(SETTING settings.c)
 add_library(LOG log.c)

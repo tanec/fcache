@@ -114,8 +114,8 @@ readstr(stream_t *s)
   uint32_t len = readu32(s);
   char *str = (char*)smalloc(len+1);
   if (str == NULL) return NULL;
-  memset(str, 0, len+1);
   memcpy(str, s->data+s->pos, len);
+  *(str+len) = 0;
   s->pos += len;
   return str;
 }

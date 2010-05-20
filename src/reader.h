@@ -30,13 +30,6 @@ typedef struct {
   void *body; // 文件内容;
 } page_t;
 
-/////////////////////////////////////////////////////////////////////////////////////
-
-typedef struct {
-  page_t* (*read) (request_t *);
-  void    (*cache)(request_t *, page_t *);
-} reader_t;
-
 void page_free(page_t *);
 
 #endif // READER_H

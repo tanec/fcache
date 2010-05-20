@@ -3,12 +3,6 @@
 
 #include "reader.h"
 
-page_t* file_read(request_t *);
-void    file_cache(request_t *, page_t *);
-
-static reader_t read_file = {
-  &file_read,
-  &file_cache
-};
+page_t* file_get(request_t *);
 
 #endif // READ_FILE_H

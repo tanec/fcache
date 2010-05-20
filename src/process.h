@@ -26,6 +26,8 @@ typedef struct {
 
 void md5_dir(zhongsou_t *);
 void md5_file(zhongsou_t *);
+
+void process_init();
 void process(request_t *, response_t *);
 
 #endif // PROCESS_H

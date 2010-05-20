@@ -3,12 +3,8 @@
 
 #include "reader.h"
 
-page_t* mem_read(request_t *);
-void    mem_cache(request_t *, page_t *);
-
-static reader_t read_mem = {
-  &mem_read,
-  &mem_cache
-};
+page_t * mem_get(request_t *);
+page_t * mem_set(request_t *, page_t *);
+page_t * mem_del(request_t *);
 
 #endif // READ_MEM_H

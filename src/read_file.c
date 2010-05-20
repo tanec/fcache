@@ -60,7 +60,7 @@ file_read_path(char *path)
 }
 
 page_t *
-file_read(request_t *req)
+file_get(request_t *req)
 {
   zhongsou_t zt = req->inner;
   char path[71 + strlen(cfg.base_dir)]; //2*len(md5)+len('/'s)+'\0' = 2*32+6+1
@@ -81,6 +81,3 @@ file_read(request_t *req)
 
   return file_read_path(path);
 }
-
-void
-file_cache(request_t *req, page_t *page){} // do nothing

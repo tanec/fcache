@@ -92,5 +92,5 @@ inline void
 map_iter_free(map_iter_t *iter)
 {
   iter->impl->iter_free(iter->state);
-  nbd_free(iter);
+  sfree(iter);
 }

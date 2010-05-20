@@ -1,12 +1,16 @@
 #include <stdbool.h>
-#include <stdio.h>
+#include <stddef.h>
 
 #include "process.h"
 #include "reader.h"
 #include "read_mem.h"
 #include "read_file.h"
-#include "read_net.h"
 #include "md5.h"
+
+typedef enum {
+  mem,
+  fs
+} ds_t;
 
 void
 md5_dir(zhongsou_t *zt)
@@ -26,26 +30,52 @@ md5_file(zhongsou_t *zt)
   }
 }
 
+bool
+is_expire(page_t *page)
+{
+
+}
+
+void
+process_init()
+{
+  mem_init();
+}
+
 void
 process(request_t *req, response_t *resp)
 {
-  bool cache_after_response = false;
-  page_t *data = NULL;
+  page_t *page = mem_get(req);
+  ds_t from = mem;
 
-  data = (*read_mem.read)(req);
-  if (data == NULL) {
-    data = (*read_file.read)(req);
-    cache_after_response = true;
+  if (page == NULL) {
+    page = file_get(req);
+    from = fs;
   }
 
-  if (data == NULL) {
-    data = (*read_net.read)(req);
-  }
-  if (data != NULL) {
-    //TODO
-    // check expire
-    if (cache_after_response) {
-      (*read_mem.cache)(req, data);
+  if (page == NULL) {
+    // pass to upstream servers
+  } else {
+    bool expire;
+    //TODO: send to client
+
+    // send done
+    expire = is_expire(page);
+    if (from == fs) {
+        page_free(mem_set(req, page));
+      if (expire) {
+	//udp: notify
+      }
+  } else if (expire && from == mem) {
+      page_t *p1 = file_get(req);
+      if (p1 == NULL) { // not in fs: delete
+          page_free(mem_del(req));
+      } else if (is_expire(p1)) { // expire in fs
+          page_free(p1);
+          // udp: notify
+      } else { // valid on fs
+          page_free(mem_set(req, p1));
+      }
     }
   }
 }
