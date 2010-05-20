@@ -10,22 +10,16 @@ typedef struct {
   uint8_t set_mask; // 0x1: dir md5 set; 0x2: file md5 set
   md5_byte_t dig_dir[16];
   md5_byte_t dig_file[16];
-} zhongsou_t;
-
-typedef struct {
-  zhongsou_t inner;
 
   char *enc;
-  char *host;
-  char *uri;
 } request_t;
 
 typedef struct {
 
 } response_t;
 
-void md5_dir(zhongsou_t *);
-void md5_file(zhongsou_t *);
+void md5_dir(request_t *);
+void md5_file(request_t *);
 
 void process_init();
 void process(request_t *, response_t *);

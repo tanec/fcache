@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <string.h>
+#include <time.h>
 
 #include "process.h"
 #include "reader.h"
@@ -13,33 +14,38 @@ typedef enum {
 } ds_t;
 
 void
-md5_dir(zhongsou_t *zt)
+md5_dir(request_t *req)
 {
-  if ((zt->set_mask&0x1) == 0) {
-    size_t len1 = strlen(zt->domain);
-    size_t len2 = strlen(zt->keyword);
+  if ((req->set_mask&0x1) == 0) {
+    size_t len1 = strlen(req->domain);
+    size_t len2 = strlen(req->keyword);
     char d[len1+len2+1];
-    memcpy(d, zt->domain, len1);
-    memcpy(d+len1, zt->keyword, len2);
+    memcpy(d, req->domain, len1);
+    memcpy(d+len1, req->keyword, len2);
     d[len1+len2] = 0;
-    md5_digest(d, len1+len2, zt->dig_dir);
-    zt->set_mask |= 0x1;
+    md5_digest(d, len1+len2, req->dig_dir);
+    req->set_mask |= 0x1;
   }
 }
 
 void
-md5_file(zhongsou_t *zt)
+md5_file(request_t *req)
 {
-  if ((zt->set_mask&0x2) == 0) {
-    md5_digest(zt->url, strlen(zt->url), zt->dig_file);
-    zt->set_mask |= 0x2;
+  if ((req->set_mask&0x2) == 0) {
+    md5_digest(req->url, strlen(req->url), req->dig_file);
+    req->set_mask |= 0x2;
   }
 }
 
 bool
 is_expire(page_t *page)
 {
-
+    if ((page->head).valid) {
+        time_t curr = time(NULL);
+        time_t expire = (page->head).time_expire/1000;
+        return (expire < curr)?true:false;
+    }
+    return true;
 }
 
 void
@@ -64,7 +70,7 @@ process(request_t *req, response_t *resp)
   } else {
     bool expire;
     //TODO: send to client
-
+printf("mem=%x\n", smalloc_used_memory());
     // send done
     expire = is_expire(page);
     if (from == fs) {

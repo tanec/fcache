@@ -29,55 +29,54 @@ byte[] 文件内容
 page_t *
 file_read_path(char *path)
 {
-    mmap_array_t mt;
+  mmap_array_t mt;
 
-    if (mmap_read(&mt, path)) {
-        stream_t s = {0, mt.len, mt.data};
+  if (mmap_read(&mt, path)) {
+    stream_t s = {0, mt.len, mt.data};
 
-        page_t *page = (page_t*)smalloc(sizeof(page_t));
-        page->level = 0;
-        uint32_t hlen = readu32(&s);
-        page->body_len = readu32(&s);
-        page->body = smalloc(page->body_len);
-        memcpy(page->body, mt.data+2*sizeof(uint32_t)+hlen, page->body_len);
+    page_t *page = (page_t*)smalloc(sizeof(page_t));
+    page->level = 0;
+    uint32_t hlen = readu32(&s);
+    page->body_len = readu32(&s);
+    page->body = smalloc(page->body_len);
+    memcpy(page->body, mt.data+2*sizeof(uint32_t)+hlen, page->body_len);
 
-        page_head_t *head = (page_head_t *)page;
-        head->version = readu8(&s);
-        head->valid = readu8(&s);
-        head->time_expire = readu64(&s);
-        head->time_create = readu64(&s);
-        head->page_no = readu64(&s);
-        head->type = readu8(&s);
-        head->keyword = readstr(&s);
-        head->ig = readstr(&s);
-        head->auth_type = readu32(&s);
-        head->param = readstr(&s);
+    page_head_t *head = (page_head_t *)page;
+    head->version = readu8(&s);
+    head->valid = readu8(&s);
+    head->time_expire = readu64(&s);
+    head->time_create = readu64(&s);
+    head->page_no = readu64(&s);
+    head->type = readu8(&s);
+    head->keyword = readstr(&s);
+    head->ig = readstr(&s);
+    head->auth_type = readu32(&s);
+    head->param = readstr(&s);
 
-        mmap_close(&mt);
-        return page;
-    }
-    return NULL;
+    mmap_close(&mt);
+    return page;
+  }
+  return NULL;
 }
 
 page_t *
 file_get(request_t *req)
 {
-  zhongsou_t *zt = (zhongsou_t *)req;
   char path[71 + strlen(cfg.base_dir)]; //2*len(md5)+len('/'s)+'\0' = 2*32+6+1
 
-  md5_dir(zt);
-  md5_file(zt);
+  md5_dir(req);
+  md5_file(req);
   sprintf(path,
           "%s/%02x%02x/%02x%02x/%02x%02x/%02x%02x/%02x%02x%02x%02x%02x%02x%02x%02x/%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\0",
 	  cfg.base_dir,
-          (*zt).dig_dir[0], (*zt).dig_dir[1], (*zt).dig_dir[2], (*zt).dig_dir[3],
-          (*zt).dig_dir[4], (*zt).dig_dir[5], (*zt).dig_dir[6], (*zt).dig_dir[7],
-          (*zt).dig_dir[8], (*zt).dig_dir[9], (*zt).dig_dir[10], (*zt).dig_dir[11],
-          (*zt).dig_dir[12], (*zt).dig_dir[13], (*zt).dig_dir[14], (*zt).dig_dir[15],
-          (*zt).dig_file[0], (*zt).dig_file[1], (*zt).dig_file[2], (*zt).dig_file[3],
-          (*zt).dig_file[4], (*zt).dig_file[5], (*zt).dig_file[6], (*zt).dig_file[7],
-          (*zt).dig_file[8], (*zt).dig_file[9], (*zt).dig_file[10], (*zt).dig_file[11],
-          (*zt).dig_file[12], (*zt).dig_file[13], (*zt).dig_file[14], (*zt).dig_file[15]);
+          (*req).dig_dir[0], (*req).dig_dir[1], (*req).dig_dir[2], (*req).dig_dir[3],
+          (*req).dig_dir[4], (*req).dig_dir[5], (*req).dig_dir[6], (*req).dig_dir[7],
+          (*req).dig_dir[8], (*req).dig_dir[9], (*req).dig_dir[10], (*req).dig_dir[11],
+          (*req).dig_dir[12], (*req).dig_dir[13], (*req).dig_dir[14], (*req).dig_dir[15],
+          (*req).dig_file[0], (*req).dig_file[1], (*req).dig_file[2], (*req).dig_file[3],
+          (*req).dig_file[4], (*req).dig_file[5], (*req).dig_file[6], (*req).dig_file[7],
+          (*req).dig_file[8], (*req).dig_file[9], (*req).dig_file[10], (*req).dig_file[11],
+          (*req).dig_file[12], (*req).dig_file[13], (*req).dig_file[14], (*req).dig_file[15]);
 
   return file_read_path(path);
 }
