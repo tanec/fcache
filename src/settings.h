@@ -24,7 +24,7 @@ typedef struct {
 } setting_t;
 
 static setting_t cfg = {
-  1,
+  0,
 
   tcp, "127.0.0.1", 2012,
   "/tmp/fcache.socket",

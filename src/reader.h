@@ -37,4 +37,6 @@ typedef struct {
   void    (*cache)(request_t *, page_t *);
 } reader_t;
 
+void page_free(page_t *);
+
 #endif // READER_H

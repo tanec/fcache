@@ -7,19 +7,19 @@
 
 static size_t used_memory = 0;
 
-static void
+static void *
 smalloc_die(size_t size)
 {
   fprintf(stderr, "smalloc: Out of memory trying to allocate %zu bytes\n", size);
   fflush(stderr);
-  abort();
+  return NULL;
 }
 
 void *
 smalloc(size_t size)
 {
   void *ptr = malloc(size+LENGTH_SIZE);
-  if (!ptr) smalloc_die(size);
+  if (ptr == NULL) return smalloc_die(size);
   *((size_t*)ptr) = size;
   used_memory += size+LENGTH_SIZE;
   return (char*)ptr+LENGTH_SIZE;
@@ -36,7 +36,7 @@ srealloc(void *ptr, size_t size)
   realptr = (char*)ptr-LENGTH_SIZE;
   oldsize = *((size_t*)realptr);
   newptr = realloc(realptr,size+LENGTH_SIZE);
-  if (!newptr) smalloc_die(size);
+  if (!newptr) return smalloc_die(size);
 
   *((size_t*)newptr) = size;
   used_memory -= oldsize;

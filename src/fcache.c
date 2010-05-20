@@ -26,7 +26,7 @@ main(int argc, char**argv)
   /* process arguments */
   while (-1 != (c = getopt(argc, argv,
                            "C:"  /* config file */
-			   "D"  /*do not goto daemon mode*/
+                           "d"  /* goto daemon mode*/
                            "I:" /*interface to bind*/
                            "p:" /* TCP port number to listen on */
 			   "s:" /* unix socket path to listen on */
@@ -38,8 +38,8 @@ main(int argc, char**argv)
     switch (c) {
     case 'C':
         read_cfg(&cfg, optarg);
-    case 'D':
-      cfg.daemon = 0;
+    case 'd':
+      cfg.daemon = 1;
 
     case 'I':
       cfg.bind_addr = optarg;
@@ -97,7 +97,6 @@ main(int argc, char**argv)
       }
   }
 
-
   if (cfg.daemon)
     daemonize(1,1);
   // files for log
@@ -108,7 +107,7 @@ main(int argc, char**argv)
 process(NULL, NULL);
   // prepare shared memory
   // daemonlize, check and fork
-  while(1) {
+  while(cfg.daemon) {
     sleep(5);
   }
   

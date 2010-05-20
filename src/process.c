@@ -37,12 +37,13 @@ process(request_t *req, response_t *resp)
     data = (*read_file.read)(req);
     cache_after_response = true;
   }
+
   if (data == NULL) {
     data = (*read_net.read)(req);
-    cache_after_response = true;
   }
   if (data != NULL) {
     //TODO
+    // check expire
     if (cache_after_response) {
       (*read_mem.cache)(req, data);
     }

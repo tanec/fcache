@@ -29,6 +29,7 @@ target_link_libraries(READMEM  SKIPLIST)
 
 add_library(BEREAD be_read.c)
 add_library(READFILE read_file.c)
+target_link_libraries(READFILE  BEREAD)
 
 add_library(READNET read_net.c)
 #########################################
