@@ -1,6 +1,7 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <stdbool.h>
 #include <sys/types.h>
 
 #ifndef ENABLE_TRACE
@@ -23,6 +24,14 @@
 #define IS_TAGGED(v, tag) ((v) &  tag)
 #define STRIP_TAG(v, tag) ((v) & ~tag)
 
+typedef struct {
+  off_t len;
+  char *data;
+} mmap_array_t;
+
 pid_t daemonize(int, int);
+
+bool mmap_read(mmap_array_t *, char *);
+int  mmap_close(mmap_array_t *);
 
 #endif // UTIL_H
