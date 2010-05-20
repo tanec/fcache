@@ -3,7 +3,7 @@
 
 #include "read_file.h"
 #include "be_read.h"
-#include "config.h"
+#include "settings.h"
 
 page_t *
 file_read(request_t *req)
