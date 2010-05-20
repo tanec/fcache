@@ -104,7 +104,7 @@ main(int argc, char**argv)
   
   // Initialization
 {
-request_t req = {"gbk", "host", "http://host:port/path/file"};
+request_t req = {"gbkkk", "--hosttt", "http://host:port/path/file"};
 process(&req, NULL);
 }
   // prepare shared memory

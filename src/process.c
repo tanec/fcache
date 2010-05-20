@@ -1,5 +1,5 @@
 #include <stdbool.h>
-#include <stddef.h>
+#include <string.h>
 
 #include "process.h"
 #include "reader.h"
@@ -16,8 +16,14 @@ void
 md5_dir(zhongsou_t *zt)
 {
   if ((zt->set_mask&0x1) == 0) {
-    md5_digest(NULL, 0, zt->dig_dir);
-    zt->set_mask &= 0x1;
+    size_t len1 = strlen(zt->domain);
+    size_t len2 = strlen(zt->keyword);
+    char d[len1+len2+1];
+    memcpy(d, zt->domain, len1);
+    memcpy(d+len1, zt->keyword, len2);
+    d[len1+len2] = 0;
+    md5_digest(d, len1+len2, zt->dig_dir);
+    zt->set_mask |= 0x1;
   }
 }
 
@@ -25,8 +31,8 @@ void
 md5_file(zhongsou_t *zt)
 {
   if ((zt->set_mask&0x2) == 0) {
-    md5_digest(NULL, 0, zt->dig_file);
-    zt->set_mask &= 0x2;
+    md5_digest(zt->url, strlen(zt->url), zt->dig_file);
+    zt->set_mask |= 0x2;
   }
 }
 
