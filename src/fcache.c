@@ -103,8 +103,10 @@ main(int argc, char**argv)
   
   
   // Initialization
-
-process(NULL, NULL);
+{
+request_t req = {"gbk", "host", "http://host:port/path/file"};
+process(&req, NULL);
+}
   // prepare shared memory
   // daemonlize, check and fork
   while(cfg.daemon) {

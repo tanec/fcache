@@ -62,22 +62,22 @@ file_read_path(char *path)
 page_t *
 file_get(request_t *req)
 {
-  zhongsou_t zt = req->inner;
+  zhongsou_t *zt = (zhongsou_t *)req;
   char path[71 + strlen(cfg.base_dir)]; //2*len(md5)+len('/'s)+'\0' = 2*32+6+1
 
-  md5_dir(&zt);
-  md5_file(&zt);
+  md5_dir(zt);
+  md5_file(zt);
   sprintf(path,
           "%s/%02x%02x/%02x%02x/%02x%02x/%02x%02x/%02x%02x%02x%02x%02x%02x%02x%02x/%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\0",
 	  cfg.base_dir,
-	  zt.dig_dir[0], zt.dig_dir[1], zt.dig_dir[2], zt.dig_dir[3],
-	  zt.dig_dir[4], zt.dig_dir[5], zt.dig_dir[6], zt.dig_dir[7],
-	  zt.dig_dir[8], zt.dig_dir[9], zt.dig_dir[10], zt.dig_dir[11],
-          zt.dig_dir[12], zt.dig_dir[13], zt.dig_dir[14], zt.dig_dir[15],
-          zt.dig_file[0], zt.dig_file[1], zt.dig_file[2], zt.dig_file[3],
-          zt.dig_file[4], zt.dig_file[5], zt.dig_file[6], zt.dig_file[7],
-          zt.dig_file[8], zt.dig_file[9], zt.dig_file[10], zt.dig_file[11],
-          zt.dig_file[12], zt.dig_file[13], zt.dig_file[14], zt.dig_file[15]);
+          (*zt).dig_dir[0], (*zt).dig_dir[1], (*zt).dig_dir[2], (*zt).dig_dir[3],
+          (*zt).dig_dir[4], (*zt).dig_dir[5], (*zt).dig_dir[6], (*zt).dig_dir[7],
+          (*zt).dig_dir[8], (*zt).dig_dir[9], (*zt).dig_dir[10], (*zt).dig_dir[11],
+          (*zt).dig_dir[12], (*zt).dig_dir[13], (*zt).dig_dir[14], (*zt).dig_dir[15],
+          (*zt).dig_file[0], (*zt).dig_file[1], (*zt).dig_file[2], (*zt).dig_file[3],
+          (*zt).dig_file[4], (*zt).dig_file[5], (*zt).dig_file[6], (*zt).dig_file[7],
+          (*zt).dig_file[8], (*zt).dig_file[9], (*zt).dig_file[10], (*zt).dig_file[11],
+          (*zt).dig_file[12], (*zt).dig_file[13], (*zt).dig_file[14], (*zt).dig_file[15]);
 
   return file_read_path(path);
 }

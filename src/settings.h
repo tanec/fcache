@@ -31,7 +31,8 @@ static setting_t cfg = {
 
   "/var/run/fcache.pid",
   16,
-  4096
+  4096,
+  "/tmp"
 };
 
 void read_cfg(setting_t *, char *);

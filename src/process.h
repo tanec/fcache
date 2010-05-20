@@ -13,11 +13,11 @@ typedef struct {
 } zhongsou_t;
 
 typedef struct {
+  zhongsou_t inner;
+
   char *enc;
   char *host;
   char *uri;
-
-  zhongsou_t inner;
 } request_t;
 
 typedef struct {
