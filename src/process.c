@@ -40,12 +40,12 @@ md5_file(request_t *req)
 bool
 is_expire(page_t *page)
 {
-    if ((page->head).valid) {
-        time_t curr = time(NULL);
-        time_t expire = (page->head).time_expire/1000;
-        return (expire < curr)?true:false;
-    }
-    return true;
+  if ((page->head).valid) {
+    time_t curr = time(NULL);
+    time_t expire = (page->head).time_expire/1000;
+    return (expire < curr)?true:false;
+  }
+  return true;
 }
 
 void
@@ -70,23 +70,23 @@ process(request_t *req, response_t *resp)
   } else {
     bool expire;
     //TODO: send to client
-printf("mem=%x\n", smalloc_used_memory());
+    printf("mem=%x\n", smalloc_used_memory());
     // send done
     expire = is_expire(page);
     if (from == fs) {
-        sfree(mem_set(req, page));
+      sfree(mem_set(req, page));
       if (expire) {
 	//udp: notify
       }
-  } else if (expire && from == mem) {
+    } else if (expire && from == mem) {
       page_t *p1 = file_get(req);
       if (p1 == NULL) { // not in fs: delete
-          sfree(mem_del(req));
+	sfree(mem_del(req));
       } else if (is_expire(p1)) { // expire in fs
-          sfree(p1);
-          // udp: notify
+	sfree(p1);
+	// udp: notify
       } else { // valid on fs
-          sfree(mem_set(req, p1));
+	sfree(mem_set(req, p1));
       }
     }
   }

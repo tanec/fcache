@@ -340,11 +340,11 @@ md5_digest(const void *ptr, int size, md5_byte_t digest[16])
 int
 md5_compare(md5_byte_t digest1[16], md5_byte_t digest2[16])
 {
-    int i;
-    for(i=0; i<16; i++) {
-        if (digest1[i] == digest2[i])
-            continue;
-        return digest1[i] - digest2[i];
-    }
-    return 0;
+  int i;
+  for(i=0; i<16; i++) {
+    if (digest1[i] == digest2[i])
+      continue;
+    return digest1[i] - digest2[i];
+  }
+  return 0;
 }
