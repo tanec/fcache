@@ -5,6 +5,10 @@
 void *
 page_print(page_t *page)
 {
+  if (page == NULL) {
+    printf("page = NULL\n");
+    return;
+  }
   printf("<== page@%llx start:\n", page);
   printf("  head.version=%d\n", page->head.version);
   printf("  head.valid=%d\n", page->head.valid);

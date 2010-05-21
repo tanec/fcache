@@ -34,6 +34,9 @@ main(int argc, char**argv)
 			   "c:"  /* max simultaneous connections */
                            "P:"  /* file to hold pid */
                            "t:"  /* max thread connections */
+
+                           // debug
+                           "r:"  /* test read a file */
 			   ))) {
     switch (c) {
     case 'C':
@@ -74,6 +77,10 @@ main(int argc, char**argv)
 		" your machine or less.\n");
       }
       break;
+
+    case 'r':
+      page_print(file_read_path(optarg));
+      return 0;
     default: return 1;
     }
   }
@@ -104,8 +111,6 @@ main(int argc, char**argv)
   
   // Initialization
 {
-      page_print(file_read_path("/root/Desktop/30b11260e7f24128575d6106d058a36d"));
-
 request_t req = {"gbkkk", "--hosttt", "http://host:port/path/file"};
 printf("time=%d\n", time(NULL));
 process_init();
