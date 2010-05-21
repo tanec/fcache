@@ -76,6 +76,7 @@ void
 process_init()
 {
   mem_init();
+  memset(&statics, 0, sizeof(statics));
 }
 
 void
