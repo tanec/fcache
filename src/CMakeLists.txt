@@ -32,8 +32,10 @@ add_library(READFILE read_file.c)
 target_link_libraries(READFILE  BEREAD READER)
 #########################################
 
+add_library(STAT statistics.c)
+
 add_library(PROCESS process.c)
-target_link_libraries(PROCESS MD5 READMEM READFILE)
+target_link_libraries(PROCESS MD5 READMEM READFILE STAT)
 
 add_library(SETTING settings.c)
 add_library(LOG log.c)

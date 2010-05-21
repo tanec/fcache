@@ -15,8 +15,6 @@
 #include "settings.h"
 #include "process.h"
 
-stat_summary_t stat_mem, stat_fs, stat_http, stat_auth;
-
 int
 main(int argc, char**argv)
 {

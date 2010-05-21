@@ -7,11 +7,35 @@
 #include "read_mem.h"
 #include "read_file.h"
 #include "md5.h"
+#include "statistics.h"
+
+#define STAT_HOURS 24
+
+typedef struct {
+  stat_item_t all;
+  stat_item_t mem;
+  stat_item_t fs;
+  stat_item_t net;
+} stat_t;
 
 typedef enum {
   mem,
   fs
 } ds_t;
+
+static int curr=-1;
+static stat_t statics[STAT_HOURS];
+
+int
+current_stat_slot()
+{
+  int temp = time(NULL)/3600%STAT_HOURS;
+  if (temp != curr) {
+    curr = temp;
+    //init
+  }
+  return curr;
+}
 
 void
 md5_dir(request_t *req)
@@ -57,24 +81,84 @@ process_init()
 void
 process(request_t *req, response_t *resp)
 {
-  page_t *page = mem_get(req);
+  struct timespec all_enter, all_fin;
+  struct timespec net_enter, net_fin;
+  uint64_t use_time;
+  int curr_stat = current_stat_slot();
+
+  page_t *page;
   ds_t from = mem;
 
-  if (page == NULL) {
-    page = file_get(req);
-    from = fs;
+  touch_timespec(&all_enter);
+  statics[curr_stat].all.total_num++;
+
+  // mem block
+  {
+    struct timespec s, e;
+    stat_item_t item = statics[curr_stat].mem;
+    item.total_num++;
+
+    touch_timespec(&s);
+    page = mem_get(req);
+    touch_timespec(&e);
+
+    use_time = time_diff(s, e);
+    if (page != NULL) {
+      stat_add(&(item.success), use_time);
+    } else {
+      stat_add(&(item.notfound), use_time);
+    }
   }
 
+  // fs block
   if (page == NULL) {
-    // pass to upstream servers
-  } else {
-    bool expire;
-    //TODO: send to client
-    printf("mem=%x\n", smalloc_used_memory());
-    // send done
-    expire = is_expire(page);
+    struct timespec s, e;
+    stat_item_t item = statics[curr_stat].fs;
+    item.total_num++;
+
+    touch_timespec(&s);
+    page = file_get(req);
+    from = fs;
+    touch_timespec(&e);
+
+    use_time = time_diff(s, e);
+    if (page != NULL) {
+      stat_add(&(item.success), use_time);
+    } else {
+      stat_add(&(item.notfound), use_time);
+    }
+  }
+
+  /* net
+   *  --  success: write 2 client;
+   *  -- notfound: request upstream server + write 2 client
+   */
+  {
+    struct timespec s, e;
+    stat_item_t item = statics[curr_stat].net;
+    item.total_num++;
+
+    touch_timespec(&s);
+    if (page == NULL) {
+      // pass to upstream servers
+    } else {
+      //TODO: send to client
+      printf("mem=%x\n", smalloc_used_memory());
+    }
+    touch_timespec(&e);
+    use_time = time_diff(s, e);
+    if (page != NULL) {
+      stat_add(&(item.success), use_time);
+    } else {
+      stat_add(&(item.notfound), use_time);
+    }
+  }
+
+  // send done
+  if (page != NULL) {
+    bool expire = is_expire(page);
     if (from == fs) {
-      sfree(mem_set(req, page));
+      sfree(mem_set(req, page)); // save in memory if expired?
       if (expire) {
 	//udp: notify
       }
@@ -90,4 +174,8 @@ process(request_t *req, response_t *resp)
       }
     }
   }
+
+  touch_timespec(&all_fin);
+  use_time = time_diff(all_enter, all_fin);
+  stat_add(&(statics[curr_stat].all.success), use_time);
 }
