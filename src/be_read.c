@@ -14,8 +14,8 @@ read(stream_t *s)
 void
 readarr(stream_t *s, char *dest, size_t size)
 {
-    memcpy(dest, s->data+s->pos, size);
-    s->pos += size;
+  memcpy(dest, s->data+s->pos, size);
+  s->pos += size;
 }
 
 bool
