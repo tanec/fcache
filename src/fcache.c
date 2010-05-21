@@ -104,6 +104,8 @@ main(int argc, char**argv)
   
   // Initialization
 {
+      page_print(file_read_path("/root/Desktop/30b11260e7f24128575d6106d058a36d"));
+
 request_t req = {"gbkkk", "--hosttt", "http://host:port/path/file"};
 printf("time=%d\n", time(NULL));
 process_init();

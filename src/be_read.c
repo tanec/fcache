@@ -1,6 +1,5 @@
 #include <string.h>
 #include "be_read.h"
-#include "smalloc.h"
 
 int16_t
 read(stream_t *s)
@@ -10,6 +9,13 @@ read(stream_t *s)
     ret = *(s->data+((s->pos)++));
   }
   return ret;
+}
+
+void
+readarr(stream_t *s, char *dest, size_t size)
+{
+    memcpy(dest, s->data+s->pos, size);
+    s->pos += size;
 }
 
 bool
@@ -106,16 +112,4 @@ readu64(stream_t *s)
 		   (int64_t)((ch6&255) << 16) +
                    (int64_t)((ch7&255) << 8)  +
 		   (int64_t)((ch8&255) << 0));
-}
-
-char *
-readstr(stream_t *s)
-{
-  uint32_t len = readu32(s);
-  char *str = (char*)smalloc(len+1);
-  if (str == NULL) return NULL;
-  memcpy(str, s->data+s->pos, len);
-  *(str+len) = 0;
-  s->pos += len;
-  return str;
 }

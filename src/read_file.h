@@ -4,5 +4,6 @@
 #include "reader.h"
 
 page_t* file_get(request_t *);
+page_t* file_read_path(char *path);
 
 #endif // READ_FILE_H

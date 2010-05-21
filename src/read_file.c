@@ -32,14 +32,20 @@ file_read_path(char *path)
   mmap_array_t mt;
 
   if (mmap_read(&mt, path)) {
+    char *strpos;
+    uint32_t strlen;
     stream_t s = {0, mt.len, mt.data};
-
-    page_t *page = (page_t*)smalloc(sizeof(page_t));
-    page->level = 0;
     uint32_t hlen = readu32(&s);
-    page->body_len = readu32(&s);
-    page->body = smalloc(page->body_len);
+    uint32_t blen = readu32(&s);
+
+    /* |<-- page_t -->|<-- body data -->|<-- head strings -->| */
+    /* about 32 bytes in head is not for strings */
+    page_t *page = (page_t*)smalloc(sizeof(page_t)+blen+hlen-32);
+    page->level = 0;
+    page->body_len = blen;
+    page->body = (char*)page+sizeof(page_t);
     memcpy(page->body, mt.data+2*sizeof(uint32_t)+hlen, page->body_len);
+    strpos = (char*)page->body + blen;
 
     page_head_t *head = (page_head_t *)page;
     head->version = readu8(&s);
@@ -48,10 +54,26 @@ file_read_path(char *path)
     head->time_create = readu64(&s);
     head->page_no = readu64(&s);
     head->type = readu8(&s);
-    head->keyword = readstr(&s);
-    head->ig = readstr(&s);
+
+    strlen = readu32(&s);
+    readarr(&s, strpos, strlen);
+    *(strpos+strlen) = 0;
+    head->keyword = strpos;
+    strpos += strlen+1;
+
+    strlen = readu32(&s);
+    readarr(&s, strpos, strlen);
+    *(strpos+strlen) = 0;
+    head->ig = strpos;
+    strpos += strlen+1;
+
     head->auth_type = readu32(&s);
-    head->param = readstr(&s);
+
+    strlen = readu32(&s);
+    readarr(&s, strpos, strlen);
+    *(strpos+strlen) = 0;
+    head->param = strpos;
+    strpos += strlen+1;
 
     mmap_close(&mt);
     return page;

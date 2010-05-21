@@ -21,6 +21,6 @@ uint16_t readu16(stream_t *);
 uint32_t readu32(stream_t *);
 uint64_t readu64(stream_t *);
 
-char *readstr(stream_t *);
+void readarr(stream_t *, char *, size_t);
 
 #endif // BE_READ_H

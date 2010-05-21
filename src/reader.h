@@ -30,6 +30,6 @@ typedef struct {
   void *body; // 文件内容;
 } page_t;
 
-void page_free(page_t *);
+void * page_print(page_t *);
 
 #endif // READER_H

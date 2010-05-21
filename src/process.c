@@ -74,19 +74,19 @@ printf("mem=%x\n", smalloc_used_memory());
     // send done
     expire = is_expire(page);
     if (from == fs) {
-        page_free(mem_set(req, page));
+        sfree(mem_set(req, page));
       if (expire) {
 	//udp: notify
       }
   } else if (expire && from == mem) {
       page_t *p1 = file_get(req);
       if (p1 == NULL) { // not in fs: delete
-          page_free(mem_del(req));
+          sfree(mem_del(req));
       } else if (is_expire(p1)) { // expire in fs
-          page_free(p1);
+          sfree(p1);
           // udp: notify
       } else { // valid on fs
-          page_free(mem_set(req, p1));
+          sfree(mem_set(req, p1));
       }
     }
   }
