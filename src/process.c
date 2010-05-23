@@ -79,6 +79,46 @@ process_init()
   memset(&statics, 0, sizeof(statics));
 }
 
+page_t *
+process_mem(request_t *req, response_t *resp, int curr_stat)
+{
+    page_t *page;
+    struct timespec s, e;
+    stat_item_t item = statics[curr_stat].mem;
+    item.total_num++;
+
+    touch_timespec(&s);
+    page = mem_get(req);
+    touch_timespec(&e);
+
+    if (page != NULL) {
+      stat_add(&(item.success), time_diff(s, e));
+    } else {
+      stat_add(&(item.notfound), time_diff(s, e));
+    }
+    return page;
+}
+
+page_t *
+process_fs(request_t *req, response_t *resp, int curr_stat)
+{
+    page_t *page;
+    struct timespec s, e;
+    stat_item_t item = statics[curr_stat].fs;
+    item.total_num++;
+
+    touch_timespec(&s);
+    page = file_get(req);
+    touch_timespec(&e);
+
+    if (page != NULL) {
+      stat_add(&(item.success), time_diff(s, e));
+    } else {
+      stat_add(&(item.notfound), time_diff(s, e));
+    }
+    return page;
+}
+
 void
 process(request_t *req, response_t *resp)
 {
@@ -93,41 +133,12 @@ process(request_t *req, response_t *resp)
   touch_timespec(&all_enter);
   statics[curr_stat].all.total_num++;
 
-  // mem block
-  {
-    struct timespec s, e;
-    stat_item_t item = statics[curr_stat].mem;
-    item.total_num++;
-
-    touch_timespec(&s);
-    page = mem_get(req);
-    touch_timespec(&e);
-
-    use_time = time_diff(s, e);
-    if (page != NULL) {
-      stat_add(&(item.success), use_time);
-    } else {
-      stat_add(&(item.notfound), use_time);
-    }
-  }
+  page = process_mem(req, resp, curr_stat);
 
   // fs block
   if (page == NULL) {
-    struct timespec s, e;
-    stat_item_t item = statics[curr_stat].fs;
-    item.total_num++;
-
-    touch_timespec(&s);
-    page = file_get(req);
-    from = fs;
-    touch_timespec(&e);
-
-    use_time = time_diff(s, e);
-    if (page != NULL) {
-      stat_add(&(item.success), use_time);
-    } else {
-      stat_add(&(item.notfound), use_time);
-    }
+      page = process_mem(req, resp, curr_stat);
+      from = fs;
   }
 
   /* net
