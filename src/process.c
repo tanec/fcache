@@ -137,7 +137,7 @@ process(request_t *req, response_t *resp)
 
   // fs block
   if (page == NULL) {
-      page = process_mem(req, resp, curr_stat);
+      page = process_fs(req, resp, curr_stat);
       from = fs;
   }
 
