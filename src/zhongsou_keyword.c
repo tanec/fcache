@@ -21,7 +21,7 @@ count_lines(mmap_array_t *mt)
 }
 
 str_map_t *
-read_strmap(char *file)
+read_strmap(const char *file)
 {
   str_map_t *ret = NULL;
   mmap_array_t mt;
@@ -82,13 +82,13 @@ read_strmap(char *file)
 }
 
 void
-read_domain(char *file)
+read_domain(const char *file)
 {
   domains = read_strmap(file);
 }
 
 void
-read_synonyms(char *file)
+read_synonyms(const char *file)
 {
   synonyms = read_strmap(file);
 }
