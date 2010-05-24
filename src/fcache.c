@@ -14,6 +14,7 @@
 #include "fcache.h"
 #include "settings.h"
 #include "process.h"
+#include "zhongsou_keyword.h"
 
 int
 main(int argc, char**argv)
@@ -108,10 +109,14 @@ main(int argc, char**argv)
   
   
   // Initialization
+  process_init();
+  // keywords
+  if (cfg.doamin_file != NULL)  read_domain(cfg.doamin_file);
+  if (cfg.synonyms_file != NULL)read_synonyms(cfg.synonyms_file);
 {
 request_t req = {"gbkkk", "--hosttt", "http://host:port/path/file"};
 printf("time=%d\n", time(NULL));
-process_init();
+
 process(&req, NULL);
 }
   // prepare shared memory

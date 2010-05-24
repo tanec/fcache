@@ -21,6 +21,8 @@ typedef struct {
 
   //read from file
   char *base_dir;
+  char *doamin_file;
+  char *synonyms_file;
 } setting_t;
 
 static setting_t cfg = {
