@@ -40,5 +40,7 @@ target_link_libraries(PROCESS MD5 READMEM READFILE STAT)
 add_library(SETTING settings.c)
 add_library(LOG log.c)
 
+add_library(ZSKW zhongsou_keyword.c)
+
 add_executable (fcache fcache.c)
-target_link_libraries(fcache  SETTING FASTCGI EVENT LOG UTIL PROCESS)
+target_link_libraries(fcache  SETTING FASTCGI EVENT LOG UTIL PROCESS ZSKW)
