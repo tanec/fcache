@@ -91,14 +91,14 @@ file_get(request_t *req)
   sprintf(path,
           "%s/%02x%02x/%02x%02x/%02x%02x/%02x%02x/%02x%02x%02x%02x%02x%02x%02x%02x/%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\0",
 	  cfg.base_dir,
-          (*req).dig_dir[0], (*req).dig_dir[1], (*req).dig_dir[2], (*req).dig_dir[3],
-          (*req).dig_dir[4], (*req).dig_dir[5], (*req).dig_dir[6], (*req).dig_dir[7],
-          (*req).dig_dir[8], (*req).dig_dir[9], (*req).dig_dir[10], (*req).dig_dir[11],
-          (*req).dig_dir[12], (*req).dig_dir[13], (*req).dig_dir[14], (*req).dig_dir[15],
-          (*req).dig_file[0], (*req).dig_file[1], (*req).dig_file[2], (*req).dig_file[3],
-          (*req).dig_file[4], (*req).dig_file[5], (*req).dig_file[6], (*req).dig_file[7],
-          (*req).dig_file[8], (*req).dig_file[9], (*req).dig_file[10], (*req).dig_file[11],
-          (*req).dig_file[12], (*req).dig_file[13], (*req).dig_file[14], (*req).dig_file[15]);
+          (*req).dig_dir.digest[0], (*req).dig_dir.digest[1], (*req).dig_dir.digest[2], (*req).dig_dir.digest[3],
+          (*req).dig_dir.digest[4], (*req).dig_dir.digest[5], (*req).dig_dir.digest[6], (*req).dig_dir.digest[7],
+          (*req).dig_dir.digest[8], (*req).dig_dir.digest[9], (*req).dig_dir.digest[10], (*req).dig_dir.digest[11],
+          (*req).dig_dir.digest[12], (*req).dig_dir.digest[13], (*req).dig_dir.digest[14], (*req).dig_dir.digest[15],
+          (*req).dig_file.digest[0], (*req).dig_file.digest[1], (*req).dig_file.digest[2], (*req).dig_file.digest[3],
+          (*req).dig_file.digest[4], (*req).dig_file.digest[5], (*req).dig_file.digest[6], (*req).dig_file.digest[7],
+          (*req).dig_file.digest[8], (*req).dig_file.digest[9], (*req).dig_file.digest[10], (*req).dig_file.digest[11],
+          (*req).dig_file.digest[12], (*req).dig_file.digest[13], (*req).dig_file.digest[14], (*req).dig_file.digest[15]);
 
   return file_read_path(path);
 }

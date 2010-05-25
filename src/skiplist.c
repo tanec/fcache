@@ -16,7 +16,6 @@ enum unlink {
 };
 
 typedef size_t markable_t;
-#define DOES_NOT_EXIST 0
 
 typedef struct node {
   map_key_t key;

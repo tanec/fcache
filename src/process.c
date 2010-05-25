@@ -47,7 +47,7 @@ md5_dir(request_t *req)
     memcpy(d, req->domain, len1);
     memcpy(d+len1, req->keyword, len2);
     d[len1+len2] = 0;
-    md5_digest(d, len1+len2, req->dig_dir);
+    md5_digest(d, len1+len2, req->dig_dir.digest);
     req->set_mask |= 0x1;
   }
 }
@@ -56,7 +56,7 @@ void
 md5_file(request_t *req)
 {
   if ((req->set_mask&0x2) == 0) {
-    md5_digest(req->url, strlen(req->url), req->dig_file);
+    md5_digest(req->url, strlen(req->url), req->dig_file.digest);
     req->set_mask |= 0x2;
   }
 }

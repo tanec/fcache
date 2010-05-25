@@ -43,7 +43,7 @@ daemonize(int dochdir, int doclose)
 
 /* mmap() read - write */
 bool
-mmap_read(mmap_array_t *ma, char *file)
+mmap_read(mmap_array_t *ma, const char *file)
 {
   int fd;
   struct stat sb;

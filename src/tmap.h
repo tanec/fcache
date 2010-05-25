@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 #include <sys/types.h>
+#include "md5.h"
+#include "reader.h"
+
+#define DOES_NOT_EXIST 0
 
 // datatype
 typedef int      (*cmp_fun_t)   (void *, void *);
@@ -20,8 +24,8 @@ typedef struct map map_t;
 typedef struct map_iter map_iter_t;
 typedef struct map_impl map_impl_t;
 
-typedef void* map_key_t;
-typedef void* map_val_t;
+typedef md5_digest_t* map_key_t;
+typedef page_t* map_val_t;
 
 map_t *   map_alloc   (const map_impl_t *map_impl, const datatype_t *key_type);
 map_val_t map_get     (map_t *map, map_key_t key);

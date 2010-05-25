@@ -12,6 +12,10 @@ typedef struct {
   md5_byte_t buf[64];         /* accumulate block */
 } md5_state_t;
 
+typedef struct {
+  md5_byte_t digest[16];
+} md5_digest_t;
+
 void md5_init(md5_state_t *);
 void md5_append(md5_state_t *, const md5_byte_t *, int);
 void md5_finish(md5_state_t *state, md5_byte_t digest[16]);

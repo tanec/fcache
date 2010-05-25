@@ -31,7 +31,7 @@ typedef struct {
 
 pid_t daemonize(int, int);
 
-bool mmap_read(mmap_array_t *, char *);
+bool mmap_read(mmap_array_t *, const char *);
 int  mmap_close(mmap_array_t *);
 
 #endif // UTIL_H
