@@ -35,7 +35,7 @@ read_strmap(const char *file)
     memset(ret+pln+mt.len, '\n', 1); // ensure last '\n'
     memcpy((char*)ret+pln, (char*)mt.data, mt.len);
 
-    str = (char *)ret+plen;
+    str = (char *)ret+pln;
     for (i = 0; i<mt.len && n<len; i++) {
       char *k=NULL, *v=NULL;
 
