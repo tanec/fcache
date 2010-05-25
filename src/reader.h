@@ -2,6 +2,7 @@
 #define READER_H
 
 #include <stdint.h>
+#include <time.h>
 #include "process.h"
 
 typedef struct {
@@ -25,7 +26,7 @@ typedef struct {
 
 typedef struct {
   page_head_t head;
-  uint32_t level; // lru
+  time_t level; // lru
   uint32_t body_len;
   void *body; // 文件内容;
 } page_t;

@@ -1,4 +1,5 @@
 #include "tmap.h"
+#include "smalloc.h"
 
 struct map {
   const map_impl_t *impl;

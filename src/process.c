@@ -177,7 +177,7 @@ process(request_t *req, response_t *resp)
     } else if (expire && from == mem) {
       page_t *p1 = file_get(req);
       if (p1 == NULL) { // not in fs: delete
-	sfree(mem_del(req));
+        sfree(mem_del(&(req->dig_file)));
       } else if (is_expire(p1)) { // expire in fs
 	sfree(p1);
 	// udp: notify

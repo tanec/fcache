@@ -14,6 +14,8 @@ init_cfg(void)
 
   cfg.num_threads = 16;
   cfg.maxmem = (size_t)2*1024*1024*1024;
+  cfg.min_reserve = (size_t)800*1024*1024;
+  cfg.max_reserve = cfg.maxmem;
   cfg.maxconns = 4096;
 
   cfg.base_dir = "/tmp";

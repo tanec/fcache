@@ -20,6 +20,8 @@ typedef struct {
   char *pid_file;
   int num_threads;
   size_t maxmem;
+  size_t min_reserve; // to start lru
+  size_t max_reserve; // to stop  lru
   int maxconns;
 
   //read from file
