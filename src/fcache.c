@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <signal.h>
 
 #include "Config.h"
 #include "fastcgi-api.h"
@@ -16,11 +17,20 @@
 #include "process.h"
 #include "zhongsou_keyword.h"
 
+static void
+exit_on_sig(const int sig)
+{
+  printf("signal: received=%d\n", sig);
+  exit(EXIT_SUCCESS);
+}
+
 int
 main(int argc, char**argv)
 {
   int c;
   struct rlimit rlim;
+
+  signal(SIGINT, exit_on_sig);
 
   /* process arguments */
   while (-1 != (c = getopt(argc, argv,
