@@ -31,6 +31,7 @@ main(int argc, char**argv)
   struct rlimit rlim;
 
   signal(SIGINT, exit_on_sig);
+  init_cfg();
 
   /* process arguments */
   while (-1 != (c = getopt(argc, argv,

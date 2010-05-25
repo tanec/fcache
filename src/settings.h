@@ -1,6 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <sys/types.h>
+
 typedef enum {
   tcp,
   udp,
@@ -17,6 +19,7 @@ typedef struct {
 
   char *pid_file;
   int num_threads;
+  size_t maxmem;
   int maxconns;
 
   //read from file
@@ -25,18 +28,9 @@ typedef struct {
   char *synonyms_file;
 } setting_t;
 
-static setting_t cfg = {
-  0,
+static setting_t cfg;
 
-  tcp, "127.0.0.1", 2012,
-  "/tmp/fcache.socket",
-
-  "/var/run/fcache.pid",
-  16,
-  4096,
-  "/tmp"
-};
-
+void init_cfg(void);
 void read_cfg(setting_t *, char *);
 
 #endif // CONFIG_H
