@@ -32,6 +32,7 @@ main(int argc, char**argv)
 
   signal(SIGINT, exit_on_sig);
   init_cfg();
+  setbuf(stderr, NULL);
 
   /* process arguments */
   while (-1 != (c = getopt(argc, argv,
@@ -100,22 +101,27 @@ main(int argc, char**argv)
    * as needed.
    */
   if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) {
-      fprintf(stderr, "failed to getrlimit number of files\n");
-      exit(EX_OSERR);
+    fprintf(stderr, "failed to getrlimit number of files\n");
+    exit(EX_OSERR);
   } else {
-      int maxfiles = cfg.maxconns;
-      if (rlim.rlim_cur < maxfiles)
-          rlim.rlim_cur = maxfiles;
-      if (rlim.rlim_max < rlim.rlim_cur)
-          rlim.rlim_max = rlim.rlim_cur;
-      if (setrlimit(RLIMIT_NOFILE, &rlim) != 0) {
-          fprintf(stderr, "failed to set rlimit for open files. Try running as root or requesting smaller maxconns value.\n");
-          exit(EX_OSERR);
-      }
+    int maxfiles = cfg.maxconns;
+    if (rlim.rlim_cur < maxfiles)
+      rlim.rlim_cur = maxfiles;
+    if (rlim.rlim_max < rlim.rlim_cur)
+      rlim.rlim_max = rlim.rlim_cur;
+    if (setrlimit(RLIMIT_NOFILE, &rlim) != 0) {
+      fprintf(stderr, "failed to set rlimit for open files. Try running as root or requesting smaller maxconns value.\n");
+      exit(EX_OSERR);
+    }
   }
 
-  if (cfg.daemon)
+  if (cfg.daemon) {
+    if (sigignore(SIGHUP) == -1) {
+      perror("Failed to ignore SIGHUP");
+    }
+
     daemonize(1,1);
+  }
   // files for log
   
   
