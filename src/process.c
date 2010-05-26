@@ -146,7 +146,7 @@ process(request_t *req, response_t *resp)
   ds_t from = mem;
 
   size_t l1=strlen(cfg.status_path), l2=strlen(req->url);
-  if (strncmp(cfg.status_path, req->url, l1<l2?l1:l2) == 0) {
+  if (l1<=l2 && strncmp(cfg.status_path, req->url, l1) == 0) {
     send_status(req, resp);
     return;
   }
