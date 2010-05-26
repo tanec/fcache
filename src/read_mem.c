@@ -62,11 +62,10 @@ mem_set(request_t *req, page_t *page)
   if (page == NULL) return NULL;
 
   md5_file(req);
-  page->level = max++;
-  total += page->level;
-
   memcpy(&(page->digest), &(req->dig_file), sizeof(md5_digest_t));
   ret = map_set(cache, &(page->digest), page);
+  page->level = max++;
+  total += page->level;
   if (ret != NULL)
     total -= ret->level; // replace
   else
