@@ -10,6 +10,7 @@
 #include "md5.h"
 #include "statistics.h"
 #include "settings.h"
+#include "zhongsou_net_auth.h"
 #include "zhongsou_net_http.h"
 #include "zhongsou_net_udp.h"
 
@@ -178,6 +179,11 @@ process(request_t *req, response_t *resp)
     if (page == NULL) {
       http_bypass(req, resp); // pass to upstream servers
     } else {
+      char *igid;
+      bool auth = auth_http(igid, req->keyword, page->head.auth_type, page->head.param);
+      if (auth) {
+
+      }
       //TODO: send to client
       printf("mem=%x\n", smalloc_used_memory());
     }
