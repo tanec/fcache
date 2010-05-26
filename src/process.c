@@ -82,41 +82,41 @@ process_init()
 page_t *
 process_mem(request_t *req, response_t *resp, int curr_stat)
 {
-    page_t *page;
-    struct timespec s, e;
-    stat_item_t item = statics[curr_stat].mem;
-    item.total_num++;
+  page_t *page;
+  struct timespec s, e;
+  stat_item_t item = statics[curr_stat].mem;
+  item.total_num++;
 
-    touch_timespec(&s);
-    page = mem_get(req);
-    touch_timespec(&e);
+  touch_timespec(&s);
+  page = mem_get(req);
+  touch_timespec(&e);
 
-    if (page != NULL) {
-      stat_add(&(item.success), time_diff(s, e));
-    } else {
-      stat_add(&(item.notfound), time_diff(s, e));
-    }
-    return page;
+  if (page != NULL) {
+    stat_add(&(item.success), time_diff(s, e));
+  } else {
+    stat_add(&(item.notfound), time_diff(s, e));
+  }
+  return page;
 }
 
 page_t *
 process_fs(request_t *req, response_t *resp, int curr_stat)
 {
-    page_t *page;
-    struct timespec s, e;
-    stat_item_t item = statics[curr_stat].fs;
-    item.total_num++;
+  page_t *page;
+  struct timespec s, e;
+  stat_item_t item = statics[curr_stat].fs;
+  item.total_num++;
 
-    touch_timespec(&s);
-    page = file_get(req);
-    touch_timespec(&e);
+  touch_timespec(&s);
+  page = file_get(req);
+  touch_timespec(&e);
 
-    if (page != NULL) {
-      stat_add(&(item.success), time_diff(s, e));
-    } else {
-      stat_add(&(item.notfound), time_diff(s, e));
-    }
-    return page;
+  if (page != NULL) {
+    stat_add(&(item.success), time_diff(s, e));
+  } else {
+    stat_add(&(item.notfound), time_diff(s, e));
+  }
+  return page;
 }
 
 void
@@ -137,8 +137,8 @@ process(request_t *req, response_t *resp)
 
   // fs block
   if (page == NULL) {
-      page = process_fs(req, resp, curr_stat);
-      from = fs;
+    page = process_fs(req, resp, curr_stat);
+    from = fs;
   }
 
   /* net
@@ -174,15 +174,19 @@ process(request_t *req, response_t *resp)
       if (expire) {
 	//udp: notify
       }
-    } else if (expire && from == mem) {
-      page_t *p1 = file_get(req);
-      if (p1 == NULL) { // not in fs: delete
-        sfree(mem_del(&(req->dig_file)));
-      } else if (is_expire(p1)) { // expire in fs
-	sfree(p1);
-	// udp: notify
-      } else { // valid on fs
-	sfree(mem_set(req, p1));
+    } else if (from == mem) {
+      if (expire) {
+	page_t *p1 = file_get(req);
+	if (p1 == NULL) { // not in fs: delete
+	  sfree(mem_del(&(req->dig_file)));
+	} else if (is_expire(p1)) { // expire in fs
+	  sfree(p1);
+	  // udp: notify
+	} else { // valid on fs
+	  sfree(mem_set(req, p1));
+	}
+      } else {
+	mem_access(page);
       }
     }
   }

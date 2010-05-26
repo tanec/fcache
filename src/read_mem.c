@@ -64,12 +64,14 @@ mem_set(request_t *req, page_t *page)
   md5_file(req);
   memcpy(&(page->digest), &(req->dig_file), sizeof(md5_digest_t));
   ret = map_set(cache, &(page->digest), page);
-  page->level = max++;
-  total += page->level;
-  if (ret != NULL)
-    total -= ret->level; // replace
-  else
-    count++; //add
+  if (page->level >= 0) { // level < 0: sticky
+    page->level = max++;
+    total += page->level;
+    if (ret != NULL)
+      total -= ret->level; // replace
+    else
+      count++; //add
+  }
   return ret;
 }
 
@@ -79,7 +81,7 @@ mem_del(map_key_t key)
   page_t *ret;
 
   ret = map_remove(cache, key);
-  if (ret != NULL) {
+  if (ret != NULL && ret->level >= 0) {
     count --;
     total -= ret->level;
   }
@@ -89,7 +91,7 @@ mem_del(map_key_t key)
 void
 mem_access(page_t *page)
 {
-  if (page == NULL) return;
+  if (page == NULL || page->level < 0) return;
   total -= page->level;
   page->level = max++;
   total += page->level;
