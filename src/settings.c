@@ -10,6 +10,7 @@ init_cfg(void)
   cfg.port = 2012;
 
   cfg.doamin_file = "/tmp/fcache.socket";
+  cfg.status_path = "/fcache-status";
   cfg.pid_file = "/var/run/fcache.pid";
 
   cfg.num_threads = 16;

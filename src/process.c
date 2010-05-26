@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
+#include <stdio.h>
 
 #include "process.h"
 #include "reader.h"
@@ -8,6 +9,7 @@
 #include "read_file.h"
 #include "md5.h"
 #include "statistics.h"
+#include "settings.h"
 
 #define STAT_HOURS 24
 
@@ -121,16 +123,33 @@ process_fs(request_t *req, response_t *resp, int curr_stat)
 }
 
 void
+send_status(request_t *req, response_t *resp)
+{
+#define STATUS_LEN 819201
+  char buf[STATUS_LEN];
+  int n=0, len=STATUS_LEN-1;
+  memset(buf, 0, STATUS_LEN);
+  n+=snprintf(buf+n, len-n, "<html><head><title>status</title></head><body>");
+  n+=snprintf(buf+n, len-n, "");
+  n+=snprintf(buf+n, len-n, "</body></html>");
+  //TODO
+}
+
+void
 process(request_t *req, response_t *resp)
 {
   struct timespec all_enter, all_fin;
-  struct timespec net_enter, net_fin;
   uint64_t use_time;
   int curr_stat = current_stat_slot();
 
   page_t *page;
   ds_t from = mem;
 
+  size_t l1=strlen(cfg.status_path), l2=strlen(req->url);
+  if (strncmp(cfg.status_path, req->url, l1<l2?l1:l2) == 0) {
+    send_status(req, resp);
+    return;
+  }
   touch_timespec(&all_enter);
   statics[curr_stat].all.total_num++;
 

@@ -16,6 +16,7 @@ typedef struct {
   char *bind_addr;
   int port;
   char *socketpath;
+  char *status_path;
 
   char *pid_file;
   int num_threads;
