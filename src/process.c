@@ -112,6 +112,7 @@ process_fs(request_t *req, response_t *resp, int curr_stat)
   touch_timespec(&e);
 
   if (page != NULL) {
+    if (req->sticky) page->level = -18;
     stat_add(&(item.success), time_diff(s, e));
   } else {
     stat_add(&(item.notfound), time_diff(s, e));

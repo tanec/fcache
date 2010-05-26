@@ -7,6 +7,9 @@ typedef struct {
   char *domain;
   char *keyword;
   char *url;
+
+  bool sticky; // lru or not
+
   uint8_t set_mask; // 0x1: dir md5 set; 0x2: file md5 set
   md5_digest_t dig_dir;
   md5_digest_t dig_file;
