@@ -10,6 +10,8 @@
 #include "md5.h"
 #include "statistics.h"
 #include "settings.h"
+#include "zhongsou_net_http.h"
+#include "zhongsou_net_udp.h"
 
 #define STAT_HOURS 24
 
@@ -79,6 +81,8 @@ process_init()
 {
   mem_init();
   memset(&statics, 0, sizeof(statics));
+
+  udp_listen_expire();
 }
 
 page_t *
@@ -172,7 +176,7 @@ process(request_t *req, response_t *resp)
 
     touch_timespec(&s);
     if (page == NULL) {
-      // pass to upstream servers
+      http_bypass(req, resp); // pass to upstream servers
     } else {
       //TODO: send to client
       printf("mem=%x\n", smalloc_used_memory());
@@ -193,7 +197,7 @@ process(request_t *req, response_t *resp)
       sfree(mem_set(req, page)); // save in memory if expired?
       mem_lru();
       if (expire) {
-	//udp: notify
+        udp_notify_expire(req, page); //udp: notify
       }
     } else if (from == mem) {
       if (expire) {
@@ -201,8 +205,8 @@ process(request_t *req, response_t *resp)
 	if (p1 == NULL) { // not in fs: delete
 	  sfree(mem_del(&(req->dig_file)));
 	} else if (is_expire(p1)) { // expire in fs
-	  sfree(p1);
-	  // udp: notify
+          udp_notify_expire(req, p1); // udp: notify
+          sfree(p1);
 	} else { // valid on fs
 	  sfree(mem_set(req, p1));
           mem_lru(); // necessary?

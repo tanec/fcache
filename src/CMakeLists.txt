@@ -33,9 +33,11 @@ target_link_libraries(READFILE  BEREAD READER)
 #########################################
 
 add_library(STAT statistics.c)
+add_library(UDP  zhongsou_net_udp.c)
+add_library(HTTP zhongsou_net_http.c)
 
 add_library(PROCESS process.c)
-target_link_libraries(PROCESS MD5 READMEM READFILE STAT)
+target_link_libraries(PROCESS MD5 READMEM READFILE STAT UDP HTTP)
 
 add_library(SETTING settings.c)
 add_library(LOG log.c)
