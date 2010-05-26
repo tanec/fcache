@@ -20,6 +20,9 @@ init_cfg(void)
   cfg.maxconns = 4096;
 
   cfg.base_dir = "/tmp";
+
+  cfg.udp_notify_host = "127.0.0.1";
+  cfg.udp_notify_port = 2013;
 }
 
 void

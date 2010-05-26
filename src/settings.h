@@ -2,6 +2,7 @@
 #define CONFIG_H
 
 #include <sys/types.h>
+#include <stdint.h>
 
 typedef enum {
   tcp,
@@ -29,6 +30,10 @@ typedef struct {
   char *base_dir;
   char *doamin_file;
   char *synonyms_file;
+
+  //udp notify
+  char *udp_notify_host;
+  uint16_t udp_notify_port;
 } setting_t;
 
 static setting_t cfg;
