@@ -172,6 +172,7 @@ process(request_t *req, response_t *resp)
     bool expire = is_expire(page);
     if (from == fs) {
       sfree(mem_set(req, page)); // save in memory if expired?
+      mem_lru();
       if (expire) {
 	//udp: notify
       }
@@ -185,6 +186,7 @@ process(request_t *req, response_t *resp)
 	  // udp: notify
 	} else { // valid on fs
 	  sfree(mem_set(req, p1));
+          mem_lru(); // necessary?
 	}
       } else {
 	mem_access(page);
