@@ -17,6 +17,24 @@
 #include "process.h"
 #include "zhongsou_keyword.h"
 
+static struct event_base *main_base;
+static conn **freeconns;
+static int freetotal;
+static int freecurr;
+
+static void
+conn_init(void)
+{
+  freetotal = 200;
+  freecurr = 0;
+  if ((freeconns = calloc(freetotal, sizeof(conn *))) == NULL) {
+    fprintf(stderr, "Failed to allocate connection structures\n");
+  }
+  return;
+}
+
+
+
 static void
 exit_on_sig(const int sig)
 {
@@ -40,15 +58,15 @@ main(int argc, char**argv)
                            "d"  /* goto daemon mode*/
                            "I:" /*interface to bind*/
                            "p:" /* TCP port number to listen on */
-			   "s:" /* unix socket path to listen on */
+                           "s:" /* unix socket path to listen on */
 
-			   "c:"  /* max simultaneous connections */
+                           "c:"  /* max simultaneous connections */
                            "P:"  /* file to hold pid */
                            "t:"  /* max thread connections */
 
                            // debug
                            "r:"  /* test read a file */
-			   ))) {
+                           ))) {
     switch (c) {
     case 'C':
         read_cfg(&cfg, optarg);
@@ -78,14 +96,14 @@ main(int argc, char**argv)
     case 't':
       cfg.num_threads = atoi(optarg);
       if (cfg.num_threads <= 0) {
-	fprintf(stderr, "Number of threads must be greater than 0\n");
-	return 1;
+        fprintf(stderr, "Number of threads must be greater than 0\n");
+        return 1;
       }
       if (cfg.num_threads > 64) {
-	fprintf(stderr, "WARNING: Setting a high number of worker"
-		"threads is not recommended.\n"
-		" Set this value to the number of cores in"
-		" your machine or less.\n");
+        fprintf(stderr, "WARNING: Setting a high number of worker"
+                "threads is not recommended.\n"
+                " Set this value to the number of cores in"
+                " your machine or less.\n");
       }
       break;
 
@@ -115,6 +133,11 @@ main(int argc, char**argv)
     }
   }
 
+  if (getuid() == 0 || geteuid() == 0) {
+    printf("should not run as root. dangerious!");
+    exit(1);
+  }
+
   if (cfg.daemon) {
     if (sigignore(SIGHUP) == -1) {
       perror("Failed to ignore SIGHUP");
@@ -123,24 +146,20 @@ main(int argc, char**argv)
     daemonize(1,1);
   }
   // files for log
-  
-  
+
+
   // Initialization
   process_init();
   // keywords
   if (cfg.doamin_file != NULL)  read_domain(cfg.doamin_file);
   if (cfg.synonyms_file != NULL)read_synonyms(cfg.synonyms_file);
-{
-request_t req = {"gbkkk", "--hosttt", "http://host:port/path/file"};
-printf("time=%d\n", time(NULL));
 
-process(&req, NULL);
-}
-  // prepare shared memory
-  // daemonlize, check and fork
+  main_base = event_init();
+  conn_init();
+
   while(cfg.daemon) {
     sleep(5);
   }
-  
+
   return EXIT_SUCCESS;
 }
