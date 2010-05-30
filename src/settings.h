@@ -3,6 +3,7 @@
 
 #include <sys/types.h>
 #include <stdint.h>
+#include "log.h"
 
 typedef enum {
   tcp,
@@ -12,6 +13,8 @@ typedef enum {
 
 typedef struct {
   int daemon;
+  char *log_file;
+  log_level_t log_level;
 
   conn_t conn_type;
   char *bind_addr;

@@ -4,6 +4,8 @@ void
 init_cfg(void)
 {
   cfg.daemon = 0;
+  cfg.log_file = "/var/log/fcache.log";
+  cfg.log_level = INFO;
 
   cfg.conn_type = tcp;
   cfg.bind_addr = "127.0.0.1";
