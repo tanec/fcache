@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <sys/types.h>
+#include <assert.h>
 
 #ifndef ENABLE_TRACE
 #define TRACE(...) do { } while (0)
@@ -23,6 +24,9 @@
 #define TAG_VALUE(v, tag) ((v) |  tag)
 #define IS_TAGGED(v, tag) ((v) &  tag)
 #define STRIP_TAG(v, tag) ((v) & ~tag)
+
+#define AZ(foo) assert((foo) == 0)
+#define AN(foo) assert((foo) != 0)
 
 typedef struct {
   off_t len;

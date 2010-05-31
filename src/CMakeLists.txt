@@ -38,6 +38,7 @@ add_library(SETTING settings.c)
 add_library(LOG log.c)
 
 add_library(ZSKW zhongsou_keyword.c)
+add_library(SOCK sockutil.c)
 
 add_executable (fcache fcache.c)
-target_link_libraries(fcache  SETTING FASTCGI EVENT LOG UTIL PROCESS ZSKW)
+target_link_libraries(fcache  SETTING FASTCGI EVENT LOG UTIL PROCESS ZSKW SOCK)
