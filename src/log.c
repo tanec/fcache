@@ -12,7 +12,8 @@ tlog(log_level_t level, const char *fmt, ...)
 {
   if (level >= cfg.log_level) {
     if (log == NULL) {
-      log = fopen(cfg.log_file, "a+");
+      log = fopen(cfg.log_file, "a");
+      if(log!=NULL) setvbuf(log, NULL, _IONBF, 0);
     }
     if (log != NULL) {
       va_list args;
