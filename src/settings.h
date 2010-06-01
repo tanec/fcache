@@ -39,9 +39,9 @@ typedef struct {
   uint16_t udp_notify_port;
 } setting_t;
 
-static setting_t cfg;
+extern setting_t cfg;
 
-void init_cfg(setting_t *);
+void init_cfg(void);
 void read_cfg(setting_t *, char *);
 
 #endif // CONFIG_H

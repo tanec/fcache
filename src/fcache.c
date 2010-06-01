@@ -450,7 +450,7 @@ main(int argc, char**argv)
   struct rlimit rlim;
 
   signal(SIGINT, exit_on_sig);
-  init_cfg(&cfg);
+  init_cfg();
   setbuf(stderr, NULL);
 
   /* process arguments */

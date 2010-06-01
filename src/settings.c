@@ -1,30 +1,32 @@
 #include "settings.h"
 
+setting_t cfg = {};
+
 void
-init_cfg(setting_t *set)
+init_cfg(void)
 {
-  set->daemon = 0;
-  set->log_file = "/var/log/fcache.log";
-  set->log_level = INFO;
+  cfg.daemon = 0;
+  cfg.log_file = "/var/log/fcache.log";
+  cfg.log_level = INFO;
 
-  set->conn_type = tcp;
-  set->bind_addr = "127.0.0.1";
-  set->port = 2012;
+  cfg.conn_type = tcp;
+  cfg.bind_addr = "127.0.0.1";
+  cfg.port = 2012;
 
-  set->doamin_file = "/tmp/fcache.socket";
-  set->status_path = "/fcache-status";
-  set->pid_file = "/var/run/fcache.pid";
+  cfg.doamin_file = "/tmp/fcache.socket";
+  cfg.status_path = "/fcache-status";
+  cfg.pid_file = "/var/run/fcache.pid";
 
-  set->num_threads = 16;
-  set->maxmem = (size_t)2*1024*1024*1024;
-  set->min_reserve = (size_t)800*1024*1024;
-  set->max_reserve = set->maxmem;
-  set->maxconns = 1024;
+  cfg.num_threads = 16;
+  cfg.maxmem = (size_t)2*1024*1024*1024;
+  cfg.min_reserve = (size_t)800*1024*1024;
+  cfg.max_reserve = cfg.maxmem;
+  cfg.maxconns = 1024;
 
-  set->base_dir = "/tmp";
+  cfg.base_dir = "/tmp";
 
-  set->udp_notify_host = "127.0.0.1";
-  set->udp_notify_port = 2013;
+  cfg.udp_notify_host = "127.0.0.1";
+  cfg.udp_notify_port = 2013;
 }
 
 void
