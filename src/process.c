@@ -11,7 +11,6 @@
 #include "statistics.h"
 #include "settings.h"
 #include "zhongsou_net_auth.h"
-#include "zhongsou_net_http.h"
 #include "zhongsou_net_udp.h"
 
 #define STAT_HOURS 24
@@ -87,7 +86,7 @@ process_init()
 }
 
 page_t *
-process_mem(request_t *req, response_t *resp, int curr_stat)
+process_mem(request_t *req, int curr_stat)
 {
   page_t *page;
   struct timespec s, e;
@@ -107,7 +106,7 @@ process_mem(request_t *req, response_t *resp, int curr_stat)
 }
 
 page_t *
-process_fs(request_t *req, response_t *resp, int curr_stat)
+process_fs(request_t *req, int curr_stat)
 {
   page_t *page;
   struct timespec s, e;
@@ -128,7 +127,7 @@ process_fs(request_t *req, response_t *resp, int curr_stat)
 }
 
 void
-send_status(request_t *req, response_t *resp)
+send_status(request_t *req)
 {
 #define STATUS_LEN 819201
   char buf[STATUS_LEN];
@@ -140,8 +139,8 @@ send_status(request_t *req, response_t *resp)
   //TODO
 }
 
-void
-process(request_t *req, response_t *resp)
+page_t *
+process_get(request_t *req)
 {
   struct timespec all_enter, all_fin;
   uint64_t use_time;
@@ -152,17 +151,17 @@ process(request_t *req, response_t *resp)
 
   size_t l1=strlen(cfg.status_path), l2=strlen(req->url);
   if (l1<=l2 && strncmp(cfg.status_path, req->url, l1) == 0) {
-    send_status(req, resp);
+    send_status(req);
     return;
   }
   touch_timespec(&all_enter);
   statics[curr_stat].all.total_num++;
 
-  page = process_mem(req, resp, curr_stat);
+  page = process_mem(req, curr_stat);
 
   // fs block
   if (page == NULL) {
-    page = process_fs(req, resp, curr_stat);
+    page = process_fs(req, curr_stat);
     from = fs;
   }
 
@@ -177,7 +176,7 @@ process(request_t *req, response_t *resp)
 
     touch_timespec(&s);
     if (page == NULL) {
-      http_bypass(req, resp); // pass to upstream servers
+      // pass to upstream servers
     } else {
       char *igid;
       bool auth = auth_http(igid, req->keyword, page->head.auth_type, page->head.param);
@@ -207,18 +206,18 @@ process(request_t *req, response_t *resp)
       }
     } else if (from == mem) {
       if (expire) {
-	page_t *p1 = file_get(req);
-	if (p1 == NULL) { // not in fs: delete
-	  sfree(mem_del(&(req->dig_file)));
-	} else if (is_expire(p1)) { // expire in fs
+  page_t *p1 = file_get(req);
+  if (p1 == NULL) { // not in fs: delete
+    sfree(mem_del(&(req->dig_file)));
+  } else if (is_expire(p1)) { // expire in fs
           udp_notify_expire(req, p1); // udp: notify
           sfree(p1);
-	} else { // valid on fs
-	  sfree(mem_set(req, p1));
+  } else { // valid on fs
+    sfree(mem_set(req, p1));
           mem_lru(); // necessary?
-	}
+  }
       } else {
-	mem_access(page);
+  mem_access(page);
       }
     }
   }

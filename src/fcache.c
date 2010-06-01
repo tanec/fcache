@@ -22,6 +22,7 @@
 #include "fcache.h"
 #include "settings.h"
 #include "process.h"
+#include "read_file.h"
 #include "zhongsou_keyword.h"
 
 #define FCGI_LISTENSOCK_FILENO 0

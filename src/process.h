@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include "md5.h"
+#include "reader.h"
 
 typedef struct {
   char *domain;
@@ -18,14 +19,10 @@ typedef struct {
   char *enc;
 } request_t;
 
-typedef struct {
-
-} response_t;
-
 void md5_dir(request_t *);
 void md5_file(request_t *);
 
 void process_init();
-void process(request_t *, response_t *);
+page_t *process_get(request_t *);
 
 #endif // PROCESS_H
