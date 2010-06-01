@@ -30,7 +30,7 @@
 inline uint32_t
 host2addr(const char *host)
 {
-  if (!*host || !strcmp(host,"*")) {
+  if (host == NULL || !*host || !strcmp(host,"*")) {
     return htonl(INADDR_ANY);
   } else {
     uint32_t tcp_ia = inet_addr(host);
@@ -72,7 +72,7 @@ bind_tcp(const char *host, const in_port_t port, const int backlog)
   memset((char *)&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = tcp_ia;
-  addr.sin_port = port;
+  addr.sin_port = htons(port);
 
   if(bind(fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
     perror("bind_tcp: bind");

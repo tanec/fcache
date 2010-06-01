@@ -450,7 +450,7 @@ main(int argc, char**argv)
   struct rlimit rlim;
 
   signal(SIGINT, exit_on_sig);
-  init_cfg();
+  init_cfg(&cfg);
   setbuf(stderr, NULL);
 
   /* process arguments */
@@ -478,7 +478,7 @@ main(int argc, char**argv)
       cfg.bind_addr = optarg;
       break;
     case 'p':
-      cfg.port = atoi(optarg);
+      cfg.port = (uint16_t)atoi(optarg);
       cfg.conn_type = tcp;
       break;
     case 's':

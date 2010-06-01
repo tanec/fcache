@@ -18,7 +18,7 @@ typedef struct {
 
   conn_t conn_type;
   char *bind_addr;
-  int port;
+  uint16_t port;
   char *socketpath;
   char *status_path;
 
@@ -41,7 +41,7 @@ typedef struct {
 
 static setting_t cfg;
 
-void init_cfg(void);
+void init_cfg(setting_t *);
 void read_cfg(setting_t *, char *);
 
 #endif // CONFIG_H
