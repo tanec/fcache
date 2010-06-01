@@ -19,6 +19,7 @@ tlog(log_level_t level, const char *fmt, ...)
       va_start(args, fmt);
       vfprintf(log, fmt, args);
       va_end(args);
+      fprintf(log, "\n");
     }
   }
 }

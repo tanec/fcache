@@ -548,7 +548,6 @@ main(int argc, char**argv)
   }
   // files for log
 
-
   // Initialization
   process_init();
   // keywords
@@ -561,9 +560,8 @@ main(int argc, char**argv)
 
   server_t *server = calloc(1,sizeof(server_t));
   server->ev.ev_fd = FCGI_LISTENSOCK_FILENO;
-  if (server_bind(server) <= 0)
-    err(1, "server_bind");
-  printf("listening on %s:%d\n", cfg.bind_addr, cfg.port);
+  if (server_bind(server) <= 0) err(1, "server_bind");
+  tlog(INFO, "listening on %s:%d", cfg.bind_addr, cfg.port);
   server_enable(server);
 
   // enter runloop
