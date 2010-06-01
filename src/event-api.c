@@ -1,4 +1,5 @@
 #include <sys/socket.h>
+#include <stddef.h>
 #include "event-api.h"
 #include "util.h"
 
