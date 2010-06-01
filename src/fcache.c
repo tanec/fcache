@@ -34,7 +34,7 @@ typedef struct {
 static void
 exit_on_sig(const int sig)
 {
-  printf("signal: received=%d\n", sig);
+  tlog(FATAL, "signal: received=%d", sig);
   exit(EXIT_SUCCESS);
 }
 
@@ -47,14 +47,14 @@ request_get(uint16_t id) {
     r = (fcgi_request_t *)calloc(1, sizeof(fcgi_request_t));
     _requests[id] = r;
   }
-  printf("** get req %p\n", r);
+  tlog(DEBUG, "** get req %p", r);
   return r;
 }
 
 inline static void
 request_put(fcgi_request_t *r)
 {
-  printf("** put req %p\n", r);
+  tlog(DEBUG, "** put req %p", r);
   r->bev->cbarg = NULL;
   r->bev = NULL;
 }
@@ -69,11 +69,7 @@ void
 request_write(fcgi_request_t *r, const char *buf, uint16_t len, uint8_t tostdout)
 {
   if (len == 0) return;
-
-  if (!request_is_active(r)) {
-    //warn("request_write(): request is not active");
-    return;
-  }
+  if (!request_is_active(r)) return;
 
   header_t h;
   header_init(&h, tostdout ? TYPE_STDOUT : TYPE_STDERR, r->id, len);
@@ -89,15 +85,10 @@ request_write(fcgi_request_t *r, const char *buf, uint16_t len, uint8_t tostdout
 void
 request_end(fcgi_request_t *r, uint32_t appstatus, uint8_t protostatus)
 {
-  if (!request_is_active(r)) {
-    //warn("request_end(): request is not active");
-    return;
-  }
+  if (!request_is_active(r)) return;
 
   uint8_t buf[32]; // header + header + end_request_t
   uint8_t *p = buf;
-
-  //assert(EVBUFFER_LENGTH(r->bev->output) == 0);
 
   // Terminate the stdout and stderr stream, and send the end-request message.
   header_init((header_t *)p, TYPE_STDOUT, r->id, 0);
@@ -107,7 +98,7 @@ request_end(fcgi_request_t *r, uint32_t appstatus, uint8_t protostatus)
   end_request_init((end_request_t *)p, r->id, appstatus, protostatus);
   p += sizeof(end_request_t);
 
-  printf("sending END_REQUEST for id %d\n", r->id);
+  tlog(DEBUG, "sending END_REQUEST for id %d", r->id);
 
   bufferevent_write(r->bev, (const void *)buf, sizeof(buf));
 
@@ -133,7 +124,6 @@ app_handle_beginrequest(fcgi_request_t *r)
   request_end(r, 0, PROTOST_REQUEST_COMPLETE);
 }
 
-
 void
 app_handle_input(fcgi_request_t *r, uint16_t length)
 {
@@ -156,14 +146,11 @@ process_begin_request(struct bufferevent *bev, uint16_t id, const begin_request_
   fcgi_request_t *r;
 
   r = request_get(id);
-  //assert(r->bev == NULL);
   if ((r->bev != NULL) && (EVBUFFER_LENGTH(r->bev->input) != 0)) {
-    printf("warn: client sent already used req id %d -- skipping", id);
-    // todo: respond with error
+    tlog(WARN, "client sent already used req id %d -- skipping", id);
     bev_close(r->bev);
     return;
   }
-
 
   r->bev = bev;
   r->id = id;
@@ -180,11 +167,11 @@ inline static void
 process_abort_request(fcgi_request_t *r)
 {
   assert(r->bev != NULL);
-  printf("request %p aborted by client\n", r);
+  tlog(DEBUG, "request %p aborted by client", r);
 
   app_handle_requestaborted(r);
 
-  r->terminate = 1; // can we trust fcgiproto_writecb to be called?
+  r->terminate = 1; // can we trust fcache_writecb to be called?
 }
 
 inline static void
@@ -193,7 +180,6 @@ process_params(struct bufferevent *bev, uint16_t id, const uint8_t *buf, uint16_
   fcgi_request_t *r;
 
   r = request_get(id);
-  //assert(r->bev != NULL); // this can actually happen and it's ok
 
   // Is this the last message to come? Then queue the request for the user.
   if (len == 0) {
@@ -203,25 +189,21 @@ process_params(struct bufferevent *bev, uint16_t id, const uint8_t *buf, uint16_
   }
 
   // Process message.
-
   uint8_t const * const bufend = buf + len;
   uint32_t name_len;
   uint32_t data_len;
 
   while(buf != bufend) {
-
     if (*buf >> 7 == 0) {
       name_len = *(buf++);
-    }
-    else {
+    } else {
       name_len = ((buf[0] & 0x7F) << 24) + (buf[1] << 16) + (buf[2] << 8) + buf[3];
       buf += 4;
     }
 
     if (*buf >> 7 == 0) {
       data_len = *(buf++);
-    }
-    else {
+    } else {
       data_len = ((buf[0] & 0x7F) << 24) + (buf[1] << 16) + (buf[2] << 8) + buf[3];
       buf += 4;
     }
@@ -234,7 +216,7 @@ process_params(struct bufferevent *bev, uint16_t id, const uint8_t *buf, uint16_
     buf += name_len;
     strncpy(v, (const char *)buf, data_len); v[data_len] = '\0';
     buf += data_len;
-    printf("fcgiproto>> param>> '%s' => '%s'\n", k, v);
+    tlog(DEBUG, "fcache>> param>> '%s' => '%s'", k, v);
     // todo: req->second->params[name] = data;
   }
 
@@ -270,7 +252,7 @@ process_stdin(struct bufferevent *bev, uint16_t id, const uint8_t *buf, uint16_t
 inline static void
 process_unknown(struct bufferevent *bev, uint8_t type, uint16_t len)
 {
-  printf("process_unknown(%p, %d, %d)\n", bev, type, len);
+  tlog(ERROR, "process_unknown(%p, %d, %d)", bev, type, len);
   unknown_type_t msg;
   unknown_type_init(&msg, type);
   bufferevent_write(bev, (const void *)&msg, sizeof(unknown_type_t));
@@ -282,15 +264,14 @@ process_unknown(struct bufferevent *bev, uint8_t type, uint16_t len)
 void
 fcache_readcb(struct bufferevent *bev, fcgi_request_t *r)
 {
-  printf("fcgiproto_readcb(%p, %p)\n", bev, r);
-  //bufferevent_write_buffer(bev, bev->input);
+  tlog(DEBUG, "fcache_readcb(%p, %p)", bev, r);
 
   while(EVBUFFER_LENGTH(bev->input) >= sizeof(header_t)) {
     const header_t *hp = (const header_t *)EVBUFFER_DATA(bev->input);
 
     // Check whether our peer speaks the correct protocol version.
     if (hp->version != 1) {
-      warnx("fcgiev: cannot handle protocol version %u", hp->version);
+      tlog(FATAL, "fcache: cannot handle protocol version %u", hp->version);
       bev_abort(bev);
       break;
     }
@@ -305,8 +286,9 @@ fcache_readcb(struct bufferevent *bev, fcgi_request_t *r)
       return;
 
     // Process the message.
-    printf("fcgiproto>> received message: id: %d, bodylen: %d, padding: %d, type: %d\n",
-           msg_id, msg_len, hp->paddingLength, (int)hp->type);
+    tlog(DEBUG,
+         "fcache>> received message: id: %d, bodylen: %d, padding: %d, type: %d",
+         msg_id, msg_len, hp->paddingLength, (int)hp->type);
 
     switch (hp->type) {
     case TYPE_BEGIN_REQUEST:
@@ -342,7 +324,7 @@ void
 fcache_writecb(struct bufferevent *bev, fcgi_request_t *r)
 {
   // Invoked if bev->output is drained or below the low watermark.
-  printf("fcgiproto_writecb(%p, %p)\n", bev, r);
+  tlog(DEBUG, "fcache_writecb(%p, %p)", bev, r);
 
   if (r != NULL && r->terminate) {
     bev_disable(r->bev);
@@ -350,7 +332,7 @@ fcache_writecb(struct bufferevent *bev, fcgi_request_t *r)
     bev_close(r->bev);
     request_put(r);
     if (r->keepconn == false) {
-      printf("PUT connection (r->keepconn == false, in fcgiproto_writecb)\n");
+      tlog(ERROR, "PUT connection (r->keepconn == false, in fcache_writecb)");
     }
   }
 }
@@ -359,18 +341,15 @@ void
 fcache_errorcb(struct bufferevent *bev, short what, fcgi_request_t *r)
 {
   if (what & EVBUFFER_EOF) {
-    printf("request %p EOF\n", r);
-    // we treat abrupt disconnect as abort
+    tlog(ERROR, "request %p EOF", r);
     process_abort_request(r);
-  }
-  else if (what & EVBUFFER_TIMEOUT)
-    printf("request %p timeout\n", r);
+  } else if (what & EVBUFFER_TIMEOUT)
+    tlog(ERROR, "request %p timeout", r);
   else
-    printf("request %p error\n", r);
+    tlog(ERROR, "request %p error", r);
 
   bev_close(bev);
-  if (r)
-    request_put(r);
+  if (r) request_put(r);
 }
 /*************** callback section end **********/
 
@@ -428,8 +407,8 @@ server_accept(int fd, short ev, server_t *server)
     events |= EV_WRITE;
   bufferevent_enable(bev, events);
 
-  printf("GET connection\n");
-  printf("fcgi client %s connected on fd %d\n", sockaddr_host(&sa), connfd);
+  tlog(DEBUG, "GET connection\n");
+  tlog(DEBUG, "fcgi client %s connected on fd %d\n", sockaddr_host(&sa), connfd);
 }
 
 void

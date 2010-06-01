@@ -9,8 +9,9 @@ typedef int err_t;
 typedef enum {
   DEBUG = 0,
   INFO  = 1,
-  ERROR = 2,
-  FATAL = 3
+  WARN  = 2,
+  ERROR = 3,
+  FATAL = 4
 } log_level_t;
 
 void tlog(log_level_t level, const char *fmt, ...);
