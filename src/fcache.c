@@ -135,7 +135,7 @@ app_handle_input(fcgi_request_t *r, uint16_t length)
 void
 app_handle_requestaborted(fcgi_request_t *r)
 {
-  printf("app_handle_requestaborted %p\n", r);
+  tlog(INFO, "app_handle_requestaborted %p\n", r);
 }
 /*************** handle  section end ***********/
 
