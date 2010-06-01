@@ -386,10 +386,10 @@ sockaddr_host(const sau_t *sa)
 
 /*************** server section ****************/
 const sau_t *
-server_bind(server_t *server, const char *addrorpath)
+server_bind(server_t *server)
 {
   static sau_t sa;
-  if ((server->ev.ev_fd = sockutil_bind(addrorpath, SOMAXCONN, &sa)) < 0)
+  if ((server->ev.ev_fd = bind_tcp(cfg.bind_addr, cfg.port, SOMAXCONN)) < 0)
     return NULL;
   return (const sau_t *)(&sa);
 }
@@ -535,7 +535,7 @@ main(int argc, char**argv)
   }
 
   if (getuid() == 0 || geteuid() == 0) {
-    printf("should not run as root. dangerious!");
+    printf("should not run as root. dangerious!\n");
     exit(1);
   }
 
@@ -555,31 +555,16 @@ main(int argc, char**argv)
   if (cfg.doamin_file != NULL)  read_domain(cfg.doamin_file);
   if (cfg.synonyms_file != NULL)read_synonyms(cfg.synonyms_file);
 
-
-  server_t *server;
-  int i;
-
   // initialize libraries
   event_init();
   memset((void *)_requests, 0, sizeof(_requests));
 
-  // no argmuents: bind to stdin
-  if (argc <= 1) {
-    server = calloc(1,sizeof(server_t));
-    server->ev.ev_fd = FCGI_LISTENSOCK_FILENO;
-    server_enable(server);
-  }
-  // bind with every argument
-  else {
-    for (i=1; i<argc; i++) {
-      server = calloc(1,sizeof(server_t));
-      server->ev.ev_fd = FCGI_LISTENSOCK_FILENO;
-      if (server_bind(server, argv[i]) == 0)
-        err(1, "server_bind");
-      printf("listening on %s\n", argv[i]);
-      server_enable(server);
-    }
-  }
+  server_t *server = calloc(1,sizeof(server_t));
+  server->ev.ev_fd = FCGI_LISTENSOCK_FILENO;
+  if (server_bind(server) <= 0)
+    err(1, "server_bind");
+  printf("listening on %s:%d\n", cfg.bind_addr, cfg.port);
+  server_enable(server);
 
   // enter runloop
   event_dispatch();

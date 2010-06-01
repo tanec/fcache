@@ -9,13 +9,13 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
 #include <sys/time.h>
 #include <signal.h>
 #include <netdb.h>
 #include <err.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <unistd.h>
 #include "sockutil.h"
 
@@ -26,6 +26,67 @@
 #define PATH_MAX 1024
 #endif
 #endif
+
+inline uint32_t
+host2addr(const char *host)
+{
+  if (!*host || !strcmp(host,"*")) {
+    return htonl(INADDR_ANY);
+  } else {
+    uint32_t tcp_ia = inet_addr(host);
+    if (tcp_ia == INADDR_NONE) {
+      struct hostent * hep;
+      hep = gethostbyname(host);
+      if ((!hep) || (hep->h_addrtype != AF_INET || !hep->h_addr_list[0])) {
+        warn("fcgiev: cannot resolve host name %s", host);
+        return -1;
+      }
+      if (hep->h_addr_list[1]) {
+        warn("fcgiev: host %s has multiple addresses -- choose one explicitly", host);
+        return -1;
+      }
+      tcp_ia = ((struct in_addr *) (hep->h_addr))->s_addr;
+    }
+    return tcp_ia;
+  }
+}
+
+int
+bind_tcp(const char *host, const in_port_t port, const int backlog)
+{
+  int  fd;
+  uint32_t tcp_ia;
+  struct sockaddr_in addr;
+
+  if ((tcp_ia = host2addr(host)) < 0) return -1;
+  if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    return -1;
+  } else {
+    int flag = 1;
+    if(setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&flag, sizeof(flag)) < 0) {
+      warn("bind_tcp: can't set SO_REUSEADDR.");
+      return -1;
+    }
+  }
+
+  memset((char *)&addr, 0, sizeof(addr));
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = tcp_ia;
+  addr.sin_port = port;
+
+  if(bind(fd, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+    perror("bind_tcp: bind");
+    return -1;
+  }
+
+  if(listen(fd, backlog) < 0) {
+    perror("bind_tcp: listen");
+    return -1;
+  }
+
+  return fd;
+}
+
 
 inline static int
 _build_un(const char *bindPath, struct sockaddr_un *servAddrPtr, int *servAddrLen)
@@ -41,86 +102,26 @@ _build_un(const char *bindPath, struct sockaddr_un *servAddrPtr, int *servAddrLe
 }
 
 int
-sockutil_bind(const char *bindPath, int backlog, sau_t *sa)
+bind_unix(const char *bindPath, const int backlog)
 {
   int fd, servLen;
-  bool tcp = false;
-  unsigned long tcp_ia = 0;
-  char *tp;
-  short port = 0;
-  char host[PATH_MAX];
+  struct sockaddr_un addr;
 
-  strcpy(host, bindPath);
+  if((fd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) return -1;
 
-  if((tp = strchr(host, ':')) != 0) {
-    *tp++ = 0;
-    if((port = atoi(tp)) == 0)
-      *--tp = ':';
-    else
-      tcp = true;
-  }
-
-  if(tcp) {
-    if (!*host || !strcmp(host,"*")) {
-      tcp_ia = htonl(INADDR_ANY);
-    }
-    else {
-      tcp_ia = inet_addr(host);
-      if (tcp_ia == INADDR_NONE) {
-        struct hostent * hep;
-        hep = gethostbyname(host);
-        if ((!hep) || (hep->h_addrtype != AF_INET || !hep->h_addr_list[0])) {
-          warn("fcgiev: cannot resolve host name %s", host);
-          return -1;
-        }
-        if (hep->h_addr_list[1]) {
-          warn("fcgiev: host %s has multiple addresses -- choose one explicitly", host);
-          return -1;
-        }
-        tcp_ia = ((struct in_addr *) (hep->h_addr))->s_addr;
-      }
-    }
-
-    fd = socket(AF_INET, SOCK_STREAM, 0);
-
-    if(fd >= 0) {
-      int flag = 1;
-      if(setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&flag, sizeof(flag)) < 0) {
-        warn("fcgiev: can't set SO_REUSEADDR.");
-        return -1;
-      }
-    }
-  }
-  else { /* tcp == FALSE */
-    fd = socket(AF_UNIX, SOCK_STREAM, 0);
-  }
-
-  if(fd < 0)
+  unlink(bindPath);
+  if(_build_un(bindPath, &addr, &servLen)) {
+    warn("bind_unix: listening socket's path name is too long.");
     return -1;
-
-  // Bind the listening socket.
-  if(tcp) {
-    memset((char *)&sa->in, 0, sizeof(sa->in));
-    sa->in.sin_family = AF_INET;
-    sa->in.sin_addr.s_addr = tcp_ia;
-    sa->in.sin_port = htons(port);
-    servLen = sizeof(sa->in);
-  }
-  else {
-    unlink(bindPath);
-    if(_build_un(bindPath, &sa->un, &servLen)) {
-      warn("fcgiev: listening socket's path name is too long.");
-      return -1;
-    }
   }
 
-  if(bind(fd, (struct sockaddr *) &sa->un, servLen) < 0) {
-    perror("fcgiev: bind");
+  if(bind(fd, (struct sockaddr *) &addr, servLen) < 0) {
+    perror("bind_unix: bind");
     return -1;
   }
 
   if(listen(fd, backlog) < 0) {
-    perror("fcgiev: listen");
+    perror("bind_unix: listen");
     return -1;
   }
 
