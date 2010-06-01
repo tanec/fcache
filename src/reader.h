@@ -23,8 +23,14 @@ typedef struct {
   char *param;
 } page_head_t;
 
+typedef enum {
+  MEMORY,
+  FILESYSTEM
+} page_from_t;
+
 typedef struct {
   page_head_t head;
+  page_from_t from;
   uint64_t level; // lru
   md5_digest_t digest; // key md5 digest
   uint32_t body_len;

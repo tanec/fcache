@@ -2,6 +2,7 @@
 #define UTIL_H
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <sys/types.h>
 #include <assert.h>
 
@@ -38,4 +39,5 @@ pid_t daemonize(int, int);
 bool mmap_read(mmap_array_t *, const char *);
 int  mmap_close(mmap_array_t *);
 
+uint64_t current_time_millis(void);
 #endif // UTIL_H

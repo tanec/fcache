@@ -23,6 +23,8 @@ void md5_dir(request_t *);
 void md5_file(request_t *);
 
 void process_init();
-page_t *process_get(request_t *);
+page_t * process_get(request_t *);
+page_t * process_auth(request_t *, page_t *);
+page_t * process_cache(request_t *, page_t *);
 
 #endif // PROCESS_H

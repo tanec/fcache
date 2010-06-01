@@ -76,3 +76,9 @@ mmap_close(mmap_array_t *ma)
 {
   return munmap(ma->data, ma->len);
 }
+
+uint64_t
+current_time_millis()
+{
+  return 0; //TODO
+}

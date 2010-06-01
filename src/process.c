@@ -8,6 +8,7 @@
 #include "read_mem.h"
 #include "read_file.h"
 #include "md5.h"
+#include "util.h"
 #include "statistics.h"
 #include "settings.h"
 #include "zhongsou_net_auth.h"
@@ -16,16 +17,11 @@
 #define STAT_HOURS 24
 
 typedef struct {
-  stat_item_t all;
   stat_item_t mem;
   stat_item_t fs;
+  stat_item_t auth;
   stat_item_t net;
 } stat_t;
-
-typedef enum {
-  mem,
-  fs
-} ds_t;
 
 static int curr=-1;
 static stat_t statics[STAT_HOURS];
@@ -89,18 +85,16 @@ page_t *
 process_mem(request_t *req, int curr_stat)
 {
   page_t *page;
-  struct timespec s, e;
+  uint64_t s = current_time_millis();
   stat_item_t item = statics[curr_stat].mem;
   item.total_num++;
 
-  touch_timespec(&s);
   page = mem_get(req);
-  touch_timespec(&e);
 
   if (page != NULL) {
-    stat_add(&(item.success), time_diff(s, e));
+    stat_add(&(item.success), current_time_millis() - s);
   } else {
-    stat_add(&(item.notfound), time_diff(s, e));
+    stat_add(&(item.notfound), current_time_millis() - s);
   }
   return page;
 }
@@ -109,19 +103,17 @@ page_t *
 process_fs(request_t *req, int curr_stat)
 {
   page_t *page;
-  struct timespec s, e;
+  uint64_t s = current_time_millis();
   stat_item_t item = statics[curr_stat].fs;
   item.total_num++;
 
-  touch_timespec(&s);
   page = file_get(req);
-  touch_timespec(&e);
 
   if (page != NULL) {
     if (req->sticky) page->level = -18;
-    stat_add(&(item.success), time_diff(s, e));
+    stat_add(&(item.success), current_time_millis() - s);
   } else {
-    stat_add(&(item.notfound), time_diff(s, e));
+    stat_add(&(item.notfound), current_time_millis() - s);
   }
   return page;
 }
@@ -142,87 +134,80 @@ send_status(request_t *req)
 page_t *
 process_get(request_t *req)
 {
-  struct timespec all_enter, all_fin;
   uint64_t use_time;
+  page_t *page = NULL;
   int curr_stat = current_stat_slot();
-
-  page_t *page;
-  ds_t from = mem;
 
   size_t l1=strlen(cfg.status_path), l2=strlen(req->url);
   if (l1<=l2 && strncmp(cfg.status_path, req->url, l1) == 0) {
     send_status(req);
-    return;
+    return;//TODO
   }
-  touch_timespec(&all_enter);
-  statics[curr_stat].all.total_num++;
 
   page = process_mem(req, curr_stat);
-
-  // fs block
-  if (page == NULL) {
-    page = process_fs(req, curr_stat);
-    from = fs;
-  }
-
-  /* net
-   *  --  success: write 2 client;
-   *  -- notfound: request upstream server + write 2 client
-   */
-  {
-    struct timespec s, e;
-    stat_item_t item = statics[curr_stat].net;
-    item.total_num++;
-
-    touch_timespec(&s);
-    if (page == NULL) {
-      // pass to upstream servers
-    } else {
-      char *igid;
-      bool auth = auth_http(igid, req->keyword, page->head.auth_type, page->head.param);
-      if (auth) {
-
-      }
-      //TODO: send to client
-      printf("mem=%x\n", smalloc_used_memory());
-    }
-    touch_timespec(&e);
-    use_time = time_diff(s, e);
-    if (page != NULL) {
-      stat_add(&(item.success), use_time);
-    } else {
-      stat_add(&(item.notfound), use_time);
-    }
-  }
-
-  // send done
   if (page != NULL) {
-    bool expire = is_expire(page);
-    if (from == fs) {
-      sfree(mem_set(req, page)); // save in memory if expired?
-      mem_lru();
-      if (expire) {
-        udp_notify_expire(req, page); //udp: notify
-      }
-    } else if (from == mem) {
-      if (expire) {
-  page_t *p1 = file_get(req);
-  if (p1 == NULL) { // not in fs: delete
-    sfree(mem_del(&(req->dig_file)));
-  } else if (is_expire(p1)) { // expire in fs
-          udp_notify_expire(req, p1); // udp: notify
-          sfree(p1);
-  } else { // valid on fs
-    sfree(mem_set(req, p1));
-          mem_lru(); // necessary?
-  }
-      } else {
-  mem_access(page);
-      }
-    }
+    page->from = MEMORY;
+    return page;
   }
 
-  touch_timespec(&all_fin);
-  use_time = time_diff(all_enter, all_fin);
-  stat_add(&(statics[curr_stat].all.success), use_time);
+  page = process_fs(req, curr_stat);
+  if (page != NULL) {
+    page->from = FILESYSTEM;
+    return page;
+  }
+
+  return NULL;
+}
+
+page_t *
+process_auth(request_t *req, page_t *page)
+{
+  if (page == NULL) return NULL;
+
+  page_t * ret = page;
+  int curr_stat = current_stat_slot();
+  uint64_t s = current_time_millis();
+  stat_item_t item = statics[curr_stat].auth;
+  item.total_num++;
+
+  char *igid;
+  if (auth_http(igid, req->keyword, page->head.auth_type, page->head.param))
+    ret = NULL;
+
+  if (page != NULL) {
+    stat_add(&(item.success), current_time_millis() - s);
+  } else {
+    stat_add(&(item.notfound), current_time_millis() - s);
+  }
+  return ret;
+}
+
+page_t *
+process_cache(request_t *req, page_t *page)
+{// send done
+  if (page == NULL) return NULL;
+
+  bool expire = is_expire(page);
+  if (page->from == FILESYSTEM) {
+    sfree(mem_set(req, page)); // save in memory if expired?
+    mem_lru();
+    if (expire) {
+      udp_notify_expire(req, page); //udp: notify
+    }
+  } else if (page->from == MEMORY) {
+    if (expire) {
+      page_t *p1 = file_get(req);
+      if (p1 == NULL) { // not in fs: delete
+        sfree(mem_del(&(req->dig_file)));
+      } else if (is_expire(p1)) { // expire in fs
+        udp_notify_expire(req, p1); // udp: notify
+        sfree(p1);
+      } else { // valid on fs
+        sfree(mem_set(req, p1));
+        mem_lru(); // necessary?
+      }
+    } else {
+      mem_access(page);
+    }
+  }
 }
