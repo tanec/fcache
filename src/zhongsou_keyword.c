@@ -99,7 +99,7 @@ char *
 domain2kw(char *s)
 {
   char *ret = search(domains, s, 0, domains->len);
-  return ret == NULL ? s : ret;
+  return ret == NULL ? NULL : ret;
 }
 
 char *
@@ -107,6 +107,25 @@ synonyms2kw(char *s)
 {
   char *ret = search(synonyms, s, 0, synonyms->len);
   return ret == NULL ? s : ret;
+}
+
+char *
+find_keyword(const char*domain, const char *uri, char *keyword)
+{
+  char *kw = domain2kw(domain);
+  if (kw==NULL && uri!=NULL) {
+    int i;
+    size_t len = strlen(uri);
+    memset(keyword, 0, len);
+    memcpy(keyword, uri, len);
+    kw = keyword+1;
+    for (i=0; i<len-2; i++)
+      if(*(kw+i)=='/') {*(kw+i)='\0';break;}
+  }
+
+  if (kw != NULL) kw = synonyms2kw(kw);
+  tlog(DEBUG, "(domain:%s, url%s)->keyword:%s", req->domain, req->url, req->keyword);
+  return kw;
 }
 
 char *
