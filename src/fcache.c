@@ -49,11 +49,13 @@ page_handler(struct evhttp_request *req, void *arg)
 
     if (page != NULL) {
       struct evbuffer *buf;
-      if ((buf = evbuffer_new()) == NULL)
+      if ((buf = evbuffer_new()) == NULL) {
         tlog(ERROR, "failed to create response buffer");
-      evbuffer_add_printf(buf, "Requested: %sn", evhttp_request_uri(req));
-      evhttp_send_reply(req, HTTP_OK, "OK", buf);
-
+      } else {
+        evbuffer_expand(buf, page->body_len);
+        memcpy(buf->buffer, page->body, page->body_len);
+        evhttp_send_reply(req, HTTP_OK, "OK", buf);
+      }
       process_cache(&r, page);
     } else {
       // not authorized
