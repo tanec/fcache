@@ -72,10 +72,10 @@ request_write(fcgi_request_t *r, const char *buf, uint16_t len, uint8_t tostdout
   if (len == 0) return;
   if (!request_is_active(r)) return;
 
-  header_t h;
-  header_init(&h, tostdout ? TYPE_STDOUT : TYPE_STDERR, r->id, len);
+  FCGI_header_t h;
+  FCGI_header_init(&h, tostdout ? TYPE_STDOUT : TYPE_STDERR, r->id, len);
 
-  if (evbuffer_add(r->bev->output, (const void *)&h, sizeof(header_t)) != -1)
+  if (evbuffer_add(r->bev->output, (const void *)&h, sizeof(FCGI_header_t)) != -1)
     evbuffer_add(r->bev->output, (const void *)buf, len);
 
   // schedule write
@@ -92,12 +92,12 @@ request_end(fcgi_request_t *r, uint32_t appstatus, uint8_t protostatus)
   uint8_t *p = buf;
 
   // Terminate the stdout and stderr stream, and send the end-request message.
-  header_init((header_t *)p, TYPE_STDOUT, r->id, 0);
-  p += sizeof(header_t);
-  header_init((header_t *)p, TYPE_STDERR, r->id, 0);
-  p += sizeof(header_t);
-  end_request_init((end_request_t *)p, r->id, appstatus, protostatus);
-  p += sizeof(end_request_t);
+  FCGI_header_init((FCGI_header_t *)p, TYPE_STDOUT, r->id, 0);
+  p += sizeof(FCGI_header_t);
+  FCGI_header_init((FCGI_header_t *)p, TYPE_STDERR, r->id, 0);
+  p += sizeof(FCGI_header_t);
+  FCGI_end_request_init((FCGI_end_request_t *)p, r->id, appstatus, protostatus);
+  p += sizeof(FCGI_end_request_t);
 
   tlog(DEBUG, "sending END_REQUEST for id %d", r->id);
 
@@ -142,7 +142,7 @@ app_handle_requestaborted(fcgi_request_t *r)
 
 /*************** process section ***************/
 inline static void
-process_begin_request(struct bufferevent *bev, uint16_t id, const begin_request_t *br)
+process_begin_request(struct bufferevent *bev, uint16_t id, const FCGI_begin_request_t *br)
 {
   fcgi_request_t *r;
 
@@ -161,7 +161,7 @@ process_begin_request(struct bufferevent *bev, uint16_t id, const begin_request_
   r->terminate = false;
   bev->cbarg = (void *)r;
 
-  evbuffer_drain(bev->input, sizeof(header_t)+sizeof(begin_request_t));
+  evbuffer_drain(bev->input, sizeof(FCGI_header_t)+sizeof(FCGI_begin_request_t));
 }
 
 inline static void
@@ -184,7 +184,7 @@ process_params(struct bufferevent *bev, uint16_t id, const uint8_t *buf, uint16_
 
   // Is this the last message to come? Then queue the request for the user.
   if (len == 0) {
-    evbuffer_drain(bev->input, sizeof(header_t));
+    evbuffer_drain(bev->input, sizeof(FCGI_header_t));
     app_handle_beginrequest(r);
     return;
   }
@@ -221,7 +221,7 @@ process_params(struct bufferevent *bev, uint16_t id, const uint8_t *buf, uint16_
     // todo: req->second->params[name] = data;
   }
 
-  evbuffer_drain(bev->input, sizeof(header_t) + len);
+  evbuffer_drain(bev->input, sizeof(FCGI_header_t) + len);
 }
 
 inline static void
@@ -238,7 +238,7 @@ process_stdin(struct bufferevent *bev, uint16_t id, const uint8_t *buf, uint16_t
   }
 
   assert(r->bev != NULL);
-  evbuffer_drain(bev->input, sizeof(header_t));
+  evbuffer_drain(bev->input, sizeof(FCGI_header_t));
 
   // Is this the last message to come? Then set the eof flag.
   // Otherwise, add the data to the buffer in the request structure.
@@ -254,10 +254,10 @@ inline static void
 process_unknown(struct bufferevent *bev, uint8_t type, uint16_t len)
 {
   tlog(ERROR, "process_unknown(%p, %d, %d)", bev, type, len);
-  unknown_type_t msg;
-  unknown_type_init(&msg, type);
-  bufferevent_write(bev, (const void *)&msg, sizeof(unknown_type_t));
-  evbuffer_drain(bev->input, sizeof(header_t) + len);
+  FCGI_unknown_type_t msg;
+  FCGI_unknown_type_init(&msg, type);
+  bufferevent_write(bev, (const void *)&msg, sizeof(FCGI_unknown_type_t));
+  evbuffer_drain(bev->input, sizeof(FCGI_header_t) + len);
 }
 /*************** process section end ***********/
 
@@ -267,8 +267,8 @@ fcache_readcb(struct bufferevent *bev, fcgi_request_t *r)
 {
   tlog(DEBUG, "fcache_readcb(%p, %p)", bev, r);
 
-  while(EVBUFFER_LENGTH(bev->input) >= sizeof(header_t)) {
-    const header_t *hp = (const header_t *)EVBUFFER_DATA(bev->input);
+  while(EVBUFFER_LENGTH(bev->input) >= sizeof(FCGI_header_t)) {
+    const FCGI_header_t *hp = (const FCGI_header_t *)EVBUFFER_DATA(bev->input);
 
     // Check whether our peer speaks the correct protocol version.
     if (hp->version != 1) {
@@ -283,7 +283,7 @@ fcache_readcb(struct bufferevent *bev, fcgi_request_t *r)
     uint16_t msg_len = (hp->contentLengthB1 << 8) + hp->contentLengthB0;
     uint16_t msg_id = (hp->requestIdB1 << 8) + hp->requestIdB0;
 
-    if (EVBUFFER_LENGTH(bev->input) < sizeof(header_t) + msg_len + hp->paddingLength)
+    if (EVBUFFER_LENGTH(bev->input) < sizeof(FCGI_header_t) + msg_len + hp->paddingLength)
       return;
 
     // Process the message.
@@ -294,16 +294,16 @@ fcache_readcb(struct bufferevent *bev, fcgi_request_t *r)
     switch (hp->type) {
     case TYPE_BEGIN_REQUEST:
       process_begin_request(bev, msg_id,
-                            (const begin_request_t *)(EVBUFFER_DATA(bev->input) + sizeof(header_t)) );
+                            (const FCGI_begin_request_t *)(EVBUFFER_DATA(bev->input) + sizeof(FCGI_header_t)) );
       break;
     case TYPE_ABORT_REQUEST:
       process_abort_request(request_get(msg_id));
       break;
     case TYPE_PARAMS:
-      process_params(bev, msg_id, (const uint8_t *)EVBUFFER_DATA(bev->input) + sizeof(header_t), msg_len);
+      process_params(bev, msg_id, (const uint8_t *)EVBUFFER_DATA(bev->input) + sizeof(FCGI_header_t), msg_len);
       break;
     case TYPE_STDIN:
-      process_stdin(bev, msg_id, (const uint8_t *)EVBUFFER_DATA(bev->input) + sizeof(header_t), msg_len);
+      process_stdin(bev, msg_id, (const uint8_t *)EVBUFFER_DATA(bev->input) + sizeof(FCGI_header_t), msg_len);
       break;
       //case TYPE_END_REQUEST:
       //case TYPE_STDOUT:

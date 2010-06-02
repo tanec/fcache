@@ -12,32 +12,32 @@ typedef struct {
   uint8_t contentLengthB0;
   uint8_t paddingLength;
   uint8_t reserved;
-} header_t; // 8
+} FCGI_header_t; // 8
 
 typedef struct {
   uint8_t roleB1;
   uint8_t roleB0;
   uint8_t flags;
   uint8_t reserved[5];
-} begin_request_t; // 8
+} FCGI_begin_request_t; // 8
 
 typedef struct {
-  header_t header;
+  FCGI_header_t header;
   uint8_t appStatusB3;
   uint8_t appStatusB2;
   uint8_t appStatusB1;
   uint8_t appStatusB0;
   uint8_t protocolStatus;
   uint8_t reserved[3];
-} end_request_t; // 16
+} FCGI_end_request_t; // 16
 
 typedef struct {
-  header_t header;
+  FCGI_header_t header;
   uint8_t type;
   uint8_t reserved[7];
-} unknown_type_t; // 16
+} FCGI_unknown_type_t; // 16
 
-enum { // header.type
+enum FCGI_header_type { // header.type
   TYPE_BEGIN_REQUEST     = 1,
   TYPE_ABORT_REQUEST     = 2,
   TYPE_END_REQUEST       = 3,
@@ -51,8 +51,9 @@ enum { // header.type
   TYPE_UNKNOWN           = 11
 };
 
-inline void header_init(header_t *, uint8_t, uint16_t, uint16_t);
-inline void end_request_init(end_request_t *, uint16_t, uint32_t, uint8_t);
-inline void unknown_type_init(unknown_type_t *, uint8_t);
+inline void FCGI_header_init(FCGI_header_t *, uint8_t, uint16_t, uint16_t);
+inline void FCGI_end_request_init(FCGI_end_request_t *, uint16_t, uint32_t, uint8_t);
+inline void FCGI_unknown_type_init(FCGI_unknown_type_t *, uint8_t);
+
 
 #endif // FASTCGIAPI_H
