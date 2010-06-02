@@ -43,7 +43,7 @@ page_handler(struct evhttp_request *req, void *arg)
   r.url = req->uri;
   r.keyword = find_keyword(req->remote_host, req->uri, kw);
 
-  if ((page=process_get(req)) != NULL) {
+  if ((page=process_get(&r)) != NULL) {
     struct evbuffer *buf;
     if ((buf = evbuffer_new()) == NULL)
       tlog(ERROR, "failed to create response buffer");

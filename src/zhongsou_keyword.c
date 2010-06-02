@@ -3,6 +3,7 @@
 #include "zhongsou_keyword.h"
 #include "util.h"
 #include "smalloc.h"
+#include "log.h"
 
 static str_map_t *domains = NULL;
 static str_map_t *synonyms = NULL;
@@ -41,39 +42,39 @@ read_strmap(const char *file)
 
       switch(*(str+i)) {
       case '\n':
-	*(str+i) = 0;
-	if (k != NULL && v != NULL) {
-	  (ret->base+n)->key = k;
-	  (ret->base+n)->value = v;
-	  n++;
-	}
-	k = NULL;
-	v = NULL;
-	break;
+        *(str+i) = 0;
+        if (k != NULL && v != NULL) {
+          (ret->base+n)->key = k;
+          (ret->base+n)->value = v;
+          n++;
+        }
+        k = NULL;
+        v = NULL;
+        break;
       case ' ':
       case '\r':
       case '\t':
-	*(str+i) = 0;
-	break;
+        *(str+i) = 0;
+        break;
       default:
-	if (k == NULL) {
-	  k = str+i;
-	} else if (v == NULL) {
-	  v = str + i;
-	}
+        if (k == NULL) {
+          k = str+i;
+        } else if (v == NULL) {
+          v = str + i;
+        }
       }
     }
     //sort
     for (i = 0; i<len; i++) {
       int j;
       for (j = i+1; j < len; j++) {
-	if (strcmp((ret->base+i)->key, (ret->base+j)->key) > 0) {
-	  char *k = (ret->base+i)->key, *v = (ret->base+i)->value;
-	  (ret->base+i)->key = (ret->base+j)->key;
-	  (ret->base+i)->value = (ret->base+j)->value;
-	  (ret->base+j)->key = k;
-	  (ret->base+j)->value = v;
-	}
+        if (strcmp((ret->base+i)->key, (ret->base+j)->key) > 0) {
+          char *k = (ret->base+i)->key, *v = (ret->base+i)->value;
+          (ret->base+i)->key = (ret->base+j)->key;
+          (ret->base+i)->value = (ret->base+j)->value;
+          (ret->base+j)->key = k;
+          (ret->base+j)->value = v;
+        }
       }
     }
     mmap_close(&mt);
@@ -112,7 +113,7 @@ synonyms2kw(char *s)
 char *
 find_keyword(const char*domain, const char *uri, char *keyword)
 {
-  char *kw = domain2kw(domain);
+  char *kw = domain2kw((char *)domain);
   if (kw==NULL && uri!=NULL) {
     int i;
     size_t len = strlen(uri);
@@ -124,7 +125,7 @@ find_keyword(const char*domain, const char *uri, char *keyword)
   }
 
   if (kw != NULL) kw = synonyms2kw(kw);
-  tlog(DEBUG, "(domain:%s, url%s)->keyword:%s", req->domain, req->url, req->keyword);
+  tlog(DEBUG, "(domain:%s, url%s)->keyword:%s", domain, uri, kw);
   return kw;
 }
 
