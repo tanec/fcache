@@ -44,11 +44,20 @@ page_handler(struct evhttp_request *req, void *arg)
   r.keyword = find_keyword(req->remote_host, req->uri, kw);
 
   if ((page=process_get(&r)) != NULL) {
-    struct evbuffer *buf;
-    if ((buf = evbuffer_new()) == NULL)
-      tlog(ERROR, "failed to create response buffer");
-    evbuffer_add_printf(buf, "Requested: %sn", evhttp_request_uri(req));
-    evhttp_send_reply(req, HTTP_OK, "OK", buf);
+    if (page->head.auth_type != 0)
+      page = process_auth(&r, page);
+
+    if (page != NULL) {
+      struct evbuffer *buf;
+      if ((buf = evbuffer_new()) == NULL)
+        tlog(ERROR, "failed to create response buffer");
+      evbuffer_add_printf(buf, "Requested: %sn", evhttp_request_uri(req));
+      evhttp_send_reply(req, HTTP_OK, "OK", buf);
+
+      process_cache(&r, page);
+    } else {
+      // not authorized
+    }
   } else { // bypass to upstream
 
   }

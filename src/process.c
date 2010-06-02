@@ -134,7 +134,6 @@ send_status(request_t *req)
 page_t *
 process_get(request_t *req)
 {
-  uint64_t use_time;
   page_t *page = NULL;
   int curr_stat = current_stat_slot();
 
@@ -165,13 +164,12 @@ process_auth(request_t *req, page_t *page)
   if (page == NULL) return NULL;
 
   page_t * ret = page;
-  int curr_stat = current_stat_slot();
   uint64_t s = current_time_millis();
-  stat_item_t item = statics[curr_stat].auth;
+  stat_item_t item = statics[current_stat_slot()].auth;
   item.total_num++;
 
   char *igid;
-  if (auth_http(igid, req->keyword, page->head.auth_type, page->head.param))
+  if (!auth_http(igid, req->keyword, page->head.auth_type, page->head.param))
     ret = NULL;
 
   if (page != NULL) {
