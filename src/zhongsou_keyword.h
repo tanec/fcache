@@ -17,7 +17,7 @@ void read_domain(const char *);
 void read_synonyms(const char *);
 
 char * domain2kw(char *);
-char * synonyms2kw(char *);
-char * find_keyword(const char*, const char *, char *);
+char * synonyms2kw(char *, char *);
+char * find_keyword(char*, char *, char *);
 
 #endif // ZHONGSOU_KEYWORD_H

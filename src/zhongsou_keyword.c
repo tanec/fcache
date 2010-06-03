@@ -6,7 +6,12 @@
 #include "log.h"
 
 static str_map_t *domains = NULL;
-static str_map_t *synonyms = NULL;
+static str_map_t *synonyms = NULL;//default: zhongsou
+#define MAX_DOMAIN 1024
+struct dm_s {
+  char *domain;
+  str_map_t *map;
+} domain_keywords[MAX_DOMAIN];
 
 size_t
 count_lines(mmap_array_t *mt)
@@ -89,9 +94,56 @@ read_domain(const char *file)
 }
 
 void
+read_domain_synonyms(char *domain, char *file)
+{
+  int i;
+  struct dm_s *current = NULL;
+  for(i=0; i<MAX_DOMAIN; i++) {
+    if (domain_keywords[i].domain == NULL) {
+      current = &(domain_keywords[i]);
+      current->domain = domain;
+      break;
+    }
+  }
+  if(current != NULL) current->map = read_strmap(file);
+}
+
+void
 read_synonyms(const char *file)
 {
-  synonyms = read_strmap(file);
+  mmap_array_t mt;
+  char *files, *f1=NULL, *f2=NULL;
+  memset(domain_keywords, 0, MAX_DOMAIN*sizeof(struct dm_s));
+  if (mmap_read(&mt, file)) {
+    int i;
+    files = smalloc(mt.len+1);
+    memset(files, 0, mt.len+1);
+    memcpy(files, mt.data, mt.len);
+    for (i=0; i<mt.len; i++) {
+      if(*(files+i)=='\n') {
+        *(files+i) = '\0';
+        if (f1!=NULL && f2!=NULL) {
+          if (strcmp(f1, "default")==0) {
+            synonyms = read_strmap(f2);
+          } else {
+            read_domain_synonyms(f1, f2);
+            f1 = NULL;
+            f2 = NULL;
+          }
+        }
+      } else if(*(files+i)=='\r'||
+                *(files+i)=='\t'||
+                *(files+i)==' '){
+        *(files+i) = '\0';
+      } else {
+        if (f1==NULL) {
+          f1=files+i;
+        } else if(f2==NULL) {
+          f2=files+i;
+        }
+      }
+    }
+  }
 }
 
 char * search(str_map_t *map, char *key, size_t s, size_t e);
@@ -104,17 +156,26 @@ domain2kw(char *s)
 }
 
 char *
-synonyms2kw(char *s)
+synonyms2kw(char *domain, char *s)
 {
-  char *ret = search(synonyms, s, 0, synonyms->len);
+  int i;
+  char *ret = NULL;
+  for (i=0; i<MAX_DOMAIN; i++) {
+    if (domain_keywords[i].domain == NULL) break;
+    if (strcmp(domain, domain_keywords[i].domain)==0) {
+      ret = search(domain_keywords[i].map, s, 0, domain_keywords[i].map->len);
+      break;
+    }
+  }
+  if (ret==NULL) ret = search(synonyms, s, 0, synonyms->len);
   return ret == NULL ? s : ret;
 }
 
 char *
-find_keyword(const char*domain, const char *uri, char *keyword)
+find_keyword(char*domain, char *uri, char *keyword)
 {
-  char *kw = domain2kw((char *)domain);
-  if (kw==NULL && uri!=NULL) {
+  char *kw = NULL;
+  if (uri!=NULL && strlen(uri) > 1) {
     int i;
     size_t len = strlen(uri);
     memset(keyword, 0, len);
@@ -124,7 +185,10 @@ find_keyword(const char*domain, const char *uri, char *keyword)
       if(*(kw+i)=='/') {*(kw+i)='\0';break;}
   }
 
-  if (kw != NULL) kw = synonyms2kw(kw);
+  // try domain's default kwyword
+  if (kw == NULL) kw = domain2kw(domain);
+
+  if (kw != NULL) kw = synonyms2kw(domain, kw);
   tlog(DEBUG, "(domain:%s, url%s)->keyword:%s", domain, uri, kw);
   return kw;
 }
