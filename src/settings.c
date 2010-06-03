@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include "settings.h"
 
 setting_t cfg = {};
@@ -7,13 +8,15 @@ init_cfg(void)
 {
   cfg.daemon = 0;
   cfg.log_file = "/var/log/fcache.log";
-  cfg.log_level = INFO;
+  cfg.log_level = DEBUG;
 
   cfg.conn_type = tcp;
   cfg.bind_addr = "127.0.0.1";
   cfg.port = 2012;
 
-  cfg.doamin_file = "/tmp/fcache.socket";
+  cfg.doamin_file = NULL;
+  cfg.synonyms_file= NULL;
+
   cfg.status_path = "/fcache-status";
   cfg.pid_file = "/var/run/fcache.pid";
 

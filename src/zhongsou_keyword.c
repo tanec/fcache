@@ -1,5 +1,5 @@
 #include <string.h>
-
+#include <stdlib.h>
 #include "zhongsou_keyword.h"
 #include "util.h"
 #include "smalloc.h"
@@ -12,6 +12,12 @@ struct dm_s {
   char *domain;
   str_map_t *map;
 } domain_keywords[MAX_DOMAIN];
+
+int
+cmp_str_map_node(str_map_node_t *n1, str_map_node_t *n2)
+{
+  return strcmp(n1->key, n2->key);
+}
 
 size_t
 count_lines(mmap_array_t *mt)
@@ -28,26 +34,27 @@ count_lines(mmap_array_t *mt)
 
 str_map_t *
 read_strmap(const char *file)
-{
+{tlog(INFO, "read_strmap(%s)", file);
   str_map_t *ret = NULL;
   mmap_array_t mt;
   if (mmap_read(&mt, file)) {
     size_t len = count_lines(&mt), i, n = 0;
-    size_t pln = sizeof(size_t) + len*sizeof(str_map_node_t);
+    size_t pln = sizeof(size_t)
+               + sizeof(str_map_node_t *)
+               + len*sizeof(str_map_node_t);
     char *str;
     ret = smalloc(pln + mt.len + 1);
+    memset(ret, '\n', pln + mt.len + 1);// ensure last '\n'
     ret->len = len;
-    memset(ret, 0, pln);
-    memset(ret+pln+mt.len, '\n', 1); // ensure last '\n'
+    ret->base= (str_map_node_t *)((char *)ret + sizeof(size_t) + sizeof(str_map_node_t *));
     memcpy((char*)ret+pln, (char*)mt.data, mt.len);
 
     str = (char *)ret+pln;
-    for (i = 0; i<mt.len && n<len; i++) {
-      char *k=NULL, *v=NULL;
-
+    char *k=NULL, *v=NULL;
+    for (i = 0; i<mt.len+1 && n<len; i++) {
       switch(*(str+i)) {
       case '\n':
-        *(str+i) = 0;
+        *(str+i) = '\0';
         if (k != NULL && v != NULL) {
           (ret->base+n)->key = k;
           (ret->base+n)->value = v;
@@ -59,29 +66,21 @@ read_strmap(const char *file)
       case ' ':
       case '\r':
       case '\t':
-        *(str+i) = 0;
+        *(str+i) = '\0';
         break;
       default:
         if (k == NULL) {
           k = str+i;
-        } else if (v == NULL) {
-          v = str + i;
+        } else if (v == NULL && *(str+i-1)=='\0') {
+          v = str+i;
         }
       }
     }
+    ret->len=n;
     //sort
-    for (i = 0; i<len; i++) {
-      int j;
-      for (j = i+1; j < len; j++) {
-        if (strcmp((ret->base+i)->key, (ret->base+j)->key) > 0) {
-          char *k = (ret->base+i)->key, *v = (ret->base+i)->value;
-          (ret->base+i)->key = (ret->base+j)->key;
-          (ret->base+i)->value = (ret->base+j)->value;
-          (ret->base+j)->key = k;
-          (ret->base+j)->value = v;
-        }
-      }
-    }
+    qsort(ret->base, ret->len, sizeof(str_map_node_t),
+          (int(*)(const void*,const void*))cmp_str_map_node);
+
     mmap_close(&mt);
   }
   return ret;
@@ -89,13 +88,13 @@ read_strmap(const char *file)
 
 void
 read_domain(const char *file)
-{
+{tlog(DEBUG, "read_domain(%s)", file);
   domains = read_strmap(file);
 }
 
 void
 read_domain_synonyms(char *domain, char *file)
-{
+{tlog(DEBUG, "read_domain_synonyms(%s, %s)", domain, file);
   int i;
   struct dm_s *current = NULL;
   for(i=0; i<MAX_DOMAIN; i++) {
@@ -110,35 +109,36 @@ read_domain_synonyms(char *domain, char *file)
 
 void
 read_synonyms(const char *file)
-{
+{tlog(DEBUG, "read_synonyms(%s)", file);
   mmap_array_t mt;
   char *files, *f1=NULL, *f2=NULL;
   memset(domain_keywords, 0, MAX_DOMAIN*sizeof(struct dm_s));
   if (mmap_read(&mt, file)) {
     int i;
     files = smalloc(mt.len+1);
-    memset(files, 0, mt.len+1);
+    memset(files, '\n', mt.len+1);
     memcpy(files, mt.data, mt.len);
-    for (i=0; i<mt.len; i++) {
-      if(*(files+i)=='\n') {
+
+    for (i=0; i<=mt.len; i++) {
+      if(*(files+i)=='\n'||
+         *(files+i)=='\r'||
+         *(files+i)=='\t'||
+         *(files+i)==' ') {
+        char c = *(files+i);
         *(files+i) = '\0';
-        if (f1!=NULL && f2!=NULL) {
+        if (f1!=NULL && f2!=NULL && c=='\n') {
           if (strcmp(f1, "default")==0) {
             synonyms = read_strmap(f2);
           } else {
             read_domain_synonyms(f1, f2);
-            f1 = NULL;
-            f2 = NULL;
           }
+          f1 = NULL;
+          f2 = NULL;
         }
-      } else if(*(files+i)=='\r'||
-                *(files+i)=='\t'||
-                *(files+i)==' '){
-        *(files+i) = '\0';
       } else {
         if (f1==NULL) {
           f1=files+i;
-        } else if(f2==NULL) {
+        } else if(f2==NULL && *(files+i-1)=='\0') {
           f2=files+i;
         }
       }
@@ -164,15 +164,19 @@ synonyms2kw(char *domain, char *s)
     if (domain_keywords[i].domain == NULL) break;
     if (strcmp(domain, domain_keywords[i].domain)==0) {
       ret = search(domain_keywords[i].map, s, 0, domain_keywords[i].map->len);
+      tlog(DEBUG, "synonyms2kw(%s, %s)->%s", domain, s, ret);
       break;
     }
   }
-  if (ret==NULL) ret = search(synonyms, s, 0, synonyms->len);
+  if (ret==NULL) {
+    ret = search(synonyms, s, 0, synonyms->len);
+    tlog(DEBUG, "synonyms2kw(%s)->%s", s, ret);
+  }
   return ret == NULL ? s : ret;
 }
 
 char *
-find_keyword(char*domain, char *uri, char *keyword)
+find_keyword(char *domain, char *uri, char *keyword)
 {
   char *kw = NULL;
   if (uri!=NULL && strlen(uri) > 1) {
@@ -189,7 +193,7 @@ find_keyword(char*domain, char *uri, char *keyword)
   if (kw == NULL) kw = domain2kw(domain);
 
   if (kw != NULL) kw = synonyms2kw(domain, kw);
-  tlog(DEBUG, "(domain:%s, url%s)->keyword:%s", domain, uri, kw);
+  tlog(DEBUG, "find_keyword(domain=%s, uri=%s)->%s", domain, uri, kw);
   return kw;
 }
 
@@ -197,12 +201,14 @@ char *
 search(str_map_t *map, char *key, size_t s, size_t e)
 {//[s, e)
   if (map == NULL || e < s || e-s < 1) {
+    tlog(DEBUG, "search(%p, %s,%d,%d)->NULL", map, key, s, e);
     return NULL;
   } else {
     size_t m = (s+e)/2;
     str_map_node_t *node = (str_map_node_t*)(map->base)+m;
     int cr = strcmp(key, node->key);
     if (cr == 0) {
+      tlog(DEBUG, "search(%p, %s,%d,%d)->%s", map, key, s, e, node->value);
       return node->value;
     } else if (cr < 0) {
       return search(map, key, s, m);
