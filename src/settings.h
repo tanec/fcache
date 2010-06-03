@@ -42,6 +42,6 @@ typedef struct {
 extern setting_t cfg;
 
 void init_cfg(void);
-void read_cfg(setting_t *, char *);
+void read_cfg(char *);
 
 #endif // CONFIG_H

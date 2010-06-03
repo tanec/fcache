@@ -91,14 +91,9 @@ main(int argc, char**argv)
                            "r:"  /* test read a file */
                            ))) {
     switch (c) {
-    case 'C':
-        read_cfg(&cfg, optarg);
-    case 'd':
-      cfg.daemon = 1;
-
-    case 'I':
-      cfg.bind_addr = optarg;
-      break;
+    case 'C': read_cfg(optarg); break;
+    case 'd': cfg.daemon = 1;   break;
+    case 'I': cfg.bind_addr = optarg; break;
     case 'p':
       cfg.port = (uint16_t)atoi(optarg);
       cfg.conn_type = tcp;
@@ -107,15 +102,8 @@ main(int argc, char**argv)
       cfg.socketpath = optarg;
       cfg.conn_type = domain_socket;
       break;
-
-    case 'c':
-      cfg.maxconns = atoi(optarg);
-      break;
-
-    case 'P':
-      cfg.pid_file = optarg;
-      break;
-
+    case 'c': cfg.maxconns = atoi(optarg); break;
+    case 'P': cfg.pid_file = optarg; break;
     case 't':
       cfg.num_threads = atoi(optarg);
       if (cfg.num_threads <= 0) {
