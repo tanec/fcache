@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdlib.h>
 #include "settings.h"
 #include "util.h"
 
@@ -67,15 +68,15 @@ read_cfg(char *file)
   mmap_array_t mt;
   if (mmap_read(&mt, file)) {
     int i;
-    char data[mt.len+1], *k=NULL, *v=NULL;
+    char *data=malloc(mt.len+1), *k=NULL, *v=NULL;
 
     memset(data, '\n', mt.len+1);
     memcpy(data, mt.data, mt.len);
 
     for (i=0; i<mt.len+1; i++) {
-      switch(data[i]) {
+      switch(*(data+i)) {
       case '\n':
-        data[i] = '\0';
+        *(data+i) = '\0';
         if (k != NULL && v != NULL) {
           cfg_set(k, v);
         }
@@ -86,7 +87,7 @@ read_cfg(char *file)
       case '\t':
       case ' ':
       case '=':
-        data[i] = '\0';
+        *(data+i) = '\0';
         break;
       default:
         if (k == NULL) {
