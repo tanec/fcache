@@ -80,5 +80,7 @@ mmap_close(mmap_array_t *ma)
 uint64_t
 current_time_millis()
 {
-  return 0; //TODO
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return (uint64_t)tv.tv_sec*1000+(uint64_t)tv.tv_usec/1000;
 }
