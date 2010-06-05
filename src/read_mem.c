@@ -64,6 +64,7 @@ mem_set(request_t *req, page_t *page)
   md5_file(req);
   memcpy(&(page->digest), &(req->dig_file), sizeof(md5_digest_t));
   ret = map_set(cache, &(page->digest), page);
+  if (ret != NULL && ret->level < 0) page->level=ret->level;
   if (page->level >= 0) { // level < 0: sticky
     page->level = max++;
     total += page->level;

@@ -122,30 +122,11 @@ process_fs(request_t *req, int curr_stat)
   return page;
 }
 
-void
-send_status(request_t *req)
-{
-#define STATUS_LEN 819201
-  char buf[STATUS_LEN];
-  int n=0, len=STATUS_LEN-1;
-  memset(buf, 0, STATUS_LEN);
-  n+=snprintf(buf+n, len-n, "<html><head><title>status</title></head><body>");
-  n+=snprintf(buf+n, len-n, "");
-  n+=snprintf(buf+n, len-n, "</body></html>");
-  //TODO
-}
-
 page_t *
 process_get(request_t *req)
 {
   page_t *page = NULL;
   int curr_stat = current_stat_slot();
-
-  size_t l1=strlen(cfg.status_path), l2=strlen(req->url);
-  if (l1<=l2 && strncmp(cfg.status_path, req->url, l1) == 0) {
-    send_status(req);
-    return;//TODO
-  }
 
   page = process_mem(req, curr_stat);
   if (page != NULL) {
