@@ -25,9 +25,9 @@ md5_digest_hash(void *orig)
 {
   map_key_t key = (map_key_t)orig;
   return (uint32_t)(key->digest[3] << 24 +
-		    key->digest[2] << 16 +
-		    key->digest[1] << 8 +
-		    key->digest[0]);
+        key->digest[2] << 16 +
+        key->digest[1] << 8 +
+        key->digest[0]);
 }
 
 
@@ -108,11 +108,11 @@ mem_lru(void)
 
     if (iter != NULL)
       while(cfg.maxmem - smalloc_used_memory() < cfg.max_reserve) {
-	page = (page_t*)map_iter_next(iter, &key);
-	if (page!=NULL && 0<=page->level && page->level<avg) {
-          sfree(mem_del(key));
-	}
+      page = (page_t*)map_iter_next(iter, &key);
+      if (page!=NULL && 0<=page->level && page->level<avg) {
+        sfree(mem_del(key));
       }
+    }
     map_iter_free(iter);
   }
 }
