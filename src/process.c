@@ -33,6 +33,10 @@ current_stat_slot()
   if (temp != curr) {
     curr = temp;
     //init
+    stat_init(&(statics[curr].mem));
+    stat_init(&(statics[curr].fs));
+    stat_init(&(statics[curr].auth));
+    stat_init(&(statics[curr].net));
   }
   return curr;
 }
