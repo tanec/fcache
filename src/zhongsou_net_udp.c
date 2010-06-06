@@ -4,6 +4,7 @@
 
 #include "zhongsou_net_udp.h"
 #include "settings.h"
+#include "thread.h"
 
 /*
 UDP 协议
@@ -64,8 +65,39 @@ udp_notify_expire(request_t *req, page_t *page)
   close(s);
 }
 
+#define BUFLEN 1200
+static int listen_socket;
+
+void *
+handle_expire_request(void *args)
+{
+  char buf[BUFLEN];
+  struct sockaddr_in si_other;
+  int i, slen=sizeof(si_other);
+
+/*
+  for (i=0; i<NPACK; i++) {
+    if (recvfrom(listen_socket, buf, BUFLEN, 0, &si_other, &slen)==-1)
+      diep("recvfrom()");
+    printf("Received packet from %s:%d\nData: %s\n\n",
+           inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port), buf);
+  }*/
+}
+
 void
 udp_listen_expire(void)
 {
+  struct sockaddr_in si_me;
 
+  if ((listen_socket=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1)
+    perror("udp listen: socket");
+
+  memset((char *) &si_me, 0, sizeof(si_me));
+  si_me.sin_family = AF_INET;
+  si_me.sin_port = htons(cfg.udp_notify_port);
+  si_me.sin_addr.s_addr = htonl(INADDR_ANY);
+  if (bind(listen_socket, (const struct sockaddr *)&si_me, sizeof(si_me))==-1)
+    perror("udp listen: bind");
+
+  create_worker(handle_expire_request, NULL);
 }

@@ -15,9 +15,12 @@
 #include <event.h>
 #include <evhttp.h>
 
+#include <glib.h>
+
 #include "Config.h"
 #include "log.h"
 #include "util.h"
+#include "thread.h"
 
 #include "fcache.h"
 #include "settings.h"
