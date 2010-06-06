@@ -35,37 +35,104 @@ exit_on_sig(const int sig)
   exit(EXIT_SUCCESS);
 }
 
-void
-page_handler(struct evhttp_request *req, void *arg)
-{
+/* fastp: just handle, read mem/fs, write to client;
+   slowp: possible auth, bypass, cache maitain
+ */
+static GThreadPool *fastp, *slowp;
+typedef struct {
+  struct evhttp_request *req;
+  void *arg;
+
   request_t r;
+  page_t *page;
+  bool sent;
+} req_ctx_t;
+
+static void
+send_page(req_ctx_t *ctx)
+{
+  struct evbuffer *buf;
+  if ((buf = evbuffer_new()) == NULL) {
+    tlog(ERROR, "failed to create response buffer");
+  } else {
+    evbuffer_expand(buf, ctx->page->body_len);
+    memcpy(buf->buffer, ctx->page->body, ctx->page->body_len);
+    evhttp_send_reply(req, HTTP_OK, "OK", buf);
+    ctx->sent = true;
+  }
+}
+
+static void
+fast_process(gpointer data, gpointer user_data)
+{
+  req_ctx_t *ctx = data;
+  struct evhttp_request *req = ctx->req;
+
   page_t *page = NULL;
   char kw[strlen(req->uri)];
 
-  r.domain = req->remote_host;
-  r.url = req->uri;
-  r.keyword = find_keyword(req->remote_host, req->uri, kw);
+  ctx->r.domain = req->remote_host;
+  ctx->r.url = req->uri;
+  ctx->r.keyword = find_keyword(req->remote_host, req->uri, kw);
 
-  if ((page=process_get(&r)) != NULL) {
-    if (page->head.auth_type != 0)
-      page = process_auth(&r, page);
+  ctx->page=process_get(&ctx->r);
 
-    if (page != NULL) {
-      struct evbuffer *buf;
-      if ((buf = evbuffer_new()) == NULL) {
-        tlog(ERROR, "failed to create response buffer");
-      } else {
-        evbuffer_expand(buf, page->body_len);
-        memcpy(buf->buffer, page->body, page->body_len);
-        evhttp_send_reply(req, HTTP_OK, "OK", buf);
-      }
-      process_cache(&r, page);
-    } else {
-      // not authorized
-    }
-  } else { // bypass to upstream
-
+  if (ctx->page!=NULL && ctx->page->head.auth_type == AUTH_NO) {
+    send_page(ctx);
   }
+
+  g_thread_pool_push(slowp, ctx, &error);
+}
+
+static void
+slow_process(gpointer data, gpointer user_data)
+{
+  req_ctx_t *ctx = data;
+
+  if (!ctx->sent) {
+    if (ctx->page == NULL) {
+      // bypass to upstream
+    } else {
+      // auth
+    }
+    if ((page=process_get(&r)) != NULL) {
+      if (page->head.auth_type != 0)
+        page = process_auth(&r, page);
+
+      if (page != NULL) {
+        send_page(ctx);
+        process_cache(&ctx->r, ctx->page);
+      } else {
+        // not authorized
+      }
+    }
+  }
+
+  // finish
+  free(ctx);
+}
+
+static void
+init_fcache()
+{
+  GError *error;
+  gint nth = cfg.num_threads/2;
+  if (nth < 2) nth = 2;
+
+  fastp = g_thread_pool_new(fast_process, NULL, nth, false, &error);
+  slowp = g_thread_pool_new(slow_process, NULL, nth, false, &error);
+}
+
+void
+page_handler(struct evhttp_request *req, void *arg)
+{
+  GError *error;
+  req_ctx_t *ctx = calloc(1, sizeof(req_ctx_t));
+  ctx->req  = req;
+  ctx->arg  = arg;
+  ctx->page = NULL;
+  ctx->sent = false;
+  g_thread_pool_push(fastp, ctx, &error);
 }
 
 int
@@ -158,6 +225,7 @@ main(int argc, char**argv)
 
   // Initialization
   process_init();
+  init_fcache();
   // keywords
   if (cfg.doamin_file != NULL)  read_domain(cfg.doamin_file);
   if (cfg.synonyms_file != NULL)read_synonyms(cfg.synonyms_file);

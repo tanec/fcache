@@ -4,8 +4,9 @@ find_library(EVENT_LIB event)
 message("found libevent: ${EVENT_LIB}, ${EVENT_INC}")
 
 pkg_check_modules(GLIB REQUIRED glib-2.0)
-include_directories(GLIB_INCLUDE_DIRS)
-message("${GLIB_INCLUDE_DIRS}")
+include_directories(${GLIB_INCLUDE_DIRS})
+link_directories(${GLIB_LIBRARY_DIRS})
+message("glib2: -I${GLIB_INCLUDE_DIRS} -L${GLIB_LIBRARY_DIRS} -l${GLIB_LIBRARIES}")
 
 add_library(UTIL  util.c)
 add_library(SMALLOC smalloc.c)
@@ -40,4 +41,4 @@ target_link_libraries(PROCESS MD5 READMEM READFILE STAT AUTH UDP)
 add_library(ZSKW zhongsou_keyword.c)
 
 add_executable (fcache fcache.c)
-target_link_libraries(fcache ${EVENT_LIB} SETTING LOG UTIL THREAD PROCESS ZSKW)
+target_link_libraries(fcache ${EVENT_LIB} SETTING LOG UTIL THREAD PROCESS ZSKW ${GLIB_LIBRARIES})

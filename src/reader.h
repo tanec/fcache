@@ -28,6 +28,13 @@ typedef enum {
   FILESYSTEM
 } page_from_t;
 
+typedef enum {
+  AUTH_NO     = 0,
+  AUTH_PAGE   = 1,
+  AUTH_PHP    = 2,
+  AUTH_MEMBER = 3
+} auth_type_t;
+
 typedef struct {
   page_head_t head;
   page_from_t from;
