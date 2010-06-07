@@ -59,6 +59,7 @@ send_page(req_ctx_t *ctx)
     memcpy(buf->buffer, ctx->page->body, ctx->page->body_len);
     evhttp_send_reply(ctx->req, HTTP_OK, "OK", buf);
     ctx->sent = true;
+    evbuffer_free(buf);
   }
 }
 
@@ -90,14 +91,14 @@ slow_process(gpointer data, gpointer user_data)
 {
   req_ctx_t *ctx = data;
 
-  if (!ctx->sent) {
+  if (ctx->sent) {
+    process_cache(&ctx->r, ctx->page);
+  } else {
     if (ctx->page == NULL) {
       // bypass to upstream
     } else {
       // auth
-    }
-    if ((ctx->page=process_get(&ctx->r)) != NULL) {
-      if (ctx->page->head.auth_type != 0)
+      if (ctx->page->head.auth_type != AUTH_NO)
         ctx->page = process_auth(&ctx->r, ctx->page);
 
       if (ctx->page != NULL) {
@@ -105,6 +106,14 @@ slow_process(gpointer data, gpointer user_data)
         process_cache(&ctx->r, ctx->page);
       } else {
         // not authorized
+        struct evbuffer *buf;
+        if ((buf = evbuffer_new()) == NULL) {
+          tlog(ERROR, "failed to create response buffer");
+        } else {
+          evbuffer_add_printf(buf, "reply");
+          evhttp_send_reply(ctx->req, HTTP_MOVEPERM, "not permit", buf);
+          evbuffer_free(buf);
+        }
       }
     }
   }
