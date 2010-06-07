@@ -57,7 +57,7 @@ send_page(req_ctx_t *ctx)
   } else {
     evbuffer_expand(buf, ctx->page->body_len);
     memcpy(buf->buffer, ctx->page->body, ctx->page->body_len);
-    evhttp_send_reply(req, HTTP_OK, "OK", buf);
+    evhttp_send_reply(ctx->req, HTTP_OK, "OK", buf);
     ctx->sent = true;
   }
 }
@@ -67,6 +67,7 @@ fast_process(gpointer data, gpointer user_data)
 {
   req_ctx_t *ctx = data;
   struct evhttp_request *req = ctx->req;
+  GError *error;
 
   page_t *page = NULL;
   char kw[strlen(req->uri)];
@@ -95,11 +96,11 @@ slow_process(gpointer data, gpointer user_data)
     } else {
       // auth
     }
-    if ((page=process_get(&r)) != NULL) {
-      if (page->head.auth_type != 0)
-        page = process_auth(&r, page);
+    if ((ctx->page=process_get(&ctx->r)) != NULL) {
+      if (ctx->page->head.auth_type != 0)
+        ctx->page = process_auth(&ctx->r, ctx->page);
 
-      if (page != NULL) {
+      if (ctx->page != NULL) {
         send_page(ctx);
         process_cache(&ctx->r, ctx->page);
       } else {
