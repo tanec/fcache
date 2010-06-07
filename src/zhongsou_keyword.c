@@ -151,7 +151,8 @@ char * search(str_map_t *map, char *key, size_t s, size_t e);
 char *
 domain2kw(char *s)
 {
-  char *ret = search(domains, s, 0, domains->len);
+  char *ret = NULL;
+  if (domains!=NULL) ret = search(domains, s, 0, domains->len);
   return ret == NULL ? NULL : ret;
 }
 
@@ -168,7 +169,7 @@ synonyms2kw(char *domain, char *s)
       break;
     }
   }
-  if (ret==NULL) {
+  if (ret==NULL && synonyms!=NULL) {
     ret = search(synonyms, s, 0, synonyms->len);
     tlog(DEBUG, "synonyms2kw(%s)->%s", s, ret);
   }

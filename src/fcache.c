@@ -241,6 +241,10 @@ main(int argc, char**argv)
 
   event_init();
   httpd = evhttp_start(cfg.bind_addr, cfg.port);
+  if (httpd == NULL) {
+    perror("evhttpd failed!");
+    exit(1);
+  }
 
   /* Set a callback for requests to "/specific". */
   /* evhttp_set_cb(httpd, "/specific", another_handler, NULL); */
