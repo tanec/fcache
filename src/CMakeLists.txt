@@ -8,6 +8,11 @@ include_directories(${GLIB_INCLUDE_DIRS})
 link_directories(${GLIB_LIBRARY_DIRS})
 message("glib2: -I${GLIB_INCLUDE_DIRS} -L${GLIB_LIBRARY_DIRS} -l${GLIB_LIBRARIES}")
 
+pkg_check_modules(GTHREAD REQUIRED gthread-2.0)
+include_directories(${GTHREAD_INCLUDE_DIRS})
+link_directories(${GTHREAD_LIBRARY_DIRS})
+message("gthread: -I${GTHREAD_INCLUDE_DIRS} -L${GTHREAD_LIBRARY_DIRS} -l${GTHREAD_LIBRARIES}")
+
 add_library(UTIL  util.c)
 add_library(SMALLOC smalloc.c)
 add_library(MD5 md5.c)
@@ -41,4 +46,4 @@ target_link_libraries(PROCESS MD5 READMEM READFILE STAT AUTH UDP)
 add_library(ZSKW zhongsou_keyword.c)
 
 add_executable (fcache fcache.c)
-target_link_libraries(fcache ${EVENT_LIB} SETTING LOG UTIL THREAD PROCESS ZSKW ${GLIB_LIBRARIES})
+target_link_libraries(fcache ${EVENT_LIB} SETTING LOG UTIL THREAD PROCESS ZSKW ${GLIB_LIBRARIES} ${GTHREAD_LIBRARIES})

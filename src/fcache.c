@@ -120,8 +120,13 @@ init_fcache()
   gint nth = cfg.num_threads/2;
   if (nth < 2) nth = 2;
 
+  g_thread_init(NULL);
   fastp = g_thread_pool_new(fast_process, NULL, nth, false, &error);
   slowp = g_thread_pool_new(slow_process, NULL, nth, false, &error);
+  if (fastp == NULL || slowp == NULL) {
+    perror("can not initialize thread pool!");
+    exit(1);
+  }
 }
 
 void
