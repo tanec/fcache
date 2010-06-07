@@ -14,7 +14,7 @@ init_cfg(void)
 
   cfg.conn_type = tcp;
   cfg.bind_addr = "127.0.0.1";
-  cfg.port = 2012;
+  cfg.port = 2046;
 
   cfg.doamin_file = NULL;
   cfg.synonyms_file= NULL;
@@ -31,7 +31,7 @@ init_cfg(void)
   cfg.base_dir = "/tmp";
 
   cfg.udp_notify_host = "127.0.0.1";
-  cfg.udp_notify_port = 2013;
+  cfg.udp_notify_port = 2046;
 }
 
 void
