@@ -13,12 +13,20 @@ include_directories(${GTHREAD_INCLUDE_DIRS})
 link_directories(${GTHREAD_LIBRARY_DIRS})
 message("gthread: -I${GTHREAD_INCLUDE_DIRS} -L${GTHREAD_LIBRARY_DIRS} -l${GTHREAD_LIBRARIES}")
 
+pkg_check_modules(CURL REQUIRED libcurl)
+include_directories(${CURL_INCLUDE_DIRS})
+link_directories(${CURL_LIBRARY_DIRS})
+message("gthread: -I${CURL_INCLUDE_DIRS} -L${CURL_LIBRARY_DIRS} -l${CURL_LIBRARIES}")
+
 add_library(UTIL  util.c)
 add_library(SMALLOC smalloc.c)
 add_library(MD5 md5.c)
 add_library(SETTING settings.c)
 add_library(LOG log.c)
 add_library(THREAD thread.c)
+
+add_library(HTTP http-api.c)
+target_link_libraries(HTTP ${CURL_LIBRARIES})
 
 add_library(MAP tmap.c)
 add_library(SKIPLIST skiplist.c)
