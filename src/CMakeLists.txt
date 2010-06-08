@@ -45,6 +45,7 @@ target_link_libraries(READFILE  BEREAD READER)
 
 add_library(STAT statistics.c)
 add_library(AUTH zhongsou_net_auth.c)
+target_link_libraries(AUTH HTTP)
 add_library(UDP  zhongsou_net_udp.c)
 target_link_libraries(UDP THREAD)
 

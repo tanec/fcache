@@ -24,7 +24,7 @@ write_memory_cb(void *ptr, size_t size, size_t nmemb, void *data)
 {
   size_t realsize = size * nmemb;
   http_response_t *mem = (http_response_t *)data;
-printf("sz: %d x %d = %d\n", size, nmemb, realsize);
+
   mem->reply = myrealloc(mem->reply, mem->size + realsize + 1);
   if (mem->reply) {
     memcpy(&(mem->reply[mem->size]), ptr, realsize);

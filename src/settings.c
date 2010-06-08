@@ -5,6 +5,14 @@
 
 setting_t cfg = {};
 
+static inline void
+init_server_group(server_group_t *g)
+{
+  g->idx=0;
+  g->num=0;
+  g->servers=NULL;
+}
+
 void
 init_cfg(void)
 {
@@ -30,8 +38,15 @@ init_cfg(void)
 
   cfg.base_dir = "/tmp";
 
-  cfg.udp_notify_host = "127.0.0.1";
-  cfg.udp_notify_port = 2046;
+  //notify others
+  init_server_group(&cfg.udp_notify);
+  //notify me
+  cfg.udp_server.host = "127.0.0.1";
+  cfg.udp_server.port = 2046;
+  //auth
+  init_server_group(&cfg.auth);
+  //http
+  init_server_group(&cfg.http);
 }
 
 void
@@ -56,8 +71,6 @@ cfg_set(const char *k, char *v)
   cfg_set_m(base_dir, v);
   cfg_set_m(doamin_file, v);
   cfg_set_m(synonyms_file, v);
-  cfg_set_m(udp_notify_host, v);
-  cfg_set_m(udp_notify_port, atoi(v));
 #undef cfg_set_m
 }
 
@@ -100,4 +113,12 @@ read_cfg(char *file)
     }
     mmap_close(&mt);
   }
+}
+
+server_t *
+next_server_in_group(server_group_t *group)
+{
+  if (group==NULL || group->num<1 || group->servers==NULL) return NULL;
+  if (group->idx<1) group->idx = 0;
+  return &group->servers[(group->idx++)%group->num];
 }

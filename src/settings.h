@@ -12,6 +12,17 @@ typedef enum {
 } conn_t;
 
 typedef struct {
+  char *url;
+  char *host;
+  uint16_t port;
+} server_t;
+
+typedef struct {
+  server_t *servers;
+  uint8_t num, idx;
+} server_group_t;
+
+typedef struct {
   int daemon;
   char *log_file;
   log_level_t log_level;
@@ -34,14 +45,23 @@ typedef struct {
   char *doamin_file;
   char *synonyms_file;
 
-  //udp notify
-  char *udp_notify_host;
-  uint16_t udp_notify_port;
+  //udp notify other server
+  server_group_t udp_notify;
+  //udp notify me
+  server_t udp_server;
+
+  //http auth
+  server_group_t auth;
+
+  //http upstream;
+  server_group_t http;
 } setting_t;
 
 extern setting_t cfg;
 
 void init_cfg(void);
 void read_cfg(char *);
+
+server_t * next_server_in_group(server_group_t *);
 
 #endif // CONFIG_H

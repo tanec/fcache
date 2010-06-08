@@ -1,7 +1,30 @@
+#include <string.h>
+#include <stdlib.h>
+
 #include "zhongsou_net_auth.h"
+#include "http-api.h"
+#include "settings.h"
+
+#define AUTHBUFSIZE 4096
 
 bool
 auth_http(char *igid, char *keyword, uint32_t auth_type, char *json)
 {
-  return false;
+  bool ret = false;
+  http_response_t resp = {NULL, 0};
+  char data[AUTHBUFSIZE];
+  server_t *svr = NULL;
+
+  memset(data, 0, AUTHBUFSIZE);
+  snprintf(data, AUTHBUFSIZE,
+           "igid=%s&keyword=%s&auth=%s",
+           igid, keyword, json);
+  svr = next_server_in_group(&cfg.auth);
+  if (svr!=NULL && http_post(svr->url, data, &resp)) {
+    // strlen("{}")=
+    if (resp.reply!=NULL && resp.size>15)
+      ret = (*(resp.reply+8) != '0');
+  }
+  if (resp.reply != NULL) free(resp.reply);
+  return ret;
 }
