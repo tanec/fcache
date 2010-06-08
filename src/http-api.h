@@ -3,4 +3,9 @@
 
 #include <curl/curl.h>
 
+typedef struct {
+  char *reply;
+  size_t size;
+} http_response_t;
+
 #endif // HTTPAPI_H
