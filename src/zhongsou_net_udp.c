@@ -78,13 +78,12 @@ handle_expire_request(void *args)
   struct sockaddr_in si_other;
   int i, slen=sizeof(si_other);
 
-/*
-  for (i=0; i<NPACK; i++) {
-    if (recvfrom(listen_socket, buf, BUFLEN, 0, &si_other, &slen)==-1)
-      diep("recvfrom()");
+  if (recvfrom(listen_socket, buf, BUFLEN, 0, (struct sockaddr *)&si_other, &slen)!=-1) {
     printf("Received packet from %s:%d\nData: %s\n\n",
            inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port), buf);
-  }*/
+    //TODO
+
+  }
 }
 
 void
