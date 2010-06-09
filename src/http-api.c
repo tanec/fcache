@@ -1,8 +1,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdarg.h>
 
 #include "http-api.h"
+#include "log.h"
 
 void
 http_init(void)
@@ -53,20 +55,44 @@ http_get(const char *url, http_response_t *resp)
 }
 
 bool
-http_post(const char *url, const char *data, http_response_t *resp)
+http_post(const char *url, http_response_t *resp, int pairs, ...)
 {
   CURL *curl;
   CURLcode res;
 
+  struct curl_httppost *formpost = NULL;
+  struct curl_httppost *lastptr  = NULL;
+
+  va_list params;
+  int i;
+  va_start(params, pairs);
+  for (i=0; i<pairs; i++) {
+    char *k, *v;
+    k = va_arg(params, char *);
+    v = va_arg(params, char *);
+    tlog(DEBUG, "http post: %s = %s", k, v);
+    curl_formadd(&formpost,
+                 &lastptr,
+                 CURLFORM_COPYNAME,     k,
+                 CURLFORM_COPYCONTENTS, v,
+                 CURLFORM_END);
+  }
+  va_end(params);
+
   curl = curl_easy_init();
   if (curl != NULL) {
     curl_easy_setopt(curl, CURLOPT_URL, url);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+    //curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+    curl_easy_setopt(curl, CURLOPT_POST, 1);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, formpost);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_memory_cb);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)resp);
     res = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
+
+    curl_formfree(formpost);
     return res==CURLE_OK;
   }
+  curl_formfree(formpost);
   return false;
 }

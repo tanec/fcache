@@ -20,11 +20,12 @@ auth_http(char *igid, char *keyword, uint32_t auth_type, char *json)
            "igid=%s&keyword=%s&auth=%s",
            igid, keyword, json);
   svr = next_server_in_group(&cfg.auth);
-  if (svr!=NULL && http_post(svr->url, data, &resp)) {
+  if (svr!=NULL && http_post(svr->url, &resp, 3, "igid", igid, "keyword", keyword, "auth", json)) {
     tlog(DEBUG, "send %s to %s", data, svr->url);
+    tlog(DEBUG, "result=%s", resp.reply);
     // strlen("{"PageAuth":0,"GroupAuth":0}")=28
     if (resp.reply!=NULL && resp.size>15)
-      ret = (*(resp.reply+13) != '0');
+      ret = (*(resp.reply+12) != '0');
   }
   if (resp.reply != NULL) free(resp.reply);
   return ret;
