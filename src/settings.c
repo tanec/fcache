@@ -1,7 +1,10 @@
 #include <string.h>
 #include <stdlib.h>
+#include <libconfig.h>
+
 #include "settings.h"
 #include "util.h"
+#include "log.h"
 
 setting_t cfg = {};
 
@@ -31,8 +34,8 @@ init_cfg(void)
   cfg.pid_file = "/var/run/fcache.pid";
 
   cfg.num_threads = 16;
-  cfg.maxmem = (size_t)2*1024*1024*1024;
-  cfg.min_reserve = (size_t)800*1024*1024;
+  cfg.maxmem = (uint64_t)2*1024*1024*1024;
+  cfg.min_reserve = (uint64_t)800*1024*1024;
   cfg.max_reserve = cfg.maxmem;
   cfg.maxconns = 1024;
 
@@ -49,69 +52,68 @@ init_cfg(void)
   init_server_group(&cfg.http);
 }
 
-void
-cfg_set(const char *k, char *v)
+static void inline
+read_server_group(config_t *c, const char *path, server_group_t *servers)
 {
-  tlog(DEBUG, "cfg_set(%s, %s)", k, v);
-#define cfg_set_m(kk, vv) if (strcmp(k, #kk)==0) { cfg.kk=vv; return; }
-  cfg_set_m(daemon, atoi(v));
-  cfg_set_m(log_file, v);
-  cfg_set_m(log_level, atoi(v));
-  cfg_set_m(conn_type, atoi(v));
-  cfg_set_m(bind_addr, v);
-  cfg_set_m(port, atoi(v));
-  cfg_set_m(socketpath, v);
-  cfg_set_m(status_path, v);
-  cfg_set_m(pid_file, v);
-  cfg_set_m(num_threads, atoi(v));
-  cfg_set_m(maxmem, atoi(v));
-  cfg_set_m(min_reserve, atoi(v));
-  cfg_set_m(max_reserve, atoi(v));
-  cfg_set_m(maxconns, atoi(v));
-  cfg_set_m(base_dir, v);
-  cfg_set_m(doamin_file, v);
-  cfg_set_m(synonyms_file, v);
-#undef cfg_set_m
+  int i;
+  config_setting_t *set, *set1;
+  set = config_lookup(c, path);
+  if (set != NULL) {
+    int len = config_setting_length(set);
+    if (len > 0) {
+      servers->idx=0;
+      servers->num=len;
+      servers->servers = calloc(len, sizeof(server_t));
+      for(i=0; i<len;i++) {
+        set1 = config_setting_get_elem(set,i);
+        if (set1 == NULL) {
+          perror("wrong server setting");
+          exit(EXIT_FAILURE);
+        }
+        if(config_setting_lookup_string(set1, "url",  &servers->servers[i].url))  tlog(DEBUG, "%d, %s.url=%s", i, path, servers->servers[i].url);
+        if(config_setting_lookup_string(set1, "host", &servers->servers[i].host)) tlog(DEBUG, "%d, %s.host=%s",i, path, servers->servers[i].host);
+        if(config_setting_lookup_int   (set1, "port", &servers->servers[i].port)) tlog(DEBUG, "%d, %s.port=%d",i, path, servers->servers[i].port);
+      }
+    }
+  }
 }
 
 void
 read_cfg(char *file)
 {
   tlog(DEBUG, "read_cfg(%s)", file);
-  mmap_array_t mt;
-  if (mmap_read(&mt, file)) {
-    int i;
-    char *data=malloc(mt.len+1), *k=NULL, *v=NULL;
+  static config_t c; // hold it
 
-    memset(data, '\n', mt.len+1);
-    memcpy(data, mt.data, mt.len);
+  config_init(&c);
+  if(! config_read_file(&c, file)) {
+    fprintf(stderr, "%s:%d - %s\n", config_error_file(&c),
+            config_error_line(&c), config_error_text(&c));
+    config_destroy(&c);
+  } else {
+    int r, n;
+    r=config_lookup_int   (&c, "daemon",         &cfg.daemon);        tlog(DEBUG, "%d, cfg.daemon=%d",        r,cfg.daemon);
+    r=config_lookup_string(&c, "log.file",       &cfg.log_file);      tlog(DEBUG, "%d, cfg.log_file=%s",      r,cfg.log_file);
+    r=config_lookup_int   (&c, "log.level",      &cfg.log_level);     tlog(DEBUG, "%d, cfg.log_level=%d",     r,cfg.log_level);
+    r=config_lookup_int   (&c, "conn.type",      &cfg.conn_type);     tlog(DEBUG, "%d, cfg.conn_type=%d",     r,cfg.conn_type);
+    r=config_lookup_int   (&c, "conn.max",       &cfg.maxconns);      tlog(DEBUG, "%d, cfg.maxconns=%d",      r,cfg.maxconns);
+    r=config_lookup_string(&c, "conn.host",      &cfg.bind_addr);     tlog(DEBUG, "%d, cfg.bind_addr=%s",     r,cfg.bind_addr);
+    r=config_lookup_int   (&c, "conn.port",      &cfg.port);          tlog(DEBUG, "%d, cfg.port=%d",          r,cfg.port);
+    r=config_lookup_string(&c, "conn.pipe",      &cfg.socketpath);    tlog(DEBUG, "%d, cfg.socketpath=%s",    r,cfg.socketpath);
+    r=config_lookup_string(&c, "run.status",     &cfg.status_path);   tlog(DEBUG, "%d, cfg.status_path=%s",   r,cfg.status_path);
+    r=config_lookup_string(&c, "run.pidfile",    &cfg.pid_file);      tlog(DEBUG, "%d, cfg.pid_file=%s",      r,cfg.pid_file);
+    r=config_lookup_int   (&c, "thread.num",     &cfg.num_threads);   tlog(DEBUG, "%d, cfg.num_threads=%d",   r,cfg.num_threads);
+    r=config_lookup_int   (&c, "mem.max",        &n);if(r) cfg.maxmem     =(uint64_t)n*1024*1024; tlog(DEBUG, "%d, cfg.maxmem=%llu",      r,cfg.maxmem);
+    r=config_lookup_int   (&c, "mem.min_reserve",&n);if(r) cfg.min_reserve=(uint64_t)n*1024*1024; tlog(DEBUG, "%d, cfg.min_reserve=%llu", r,cfg.min_reserve);
+    r=config_lookup_int   (&c, "mem.max_reserve",&n);if(r) cfg.max_reserve=(uint64_t)n*1024*1024; tlog(DEBUG, "%d, cfg.max_reserve=%llu", r,cfg.max_reserve);
+    r=config_lookup_string(&c, "fs.dir",         &cfg.base_dir);      tlog(DEBUG, "%d, cfg.base_dir=%s",      r,cfg.base_dir);
+    r=config_lookup_string(&c, "keyword.domain", &cfg.doamin_file);   tlog(DEBUG, "%d, cfg.doamin_file=%s",   r,cfg.doamin_file);
+    r=config_lookup_string(&c, "keyword.sino",   &cfg.synonyms_file); tlog(DEBUG, "%d, cfg.synonyms_file=%s", r,cfg.synonyms_file);
+    r=config_lookup_string(&c, "udp_server.host",&cfg.udp_server.host);tlog(DEBUG,"%d, cfg.udp_server.host=%s", r,cfg.udp_server.host);
+    r=config_lookup_int   (&c, "udp_server.port",&cfg.udp_server.port);tlog(DEBUG,"%d, cfg.udp_server.port=%d", r,cfg.udp_server.port);
 
-    for (i=0; i<mt.len+1; i++) {
-      switch(*(data+i)) {
-      case '\n':
-        *(data+i) = '\0';
-        if (k != NULL && v != NULL) {
-          cfg_set(k, v);
-        }
-        k = NULL;
-        v = NULL;
-        break;
-      case '\r':
-      case '\t':
-      case ' ':
-      case '=':
-        *(data+i) = '\0';
-        break;
-      default:
-        if (k == NULL) {
-          k = data+i;
-        } else if (v == NULL && data[i-1]=='\0') {
-          v = data+i;
-        }
-        break;
-      }
-    }
-    mmap_close(&mt);
+    read_server_group(&c, "servers.notify", &cfg.udp_notify);
+    read_server_group(&c, "servers.auth",   &cfg.auth);
+    read_server_group(&c, "servers.http",   &cfg.http);
   }
 }
 

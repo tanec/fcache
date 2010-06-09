@@ -3,7 +3,6 @@
 
 #include <sys/types.h>
 #include <stdint.h>
-#include "log.h"
 
 typedef enum {
   tcp,
@@ -12,9 +11,9 @@ typedef enum {
 } conn_t;
 
 typedef struct {
-  char *url;
-  char *host;
-  uint16_t port;
+  const char *url;
+  const char *host;
+  int port;
 } server_t;
 
 typedef struct {
@@ -24,26 +23,26 @@ typedef struct {
 
 typedef struct {
   int daemon;
-  char *log_file;
-  log_level_t log_level;
+  const char *log_file;
+  int log_level;
 
-  conn_t conn_type;
-  char *bind_addr;
-  uint16_t port;
-  char *socketpath;
-  char *status_path;
+  int conn_type;
+  const char *bind_addr;
+  int port;
+  const char *socketpath;
+  const char *status_path;
 
-  char *pid_file;
+  const char *pid_file;
   int num_threads;
-  size_t maxmem;
-  size_t min_reserve; // to start lru
-  size_t max_reserve; // to stop  lru
+  uint64_t maxmem;
+  uint64_t min_reserve; // to start lru
+  uint64_t max_reserve; // to stop  lru
   int maxconns;
 
   //read from file
-  char *base_dir;
-  char *doamin_file;
-  char *synonyms_file;
+  const char *base_dir;
+  const char *doamin_file;
+  const char *synonyms_file;
 
   //udp notify other server
   server_group_t udp_notify;

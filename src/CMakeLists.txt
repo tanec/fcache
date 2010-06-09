@@ -16,14 +16,21 @@ message("gthread: -I${GTHREAD_INCLUDE_DIRS} -L${GTHREAD_LIBRARY_DIRS} -l${GTHREA
 pkg_check_modules(CURL REQUIRED libcurl)
 include_directories(${CURL_INCLUDE_DIRS})
 link_directories(${CURL_LIBRARY_DIRS})
-message("gthread: -I${CURL_INCLUDE_DIRS} -L${CURL_LIBRARY_DIRS} -l${CURL_LIBRARIES}")
+message("libcurl: -I${CURL_INCLUDE_DIRS} -L${CURL_LIBRARY_DIRS} -l${CURL_LIBRARIES}")
+
+pkg_check_modules(CFG REQUIRED libconfig)
+include_directories(${CFG_INCLUDE_DIRS})
+link_directories(${CFG_LIBRARY_DIRS})
+message("libconfig: -I${CFG_INCLUDE_DIRS} -L${CFG_LIBRARY_DIRS} -l${CFG_LIBRARIES}")
 
 add_library(UTIL  util.c)
 add_library(SMALLOC smalloc.c)
 add_library(MD5 md5.c)
-add_library(SETTING settings.c)
 add_library(LOG log.c)
 add_library(THREAD thread.c)
+
+add_library(SETTING settings.c)
+target_link_libraries(SETTING ${CFG_LIBRARIES})
 
 add_library(HTTP http-api.c)
 target_link_libraries(HTTP ${CURL_LIBRARIES})
