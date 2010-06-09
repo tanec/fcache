@@ -171,9 +171,6 @@ main(int argc, char**argv)
                            "c:"  /* max simultaneous connections */
                            "P:"  /* file to hold pid */
                            "t:"  /* max thread connections */
-
-                           // debug
-                           "r:"  /* test read a file */
                            ))) {
     switch (c) {
     case 'C': read_cfg(optarg); break;
@@ -202,10 +199,6 @@ main(int argc, char**argv)
                 " your machine or less.\n");
       }
       break;
-
-    case 'r':
-      page_print(file_read_path(optarg));
-      return 0;
     default: return 1;
     }
   }

@@ -50,6 +50,7 @@ mmap_read(mmap_array_t *ma, const char *file)
 
   fd = open(file, O_RDONLY);
   if (fd == -1) {
+    fprintf(stderr, "open(%s, O_RDONLY) failed!");
     return false;
   }
   if (fstat(fd, &sb) == -1) {
@@ -63,12 +64,15 @@ mmap_read(mmap_array_t *ma, const char *file)
   ma->len = sb.st_size;
   ma->data = mmap(0, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
   if (ma->data == MAP_FAILED) {
+    fprintf(stderr, "mmap(%p, %d, %d, %d, %d, %d) failed!", 0, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
     return false;
   }
   if (close(fd) == -1) {
+    fprintf(stderr, "close(%d) failed!", fd);
     munmap(ma->data, ma->len);
     return false;
   }
+  return true;
 }
 
 int

@@ -30,7 +30,7 @@ add_library(LOG log.c)
 add_library(THREAD thread.c)
 
 add_library(SETTING settings.c)
-target_link_libraries(SETTING ${CFG_LIBRARIES})
+target_link_libraries(SETTING ${CFG_LIBRARIES} LOG)
 
 add_library(HTTP http-api.c)
 target_link_libraries(HTTP ${CURL_LIBRARIES})
@@ -47,7 +47,7 @@ target_link_libraries(READMEM  SKIPLIST)
 
 add_library(BEREAD be_read.c)
 add_library(READFILE read_file.c)
-target_link_libraries(READFILE  BEREAD READER)
+target_link_libraries(READFILE  BEREAD READER UTIL SMALLOC SETTING PROCESS)
 #########################################
 
 add_library(STAT statistics.c)

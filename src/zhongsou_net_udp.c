@@ -5,6 +5,7 @@
 #include "zhongsou_net_udp.h"
 #include "settings.h"
 #include "thread.h"
+#include "log.h"
 
 /*
 UDP 协议
@@ -60,10 +61,17 @@ udp_notify_expire(request_t *req, page_t *page)
     memcpy(sendbuf+8, buf, real_len);
 
     // send it
-    if (sendto(s, sendbuf, real_len, MSG_DONTWAIT,
-               (struct sockaddr*)&si_other, slen) == -1) {
-      //TODO
-    }
+    ssize_t n, pos=0;
+    do {
+      n=sendto(s, sendbuf+pos, real_len+8-pos, MSG_DONTWAIT,
+               (struct sockaddr*)&si_other, slen);
+      if (n < 0) {
+         tlog(ERROR, "send udp expire notify failed!");
+         break;
+      }
+
+      pos += n;
+    } while(pos < real_len);
     close(s);
   }
 }
