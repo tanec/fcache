@@ -4,6 +4,7 @@
 #include "zhongsou_net_auth.h"
 #include "http-api.h"
 #include "settings.h"
+#include "log.h"
 
 bool
 auth_http(char *igid, char *keyword, uint32_t auth_type, char *json)
@@ -20,9 +21,10 @@ auth_http(char *igid, char *keyword, uint32_t auth_type, char *json)
            igid, keyword, json);
   svr = next_server_in_group(&cfg.auth);
   if (svr!=NULL && http_post(svr->url, data, &resp)) {
-    // strlen("{}")=//TODO
+    tlog(DEBUG, "send %s to %s", data, svr->url);
+    // strlen("{"PageAuth":0,"GroupAuth":0}")=28
     if (resp.reply!=NULL && resp.size>15)
-      ret = (*(resp.reply+8) != '0');
+      ret = (*(resp.reply+13) != '0');
   }
   if (resp.reply != NULL) free(resp.reply);
   return ret;
