@@ -16,8 +16,6 @@ typedef struct {
   stat_request_complete_t notfound;
 } stat_item_t;
 
-int touch_timespec(struct timespec *);
-uint64_t time_diff(struct timespec, struct timespec);
 void stat_init(stat_item_t *);
 void stat_add(stat_request_complete_t *, uint64_t);
 
