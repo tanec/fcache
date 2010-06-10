@@ -55,8 +55,7 @@ send_page(req_ctx_t *ctx)
   if ((buf = evbuffer_new()) == NULL) {
     tlog(ERROR, "failed to create response buffer");
   } else {
-    evbuffer_expand(buf, ctx->page->body_len);
-    memcpy(buf->buffer, ctx->page->body, ctx->page->body_len);
+    evbuffer_add(buf, ctx->page->body, ctx->page->body_len);
     evhttp_send_reply(ctx->req, HTTP_OK, "OK", buf);
     ctx->sent = true;
     evbuffer_free(buf);
@@ -95,11 +94,11 @@ slow_process(gpointer data, gpointer user_data)
     process_cache(&ctx->r, ctx->page);
   } else {
     if (ctx->page == NULL) {
-      // bypass to upstream
+      // bypass to upstream: add header "Orignal-URL"
     } else {
       // auth
       if (ctx->page->head.auth_type != AUTH_NO)
-        ctx->page = process_auth(&ctx->r, ctx->page);
+        ctx->page = process_auth("igid", ctx->page);//TODO
 
       if (ctx->page != NULL) {
         send_page(ctx);

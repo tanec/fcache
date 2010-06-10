@@ -16,3 +16,6 @@ target_link_libraries(send_expire PROCESS SETTING UTIL)
 
 add_executable (http_auth http_auth.c)
 target_link_libraries(http_auth PROCESS SETTING UTIL)
+
+add_executable (httpd http_svr.c)
+target_link_libraries(httpd ${EVENT_LIB})

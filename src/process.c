@@ -144,7 +144,7 @@ process_get(request_t *req)
 }
 
 page_t *
-process_auth(request_t *req, page_t *page)
+process_auth(char *igid, page_t *page)
 {
   if (page == NULL) return NULL;
 
@@ -153,8 +153,7 @@ process_auth(request_t *req, page_t *page)
   stat_item_t item = statics[current_stat_slot()].auth;
   item.total_num++;
 
-  char *igid;
-  if (!auth_http(igid, req->keyword, page->head.auth_type, page->head.param))
+  if (!auth_http(igid, page->head.keyword, page->head.auth_type, page->head.param))
     ret = NULL;
 
   if (page != NULL) {
