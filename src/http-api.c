@@ -60,39 +60,40 @@ http_post(const char *url, http_response_t *resp, int pairs, ...)
   CURL *curl;
   CURLcode res;
 
-  struct curl_httppost *formpost = NULL;
-  struct curl_httppost *lastptr  = NULL;
-
+  int i, len=0;
+  char *k[pairs], *v[pairs], *vv[pairs];
   va_list params;
-  int i;
   va_start(params, pairs);
   for (i=0; i<pairs; i++) {
-    char *k, *v;
-    k = va_arg(params, char *);
-    v = va_arg(params, char *);
-    tlog(DEBUG, "http post: %s = %s", k, v);
-    curl_formadd(&formpost,
-                 &lastptr,
-                 CURLFORM_COPYNAME,     k,
-                 CURLFORM_COPYCONTENTS, v,
-                 CURLFORM_END);
+    k[i] = va_arg(params, char *);
+    v[i] = va_arg(params, char *);
+    vv[i]= curl_easy_escape(curl, v[i], 0);
+    tlog(DEBUG, "http post: %s = %s(%s)", k[i], v[i], vv[i]);
+    len += 4+strlen(k[i])+strlen(vv[i]);
   }
   va_end(params);
+
+  char data[len];
+  memset(data, 0, len);
+  for (i=0; i<pairs; i++) {
+    strcat(data, "&");
+    strcat(data, k[i]);
+    strcat(data, "=");
+    strcat(data, vv[i]);
+    curl_free(vv[i]);
+  }
+  tlog(DEBUG, "http post: data = %s", data);
 
   curl = curl_easy_init();
   if (curl != NULL) {
     curl_easy_setopt(curl, CURLOPT_URL, url);
-    //curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
     curl_easy_setopt(curl, CURLOPT_POST, 1);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, formpost);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_memory_cb);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)resp);
     res = curl_easy_perform(curl);
     curl_easy_cleanup(curl);
-
-    curl_formfree(formpost);
     return res==CURLE_OK;
   }
-  curl_formfree(formpost);
   return false;
 }
