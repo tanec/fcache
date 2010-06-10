@@ -27,6 +27,8 @@ extract_cookie(struct evhttp_request *req)
   d(uri, %s);
   d(major, %d);
   d(minor, %d);
+  d(response_code, %d);
+  d(response_code_line, %s);
 }
 
 void
