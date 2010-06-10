@@ -231,6 +231,10 @@ main(int argc, char**argv)
   // files for log
 
   // Initialization
+  if (sigignore(SIGPIPE) == -1) {
+    perror("failed to ignore SIGPIPE; sigaction");
+    exit(EXIT_FAILURE);
+  }
   process_init();
   init_fcache();
   // keywords
