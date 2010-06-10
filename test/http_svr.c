@@ -10,7 +10,15 @@ void
 extract_cookie(struct evhttp_request *req)
 {
   char s[8192];
-#define d(i, f)  do {memset(s, 0, 8192); strcat(s, #i); strcat(s, " = "); strcat(s, #f); strcat(s, "\n"); printf(s, req->i);}while(0)
+#define d(i, f)           \
+  do {                    \
+      memset(s, 0, 8192); \
+      strcat(s, #i);      \
+      strcat(s, " = ");   \
+      strcat(s, #f);      \
+      strcat(s, "\n");    \
+      printf(s, req->i);  \
+    }while(0)
   d(flags, %d);
   d(remote_host, %s);
   d(remote_port, %d);
