@@ -27,7 +27,9 @@ add_library(UTIL  util.c)
 add_library(SMALLOC smalloc.c)
 add_library(MD5 md5.c)
 add_library(LOG log.c)
+
 add_library(THREAD thread.c)
+target_link_libraries(THREAD pthread)
 
 add_library(SETTING settings.c)
 target_link_libraries(SETTING ${CFG_LIBRARIES} LOG)
