@@ -31,6 +31,7 @@ typedef struct {
   int port;
   const char *socketpath;
   const char *status_path;
+  const char *monitor_path;
 
   const char *pid_file;
   int num_threads;
