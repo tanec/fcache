@@ -1,6 +1,8 @@
 #include <string.h>
+#include <sys/queue.h>
 
 #include "zhongsou_net_http.h"
+#include "log.h"
 
 char *
 zs_http_find_keyword_by_uri(struct evhttp_request *req)
@@ -51,4 +53,30 @@ zs_http_find_igid_by_cookie(struct evhttp_request *req)
   } while(ck!=NULL && strlen(ck)>kslen && ret==NULL);
   free(ock);
   return ret;
+}
+
+mmap_array_t *
+zs_http_pass_req(struct evhttp_request *c, const char *host, uint16_t port)
+{
+#define BUFLEN 8192
+  char buf[BUFLEN];
+
+  memset(buf, 0, BUFLEN);
+  // copy params
+  strcat(buf, "GET ");
+  strcat(buf, c->uri);
+  strcat(buf, "\r\n");
+  struct evkeyval *h;
+  TAILQ_FOREACH(h, c->input_headers, next) {
+    strcat(buf, h->key);
+    strcat(buf, ": ");
+    strcat(buf, h->value);
+    strcat(buf, "\r\n");
+  }
+  strcat(buf, "Orignal-URL: ");
+  strcat(buf, h->value);
+  strcat(buf, "\r\n\r\n");
+  tlog(DEBUG, "request header: %s", buf);
+
+  // connect, I/O
 }
