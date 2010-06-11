@@ -5,7 +5,26 @@
 char *
 zs_http_find_keyword_by_uri(struct evhttp_request *req)
 {
-
+  static char *kw = "keyword=";
+  char *uri, *s, *ret;
+  uri = strdup(req->uri); // make a copy
+  if (uri == NULL) {
+    return NULL;
+  } else { // try /path?keyword=xxx
+    s = uri;
+    if (strchr(s, '?') != NULL) strsep(&s, "?");
+    s = strstr(s, kw);
+    if (s != NULL && strchr(s, '&') != NULL) s=strsep(&s, "&");
+    if (s != NULL) ret = strdup(s+strlen(kw));
+  }
+  if (ret == NULL) { // try /keyword/xxx
+    s = uri;
+    if (*s=='/') s++;
+    if (*s!='\0' && strchr(s, '/')!=NULL) s=strsep(&s, "/");
+    if (s!=NULL) ret=strdup(s);
+  }
+  free(uri);
+  return ret;
 }
 
 static char *ks = "igid=";
