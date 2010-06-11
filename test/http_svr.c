@@ -1,3 +1,4 @@
+#include <sys/queue.h>
 #include <event.h>
 #include <evhttp.h>
 #include <stdlib.h>
@@ -29,6 +30,17 @@ extract_cookie(struct evhttp_request *req)
   d(minor, %d);
   d(response_code, %d);
   d(response_code_line, %s);
+
+  printf("==> %d, %s\n", req->input_buffer->totallen, req->input_buffer->buffer);
+  printf("==> %d, %s\n", req->output_buffer->totallen, req->output_buffer->buffer);
+
+
+  struct evkeyvalq *headers = req->input_headers;
+  struct evkeyval *h = headers->tqh_first;
+  TAILQ_FOREACH(h, headers, next) {
+    printf("h==> k=%s, v=%s\n", h->key, h->value);
+  }
+
 }
 
 void
@@ -61,6 +73,28 @@ gencb(struct evhttp_request *req, void *arg)
     printf("failed to create response buffer");
   } else {
     char *ht="xxxxxxxxxxxx";
+    printf("arg=%p\n", arg);
+    evbuffer_add_printf(buf, "ht=%s\n", ht);
+    evhttp_send_reply(req, HTTP_OK, "OK", buf);
+    evbuffer_free(buf);
+  }
+}
+
+void
+proxycb(struct evhttp_request *req, void *arg)
+{
+  struct evhttp_connection *evcon;
+  struct evbuffer *buf;
+  extract_req(req);
+
+  if ((evcon=0)==NULL) {
+
+  }
+  if ((buf = evbuffer_new()) == NULL) {
+    printf("failed to create response buffer");
+  } else {
+    char *ht="xxxxxxxxxxxx";
+    printf("arg=%p\n", arg);
     evbuffer_add_printf(buf, "ht=%s\n", ht);
     evhttp_send_reply(req, HTTP_OK, "OK", buf);
     evbuffer_free(buf);
@@ -86,7 +120,8 @@ main(int argc, char **argv)
   }
 
   /* Set a callback for requests to "/specific". */
-  evhttp_set_cb(httpd, "/c", copycb, NULL);
+  evhttp_set_cb(httpd, "/cgi/c", copycb, NULL);
+  evhttp_set_cb(httpd, "/cgi/p", proxycb, NULL);
 
   /* Set a callback for all other requests. */
   evhttp_set_gencb(httpd, gencb, NULL);
