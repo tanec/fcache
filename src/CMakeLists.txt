@@ -53,6 +53,7 @@ target_link_libraries(READFILE  BEREAD READER UTIL SMALLOC SETTING PROCESS)
 #########################################
 
 add_library(STAT statistics.c)
+add_library(ZSHTTP zhongsou_net_http.c)
 add_library(AUTH zhongsou_net_auth.c)
 target_link_libraries(AUTH HTTP)
 add_library(UDP  zhongsou_net_udp.c)
@@ -64,4 +65,4 @@ target_link_libraries(PROCESS MD5 READMEM READFILE STAT AUTH UDP)
 add_library(ZSKW zhongsou_keyword.c)
 
 add_executable (fcache fcache.c)
-target_link_libraries(fcache ${EVENT_LIB} SETTING LOG UTIL THREAD PROCESS ZSKW ${GLIB_LIBRARIES} ${GTHREAD_LIBRARIES})
+target_link_libraries(fcache ${EVENT_LIB} SETTING LOG UTIL THREAD PROCESS ZSKW ${GLIB_LIBRARIES} ${GTHREAD_LIBRARIES} ZSHTTP)

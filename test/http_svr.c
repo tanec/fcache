@@ -53,7 +53,6 @@ void
 copycb(struct evhttp_request *req, void *arg)
 {
   struct evbuffer *buf;
-  extract_req(req);
   if ((buf = evbuffer_new()) == NULL) {
     printf("failed to create response buffer");
   } else {
