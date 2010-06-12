@@ -55,14 +55,13 @@ mmap_read(mmap_array_t *ma, const char *file)
 
   fd = open(file, O_RDONLY);
   if (fd == -1) {
-    fprintf(stderr, "open(%s, O_RDONLY) failed!");
+    fprintf(stderr, "open(%s, O_RDONLY) failed!", file);
     return false;
   }
   if (fstat(fd, &sb) == -1) {
     return false;
   }
   if (!S_ISREG(sb.st_mode)) {
-    //fprintf (stderr, "%s is not a file\n", argv[1]);
     return false;
   }
 

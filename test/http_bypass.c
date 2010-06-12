@@ -23,6 +23,7 @@ proxycb(struct evhttp_request *req, void *arg)
     mmap_array_t resp = {0, NULL};
     zs_http_pass_req(&resp, req, host, port);
     printf("resp: {%d, %p}\n", resp.len, resp.data);
+    if (resp.data!=NULL) printf("%s\n", resp.data);
     evbuffer_add(buf, resp.data, resp.len);
     evhttp_send_reply(req, HTTP_OK, "OK", buf);
     evbuffer_free(buf);
