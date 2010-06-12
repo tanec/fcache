@@ -16,6 +16,14 @@ init_server_group(server_group_t *g)
   g->servers=NULL;
 }
 
+static inline void
+set_log_cfg(void)
+{
+  default_level = cfg.log_level;
+  log_file = (char*)cfg.log_file;
+  consolelog = cfg.daemon?0:1;
+}
+
 void
 init_cfg(void)
 {
@@ -51,6 +59,8 @@ init_cfg(void)
   init_server_group(&cfg.auth);
   //http
   init_server_group(&cfg.http);
+
+  set_log_cfg();
 }
 
 static void inline
@@ -116,6 +126,8 @@ read_cfg(char *file)
     read_server_group(&c, "servers.notify", &cfg.udp_notify);
     read_server_group(&c, "servers.auth",   &cfg.auth);
     read_server_group(&c, "servers.http",   &cfg.http);
+
+    set_log_cfg();
   }
 }
 

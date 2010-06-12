@@ -3,15 +3,17 @@
 #include <stdarg.h>
 #include <unistd.h>
 #include "log.h"
-#include "settings.h"
 
 static FILE *log = NULL;
+log_level_t default_level = DEBUG;
+char *log_file = NULL;
+int consolelog = 1;
 
 void
 tlog(log_level_t level, const char *fmt, ...)
 {
-  if (level >= cfg.log_level) {
-    if (!cfg.daemon) {
+  if (level >= default_level) {
+    if (consolelog) {
       va_list args;
       va_start(args, fmt);
       vprintf(fmt, args);
@@ -20,7 +22,7 @@ tlog(log_level_t level, const char *fmt, ...)
       return;
     }
     if (log == NULL) {
-      log = fopen(cfg.log_file, "a");
+      log = fopen(log_file, "a");
       if(log!=NULL) setvbuf(log, NULL, _IONBF, 0);
     }
     if (log != NULL) {

@@ -16,4 +16,8 @@ typedef enum {
 
 void tlog(log_level_t level, const char *fmt, ...);
 
+extern log_level_t default_level;
+extern char *log_file;
+extern int consolelog;
+
 #endif // LOG_H
