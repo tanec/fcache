@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/queue.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/ioctl.h>
@@ -99,6 +100,7 @@ slow_process(gpointer data, gpointer user_data)
       if (svr != NULL) {
         mmap_array_t data = {0, NULL};
         if (zs_http_pass_req(&data, ctx->req, svr->host, svr->port)) {
+          //if (data.data) tlog(DEBUG, "upstream:{\n%s\n}", data.data);
           struct evbuffer *buf;
           if ((buf = evbuffer_new()) == NULL) {
             tlog(ERROR, "failed to create response buffer");

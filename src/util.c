@@ -161,7 +161,6 @@ tcp_read(mmap_array_t *data, const char *host, uint16_t port, char *output)
     write_memory(data, buffer, bytes);
   } while(1);
 
-  if (data->data) tlog(DEBUG, "tcp_read:{\n%s\n}", data->data);
   close(sock);
   return data->len > 0;
 }
