@@ -1,15 +1,16 @@
 #include <string.h>
+#include <stdlib.h>
 #include <sys/queue.h>
 
 #include "zhongsou_net_http.h"
 #include "log.h"
 
 char *
-zs_http_find_keyword_by_uri(struct evhttp_request *req)
+zs_http_find_keyword_by_uri(const char *orig_uri)
 {
   static char *kw = "keyword=";
   char *uri, *s, *ret;
-  uri = strdup(req->uri); // make a copy
+  uri = strdup(orig_uri); // make a copy
   if (uri == NULL) {
     return NULL;
   } else { // try /path?keyword=xxx
