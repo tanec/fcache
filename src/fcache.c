@@ -98,18 +98,17 @@ slow_process(gpointer data, gpointer user_data)
       // bypass to upstream
       server_t *svr = next_server_in_group(&cfg.http);
       if (svr != NULL) {
-        mmap_array_t *data = zs_http_pass_req(ctx->req, svr->host, svr->port);
-        if (data != NULL) {
+        mmap_array_t data = {0, NULL};
+        if (zs_http_pass_req(&data, ctx->req, svr->host, svr->port)) {
           struct evbuffer *buf;
           if ((buf = evbuffer_new()) == NULL) {
             tlog(ERROR, "failed to create response buffer");
           } else {
-            evbuffer_add(buf, data->data, data->len);
+            evbuffer_add(buf, data.data, data.len);
             evhttp_send_reply(ctx->req, HTTP_OK, "OK", buf);
             ctx->sent = true;
             evbuffer_free(buf);
           }
-          free(data);
         }
       }
     } else {

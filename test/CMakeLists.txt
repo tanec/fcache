@@ -19,3 +19,6 @@ target_link_libraries(http_auth PROCESS SETTING UTIL)
 
 add_executable (httpd http_svr.c)
 target_link_libraries(httpd ${EVENT_LIB})
+
+add_executable (httppass http_bypass.c)
+target_link_libraries(httppass ZSHTTP ${EVENT_LIB})

@@ -54,6 +54,7 @@ target_link_libraries(READFILE  BEREAD READER UTIL SMALLOC SETTING PROCESS)
 
 add_library(STAT statistics.c)
 add_library(ZSHTTP zhongsou_net_http.c)
+target_link_libraries(ZSHTTP LOG UTIL)
 add_library(AUTH zhongsou_net_auth.c)
 target_link_libraries(AUTH HTTP)
 add_library(UDP  zhongsou_net_udp.c)

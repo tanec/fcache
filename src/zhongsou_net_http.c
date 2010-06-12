@@ -55,8 +55,8 @@ zs_http_find_igid_by_cookie(struct evhttp_request *req)
   return ret;
 }
 
-mmap_array_t *
-zs_http_pass_req(struct evhttp_request *c, const char *host, uint16_t port)
+bool
+zs_http_pass_req(mmap_array_t *resp, struct evhttp_request *c, const char *host, uint16_t port)
 {
 #define BUFLEN 8192
   char buf[BUFLEN];
@@ -74,9 +74,9 @@ zs_http_pass_req(struct evhttp_request *c, const char *host, uint16_t port)
     strcat(buf, "\r\n");
   }
   strcat(buf, "Orignal-URL: ");
-  strcat(buf, h->value);
+  strcat(buf, c->uri);
   strcat(buf, "\r\n\r\n");
-  tlog(DEBUG, "request header: %s", buf);
+  tlog(DEBUG, "==>request header:{\n%s\n}\n", buf);
 
-  // connect, I/O
+  return tcp_read(resp, host, port, buf);
 }

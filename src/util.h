@@ -40,4 +40,7 @@ bool mmap_read(mmap_array_t *, const char *);
 int  mmap_close(mmap_array_t *);
 
 uint64_t current_time_millis(void);
+
+bool tcp_read(mmap_array_t *, const char *, uint16_t, char *);
+
 #endif // UTIL_H
