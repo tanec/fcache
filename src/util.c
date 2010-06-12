@@ -107,10 +107,11 @@ write_memory(void *dest, void *src, size_t size)
 {
   mmap_array_t *arr = (mmap_array_t *)dest;
 
-  arr->data = myrealloc(arr->data, arr->len + size);
+  arr->data = myrealloc(arr->data, arr->len + size + 1);
   if (arr->data) {
     memcpy(&(arr->data[arr->len]), src, size);
     arr->len += size;
+    arr->data[arr->len] = '\0';
   }
   return size;
 }
@@ -160,6 +161,7 @@ tcp_read(mmap_array_t *data, const char *host, uint16_t port, char *output)
     write_memory(data, buffer, bytes);
   } while(1);
 
+  if (data->data) tlog(DEBUG, "tcp_read:{\n%s\n}", data->data);
   close(sock);
   return data->len > 0;
 }

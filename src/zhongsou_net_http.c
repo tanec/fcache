@@ -65,7 +65,7 @@ zs_http_pass_req(mmap_array_t *resp, struct evhttp_request *c, const char *host,
   // copy params
   strcat(buf, "GET ");
   strcat(buf, c->uri);
-  strcat(buf, "\r\n");
+  strcat(buf, " HTTP/1.1\r\n");
   struct evkeyval *h;
   TAILQ_FOREACH(h, c->input_headers, next) {
     strcat(buf, h->key);
