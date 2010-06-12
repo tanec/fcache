@@ -57,7 +57,10 @@ send_page(req_ctx_t *ctx)
   if ((buf = evbuffer_new()) == NULL) {
     tlog(ERROR, "failed to create response buffer");
   } else {
+    tlog(DEBUG, "send page: %s", ctx->page->head.param);
     evbuffer_add(buf, ctx->page->body, ctx->page->body_len);
+    evhttp_add_header(ctx->req->output_headers, "Content-Type", "text/html; charset=UTF-8");
+    evhttp_add_header(ctx->req->output_headers, "Content-Encoding", "gzip");
     evhttp_send_reply(ctx->req, HTTP_OK, "OK", buf);
     ctx->sent = true;
     evbuffer_free(buf);
@@ -100,11 +103,12 @@ slow_process(gpointer data, gpointer user_data)
       if (svr != NULL) {
         mmap_array_t data = {0, NULL};
         if (zs_http_pass_req(&data, ctx->req, svr->host, svr->port)) {
-          //if (data.data) tlog(DEBUG, "upstream:{\n%s\n}", data.data);
+          if (data.data) tlog(DEBUG, "upstream:{\n%s\n}", data.data);
           struct evbuffer *buf;
           if ((buf = evbuffer_new()) == NULL) {
             tlog(ERROR, "failed to create response buffer");
           } else {
+            evhttp_clear_headers(ctx->req->output_headers);
             evbuffer_add(buf, data.data, data.len);
             evhttp_send_reply(ctx->req, HTTP_OK, "OK", buf);
             ctx->sent = true;
