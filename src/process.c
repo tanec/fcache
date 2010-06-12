@@ -51,6 +51,7 @@ md5_dir(request_t *req)
     memcpy(d, req->domain, len1);
     memcpy(d+len1, req->keyword, len2);
     d[len1+len2] = 0;
+    tlog(DEBUG, "md5dir: %s", d);
     md5_digest(d, len1+len2, req->dig_dir.digest);
     req->set_mask |= 0x1;
   }
