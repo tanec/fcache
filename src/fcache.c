@@ -69,8 +69,6 @@ fast_process(gpointer data, gpointer user_data)
   req_ctx_t *ctx = data;
   struct evhttp_request *req = ctx->req;
   GError *error;
-
-  page_t *page = NULL;
   char kw[strlen(req->uri)];
 
   ctx->r.domain = req->remote_host;
@@ -83,6 +81,7 @@ fast_process(gpointer data, gpointer user_data)
     send_page(ctx);
   }
 
+  tlog(DEBUG, "push %s to slow pool(page=%p)", ctx->req->uri, ctx->page);
   g_thread_pool_push(slowp, ctx, &error);
 }
 
@@ -109,6 +108,7 @@ slow_process(gpointer data, gpointer user_data)
             ctx->sent = true;
             evbuffer_free(buf);
           }
+          if (data.data!=NULL) free(data.data);
         }
       }
     } else {
@@ -171,6 +171,7 @@ page_handler(struct evhttp_request *req, void *arg)
   ctx->arg  = arg;
   ctx->page = NULL;
   ctx->sent = false;
+  tlog(DEBUG, "push %s to fast pool", req->uri);
   g_thread_pool_push(fastp, ctx, &error);
 }
 
@@ -297,6 +298,7 @@ main(int argc, char**argv)
   /* Set a callback for all other requests. */
   evhttp_set_gencb(httpd, page_handler, NULL);
 
+  tlog(DEBUG, "start done: %s, %d", cfg.bind_addr, cfg.port);
   event_dispatch();
   /* Not reached in this code as it is now. */
   evhttp_free(httpd);
