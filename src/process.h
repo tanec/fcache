@@ -6,7 +6,7 @@
 #include "reader.h"
 
 typedef struct {
-  char *domain;
+  const char *domain;
   char *keyword;
   char *url;
 

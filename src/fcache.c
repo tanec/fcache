@@ -72,7 +72,7 @@ fast_process(gpointer data, gpointer user_data)
   GError *error;
   char kw[strlen(req->uri)];
 
-  ctx->r.domain = req->remote_host;
+  ctx->r.domain = evhttp_find_header(ctx->req->input_headers, "Host");
   ctx->r.url = req->uri;
   ctx->r.keyword = find_keyword(req->remote_host, req->uri, kw);
 
