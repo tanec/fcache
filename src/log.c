@@ -23,7 +23,6 @@ tlog(log_level_t level, const char *fmt, ...)
     }
     if (log == NULL) {
       log = fopen(log_file, "a");
-      if(log!=NULL) setvbuf(log, NULL, _IONBF, 0);
     }
     if (log != NULL) {
       va_list args;
@@ -31,6 +30,7 @@ tlog(log_level_t level, const char *fmt, ...)
       vfprintf(log, fmt, args);
       va_end(args);
       fprintf(log, "\n");
+      fflush(log);
     }
   }
 }
