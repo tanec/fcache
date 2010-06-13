@@ -35,6 +35,8 @@ init_cfg(void)
   cfg.bind_addr = "127.0.0.1";
   cfg.port = 2046;
 
+  cfg.page_encoding = "UTF-8";
+
   cfg.doamin_file = NULL;
   cfg.synonyms_file= NULL;
 
@@ -118,6 +120,7 @@ read_cfg(char *file)
     r=config_lookup_int   (&c, "mem.min_reserve",&n);if(r) cfg.min_reserve=(uint64_t)n*1024*1024; tlog(DEBUG, "%d, cfg.min_reserve=%llu", r,cfg.min_reserve);
     r=config_lookup_int   (&c, "mem.max_reserve",&n);if(r) cfg.max_reserve=(uint64_t)n*1024*1024; tlog(DEBUG, "%d, cfg.max_reserve=%llu", r,cfg.max_reserve);
     r=config_lookup_string(&c, "fs.dir",         &cfg.base_dir);      tlog(DEBUG, "%d, cfg.base_dir=%s",      r,cfg.base_dir);
+    r=config_lookup_string(&c, "fs.encoding",    &cfg.page_encoding); tlog(DEBUG, "%d, cfg.page_encoding=%s", r,cfg.page_encoding);
     r=config_lookup_string(&c, "keyword.domain", &cfg.doamin_file);   tlog(DEBUG, "%d, cfg.doamin_file=%s",   r,cfg.doamin_file);
     r=config_lookup_string(&c, "keyword.sino",   &cfg.synonyms_file); tlog(DEBUG, "%d, cfg.synonyms_file=%s", r,cfg.synonyms_file);
     r=config_lookup_string(&c, "udp_server.host",&cfg.udp_server.host);tlog(DEBUG,"%d, cfg.udp_server.host=%s", r,cfg.udp_server.host);

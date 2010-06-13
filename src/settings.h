@@ -42,6 +42,7 @@ typedef struct {
 
   //read from file
   const char *base_dir;
+  const char *page_encoding;
   const char *doamin_file;
   const char *synonyms_file;
 

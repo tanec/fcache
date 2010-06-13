@@ -58,8 +58,18 @@ send_page(req_ctx_t *ctx)
     tlog(ERROR, "failed to create response buffer");
   } else {
     tlog(DEBUG, "send page: %s", ctx->page->head.param);
+    static char *content_type="text/html; charset=";
+    const char *enc = cfg.page_encoding;
+    if (enc==NULL||strlen(enc)<2) enc="UTF-8";
+    char ct[strlen(content_type)+strlen(enc)+1];
+
+    size_t len1=strlen(content_type), len2=strlen(enc);
+    memcpy(ct, content_type, len1);
+    memcpy(ct+len1, enc, len2);
+    ct[len1+len2]='\0';
+
     evbuffer_add(buf, ctx->page->body, ctx->page->body_len);
-    evhttp_add_header(ctx->req->output_headers, "Content-Type", "text/html; charset=UTF-8");
+    evhttp_add_header(ctx->req->output_headers, "Content-Type", ct);
     evhttp_add_header(ctx->req->output_headers, "Content-Encoding", "gzip");
     evhttp_send_reply(ctx->req, HTTP_OK, "OK", buf);
     ctx->sent = true;
