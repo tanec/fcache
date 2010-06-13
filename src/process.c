@@ -54,7 +54,7 @@ md5_dir(request_t *req)
     memcpy(d, req->host, len1);
     memcpy(d+len1, req->keyword, len2);
     d[len1+len2] = '\0';
-printf("md5dir: %s\n", d);//TODO: remove
+
     md5_digest(d, len1+len2, req->dig_dir->digest);
   }
   return req->dig_dir;

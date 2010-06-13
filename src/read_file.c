@@ -6,6 +6,7 @@
 #include "util.h"
 #include "smalloc.h"
 #include "settings.h"
+#include "log.h"
 
 /*
 头格式       编码gbk
@@ -98,5 +99,6 @@ file_get(md5_digest_t *dir, md5_digest_t *file)
           file->digest[8], file->digest[9], file->digest[10], file->digest[11],
           file->digest[12], file->digest[13], file->digest[14], file->digest[15]);
 
+  tlog(DEBUG, "file_read_path(%s)", path);
   return file_read_path(path);
 }
