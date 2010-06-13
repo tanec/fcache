@@ -108,7 +108,7 @@ fast_process(gpointer data, gpointer user_data)
   }
   //url: host+uri, discard "http://"
   ctx->req.url = request_store(&ctx->req, 2, ctx->req.host, c->uri);
-  tlog(DEBUG, "host=%s, kwyword=%s, url=%s", ctx->req.host, ctx->req.keyword, ctx->req.url);
+  tlog(DEBUG, "host=%s, keyword=%s, url=%s", ctx->req.host, ctx->req.keyword, ctx->req.url);
 
   ctx->page=process_get(&ctx->req);
 
