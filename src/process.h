@@ -5,22 +5,28 @@
 #include "md5.h"
 #include "reader.h"
 
+#define REQDATALEN 8192
+
 typedef struct {
-  const char *domain;
-  char *keyword;
-  char *url;
+  const char *host;
+  const char *keyword;
+  const char *url;
 
   bool sticky; // lru or not
 
-  uint8_t set_mask; // 0x1: dir md5 set; 0x2: file md5 set
-  md5_digest_t dig_dir;
-  md5_digest_t dig_file;
+  md5_digest_t *dig_dir;
+  md5_digest_t *dig_file;
+  md5_digest_t digests[2];
 
-  char *enc;
+  char data[REQDATALEN];
+  uint16_t pos;
 } request_t;
 
-void md5_dir(request_t *);
-void md5_file(request_t *);
+void request_init(request_t *);
+const char * request_store(request_t *, int, ...);
+
+md5_digest_t * md5_dir(request_t *);
+md5_digest_t * md5_file(request_t *);
 
 void process_init();
 page_t * process_get(request_t *);

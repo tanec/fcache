@@ -3,10 +3,9 @@
 
 #include "reader.h"
 #include "tmap.h"
-#include "process.h"
 
-page_t * mem_get(request_t *);
-page_t * mem_set(request_t *, page_t *);
+page_t * mem_get(md5_digest_t *);
+page_t * mem_set(md5_digest_t *, page_t *);
 page_t * mem_del(map_key_t);
 
 void mem_access(page_t *);

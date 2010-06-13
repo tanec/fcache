@@ -146,21 +146,21 @@ read_synonyms(const char *file)
   }
 }
 
-char * search(str_map_t *map, char *key, size_t s, size_t e);
+char * search(str_map_t *map, const char *key, size_t s, size_t e);
 
-char *
-domain2kw(char *s)
+const char *
+domain2kw(const char *s)
 {
-  char *ret = NULL;
+  const char *ret = NULL;
   if (domains!=NULL) ret = search(domains, s, 0, domains->len);
   return ret == NULL ? NULL : ret;
 }
 
-char *
-synonyms2kw(char *domain, char *s)
+const char *
+synonyms2kw(const char *domain, const char *s)
 {
   int i;
-  char *ret = NULL;
+  const char *ret = NULL;
   for (i=0; i<MAX_DOMAIN; i++) {
     if (domain_keywords[i].domain == NULL) break;
     if (strcmp(domain, domain_keywords[i].domain)==0) {
@@ -176,30 +176,24 @@ synonyms2kw(char *domain, char *s)
   return ret == NULL ? s : ret;
 }
 
-char *
-find_keyword(char *domain, char *uri, char *keyword)
+/**
+  transform keyword
+  */
+const char *
+find_keyword(const char *domain, const char *keyword)
 {
-  char *kw = NULL;
-  if (uri!=NULL && strlen(uri) > 1) {
-    int i;
-    size_t len = strlen(uri);
-    memset(keyword, 0, len);
-    memcpy(keyword, uri, len);
-    kw = keyword+1;
-    for (i=0; i<len-2; i++)
-      if(*(kw+i)=='/') {*(kw+i)='\0';break;}
-  }
+  const char *kw = keyword;
 
   // try domain's default kwyword
-  if (kw == NULL) kw = domain2kw(domain);
+  if (kw==NULL || strcmp(kw,"/")==0) kw=domain2kw(domain);
 
-  if (kw != NULL) kw = synonyms2kw(domain, kw);
-  tlog(DEBUG, "find_keyword(domain=%s, uri=%s)->%s", domain, uri, kw);
+  if (kw!=NULL) kw=synonyms2kw(domain, kw);
+  tlog(DEBUG, "find_keyword(domain=%s, keyword=%s)->%s", domain, keyword, kw);
   return kw;
 }
 
 char *
-search(str_map_t *map, char *key, size_t s, size_t e)
+search(str_map_t *map, const char *key, size_t s, size_t e)
 {//[s, e)
   if (map == NULL || e < s || e-s < 1) {
     tlog(DEBUG, "search(%p, %s,%d,%d)->NULL", map, key, s, e);

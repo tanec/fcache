@@ -23,7 +23,7 @@ int length json 串的长度
 void
 udp_notify_expire(request_t *req, page_t *page)
 {
-  char *url=req->url, *param=page->head.param;
+  const char *url=req->url, *param=page->head.param;
   size_t buf_len = 64+strlen(url)+strlen(param), real_len, be_len;
   char buf[buf_len], sendbuf[8+buf_len], *p;
 

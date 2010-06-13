@@ -5,6 +5,9 @@
 #include "zhongsou_net_http.h"
 #include "log.h"
 
+/**
+  must free it
+ */
 char *
 zs_http_find_keyword_by_uri(const char *orig_uri)
 {
@@ -20,10 +23,11 @@ zs_http_find_keyword_by_uri(const char *orig_uri)
     if (s != NULL && strchr(s, '&') != NULL) s=strsep(&s, "&");
     if (s != NULL) ret = strdup(s+strlen(kw));
   }
-  if (ret == NULL) { // try /keyword/xxx
+  if (ret == NULL) { // try /keyword/xxx && /keyword?aaa
     s = uri;
     if (*s=='/') s++;
     if (*s!='\0' && strchr(s, '/')!=NULL) s=strsep(&s, "/");
+    if (*s!='\0' && strchr(s, '?')!=NULL) s=strsep(&s, "?");
     if (s!=NULL) ret=strdup(s);
   }
   free(uri);
@@ -75,6 +79,7 @@ zs_http_pass_req(mmap_array_t *resp, struct evhttp_request *c, const char *host,
     strcat(buf, "\r\n");
   }
   strcat(buf, "Orignal-URL: ");
+  strcat(buf, evhttp_find_header(c->input_headers, "Host"));
   strcat(buf, c->uri);
   strcat(buf, "\r\n\r\n");
   tlog(DEBUG, "==>request header:{\n%s\n}\n", buf);

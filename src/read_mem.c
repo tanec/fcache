@@ -49,20 +49,18 @@ mem_init()
 }
 
 page_t *
-mem_get(request_t *req)
+mem_get(md5_digest_t *md5)
 {
-  md5_file(req);
-  return map_get(cache, &(req->dig_file));
+  return map_get(cache, md5);
 }
 
 page_t *
-mem_set(request_t *req, page_t *page)
+mem_set(md5_digest_t *md5, page_t *page)
 {
   page_t *ret;
   if (page == NULL) return NULL;
 
-  md5_file(req);
-  memcpy(&(page->digest), &(req->dig_file), sizeof(md5_digest_t));
+  memcpy(&(page->digest), md5, sizeof(md5_digest_t));
   ret = map_set(cache, &(page->digest), page);
   if (ret != NULL && ret->level < 0) page->level=ret->level;
   if (page->level >= 0) { // level < 0: sticky

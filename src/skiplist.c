@@ -4,7 +4,6 @@
 #include <string.h>
 #include "skiplist.h"
 #include "util.h"
-#include "smalloc.h"
 
 // Set MAX_LEVELS to 1 essentially makes this data structure the Harris-Michael lock-free list(see list.c).
 #define MAX_LEVELS 24
@@ -61,7 +60,7 @@ node_alloc(int num_levels, map_key_t key, map_val_t val)
 {
   ASSERT(num_levels >= 0 && num_levels <= MAX_LEVELS);
   size_t sz = sizeof(node_t) + (num_levels - 1) * sizeof(node_t *);
-  node_t *item = (node_t *)smalloc(sz);
+  node_t *item = (node_t *)malloc(sz);
   memset(item, 0, sz);
   item->key = key;
   item->val = val;
@@ -73,7 +72,7 @@ node_alloc(int num_levels, map_key_t key, map_val_t val)
 skiplist_t *
 sl_alloc(const datatype_t *key_type)
 {
-  skiplist_t *sl = (skiplist_t *)smalloc(sizeof(skiplist_t));
+  skiplist_t *sl = (skiplist_t *)malloc(sizeof(skiplist_t));
   sl->key_type = key_type;
   sl->high_water = 1;
   sl->head = node_alloc(MAX_LEVELS, 0, 0);
@@ -88,9 +87,9 @@ sl_free(skiplist_t *sl)
   while (item) {
     node_t *next = STRIP_MARK(item->next[0]);
     if (sl->key_type != NULL) {
-      sfree((void *)item->key);
+      free((void *)item->key);
     }
-    sfree(item);
+    free(item);
     item = next;
   }
 }
@@ -314,9 +313,9 @@ sl_cas(skiplist_t *sl, map_key_t key, map_val_t expectation, map_val_t new_val)
 
     // Lost a race to another thread modifying the skiplist. Free the new item we allocated and retry.
     if (sl->key_type != NULL) {
-      sfree((void *)new_key);
+      free((void *)new_key);
     }
-    sfree(new_item);
+    free(new_item);
     return sl_cas(sl, key, expectation, new_val); // tail call
   }
 
@@ -410,9 +409,9 @@ sl_remove(skiplist_t *sl, map_key_t key)
 
   // free the node
   if (sl->key_type != NULL) {
-    sfree((void *)item->key);
+    free((void *)item->key);
   }
-  sfree(item);
+  free(item);
 
   return val;
 }
@@ -473,7 +472,7 @@ sl_print(skiplist_t *sl, int verbose)
 sl_iter_t *
 sl_iter_begin(skiplist_t *sl, map_key_t key)
 {
-  sl_iter_t *iter = (sl_iter_t *)smalloc(sizeof(sl_iter_t));
+  sl_iter_t *iter = (sl_iter_t *)malloc(sizeof(sl_iter_t));
   if (key != DOES_NOT_EXIST) {
     find_preds(NULL, &iter->next, 1, sl, key, DONT_UNLINK);
   } else {
@@ -504,5 +503,5 @@ sl_iter_next(sl_iter_t *iter, map_key_t *key_ptr)
 void
 sl_iter_free(sl_iter_t *iter)
 {
-  sfree(iter);
+  free(iter);
 }

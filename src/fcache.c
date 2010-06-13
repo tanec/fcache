@@ -42,10 +42,13 @@ exit_on_sig(const int sig)
  */
 static GThreadPool *fastp, *slowp;
 typedef struct {
-  struct evhttp_request *req;
+  // from client
+  struct evhttp_request *client_req;
   void *arg;
 
-  request_t r;
+  // pass to other function
+  request_t req;
+
   page_t *page;
   bool sent;
 } req_ctx_t;
@@ -69,33 +72,50 @@ send_page(req_ctx_t *ctx)
     ct[len1+len2]='\0';
 
     evbuffer_add(buf, ctx->page->body, ctx->page->body_len);
-    evhttp_add_header(ctx->req->output_headers, "Content-Type", ct);
-    evhttp_add_header(ctx->req->output_headers, "Content-Encoding", "gzip");
-    evhttp_send_reply(ctx->req, HTTP_OK, "OK", buf);
+    evhttp_add_header(ctx->client_req->output_headers, "Content-Type", ct);
+    evhttp_add_header(ctx->client_req->output_headers, "Content-Encoding", "gzip");
+    evhttp_send_reply(ctx->client_req, HTTP_OK, "OK", buf);
     ctx->sent = true;
     evbuffer_free(buf);
   }
+}
+
+static inline bool
+is_str_empty(const char *s)
+{
+  return s==NULL || strlen(s)<1;
 }
 
 static void
 fast_process(gpointer data, gpointer user_data)
 {
   req_ctx_t *ctx = data;
-  struct evhttp_request *req = ctx->req;
+  struct evhttp_request *c = ctx->client_req;
+  request_t req = ctx->req;
   GError *error;
-  char kw[strlen(req->uri)];
+  const char *s;
 
-  ctx->r.domain = evhttp_find_header(ctx->req->input_headers, "Host");
-  ctx->r.url = req->uri;
-  ctx->r.keyword = find_keyword(req->remote_host, req->uri, kw);
+  { // host
+    s = evhttp_find_header(c->input_headers, "Host");
+    if (is_str_empty(s)) s = c->remote_host;
+    req.host = request_store(&req, 1, s);
+  }
+  { // keyword: extract from uri, then transform
+    s = zs_http_find_keyword_by_uri(c->uri);
+    req.keyword = request_store(&req, 1, s==NULL?"/":s);
+    if(s!=NULL) free((void*)s);
+    req.keyword = find_keyword(req.host, s);
+  }
+  //url: host+uri, discard "http://"
+  req.url = request_store(&req, 2, req.host, c->uri);
 
-  ctx->page=process_get(&ctx->r);
+  ctx->page=process_get(&ctx->req);
 
   if (ctx->page!=NULL && ctx->page->head.auth_type == AUTH_NO) {
     send_page(ctx);
   }
 
-  tlog(DEBUG, "push %s to slow pool(page=%p)", ctx->req->uri, ctx->page);
+  tlog(DEBUG, "push %s to slow pool(page=%p)", ctx->client_req->uri, ctx->page);
   g_thread_pool_push(slowp, ctx, &error);
 }
 
@@ -105,20 +125,20 @@ slow_process(gpointer data, gpointer user_data)
   req_ctx_t *ctx = data;
 
   if (ctx->sent) {
-    process_cache(&ctx->r, ctx->page);
+    process_cache(&ctx->req, ctx->page);
   } else {
     if (ctx->page == NULL) {
       // bypass to upstream
       server_t *svr = next_server_in_group(&cfg.http);
       if (svr != NULL) {
         mmap_array_t data = {0, NULL};
-        if (zs_http_pass_req(&data, ctx->req, svr->host, svr->port)) {
+        if (zs_http_pass_req(&data, ctx->client_req, svr->host, svr->port)) {
           if (data.data) tlog(DEBUG, "upstream:{\n%s\n}", data.data);
           struct evbuffer *buf;
           if ((buf = evbuffer_new()) == NULL) {
             tlog(ERROR, "failed to create response buffer");
           } else {
-            evhttp_clear_headers(ctx->req->output_headers);
+            evhttp_clear_headers(ctx->client_req->output_headers);
             //parse headers
             size_t header_len = 0, len;
             if (data.len>9 && strncmp(data.data, "HTTP/1.", 7)==0) {
@@ -132,14 +152,14 @@ slow_process(gpointer data, gpointer user_data)
                 if (len>2 && strstr(line, ": ")!=NULL) {
                   k=strsep(&line, ": ");
                   v=(*line==' ')?line+1:line;
-                  evhttp_add_header(ctx->req->output_headers, k, v);
+                  evhttp_add_header(ctx->client_req->output_headers, k, v);
                 }
               } while(line!=NULL && len>0);
             }
 
             //send remaining
             evbuffer_add(buf, data.data+header_len, data.len-header_len);
-            evhttp_send_reply(ctx->req, HTTP_OK, "OK", buf);
+            evhttp_send_reply(ctx->client_req, HTTP_OK, "OK", buf);
             ctx->sent = true;
             evbuffer_free(buf);
           }
@@ -150,7 +170,7 @@ slow_process(gpointer data, gpointer user_data)
       // auth
       if (ctx->page->head.auth_type != AUTH_NO) {
         char *igid;
-        igid = zs_http_find_igid_by_cookie(ctx->req);
+        igid = zs_http_find_igid_by_cookie(ctx->client_req);
         if (igid == NULL) { //need auth, but no igid
           tlog(DEBUG, "igid not in cookie, but need auth");
           ctx->page = NULL;
@@ -162,7 +182,7 @@ slow_process(gpointer data, gpointer user_data)
 
       if (ctx->page != NULL) {
         send_page(ctx);
-        process_cache(&ctx->r, ctx->page);
+        process_cache(&ctx->req, ctx->page);
       } else {
         // not authorized
         struct evbuffer *buf;
@@ -170,7 +190,7 @@ slow_process(gpointer data, gpointer user_data)
           tlog(ERROR, "failed to create response buffer");
         } else {
           evbuffer_add_printf(buf, "reply");
-          evhttp_send_reply(ctx->req, HTTP_MOVEPERM, "not permit", buf);
+          evhttp_send_reply(ctx->client_req, HTTP_MOVEPERM, "not permit", buf);
           evbuffer_free(buf);
         }
       }
@@ -202,10 +222,11 @@ page_handler(struct evhttp_request *req, void *arg)
 {
   GError *error;
   req_ctx_t *ctx = calloc(1, sizeof(req_ctx_t));
-  ctx->req  = req;
+  ctx->client_req  = req;
   ctx->arg  = arg;
   ctx->page = NULL;
   ctx->sent = false;
+  request_init(&ctx->req);
   tlog(DEBUG, "push %s to fast pool", req->uri);
   g_thread_pool_push(fastp, ctx, &error);
 }

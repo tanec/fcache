@@ -16,8 +16,8 @@ typedef struct {
 void read_domain(const char *);
 void read_synonyms(const char *);
 
-char * domain2kw(char *);
-char * synonyms2kw(char *, char *);
-char * find_keyword(char*, char *, char *);
+const char * domain2kw(const char *);
+const char * synonyms2kw (const char *, const char *);
+const char * find_keyword(const char *, const char *);
 
 #endif // ZHONGSOU_KEYWORD_H

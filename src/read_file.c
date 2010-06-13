@@ -82,23 +82,21 @@ file_read_path(char *path)
 }
 
 page_t *
-file_get(request_t *req)
+file_get(md5_digest_t *dir, md5_digest_t *file)
 {
-  char path[71 + strlen(cfg.base_dir)]; //2*len(md5)+len('/'s)+'\0' = 2*32+6+1
+  char path[71 + strlen(cfg.base_dir)]; //2*len(md5)+len('/')s+'\0' = 2*32+6+1
 
-  md5_dir(req);
-  md5_file(req);
   sprintf(path,
           "%s/%02x%02x/%02x%02x/%02x%02x/%02x%02x/%02x%02x%02x%02x%02x%02x%02x%02x/%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\0",
 	  cfg.base_dir,
-          (*req).dig_dir.digest[0], (*req).dig_dir.digest[1], (*req).dig_dir.digest[2], (*req).dig_dir.digest[3],
-          (*req).dig_dir.digest[4], (*req).dig_dir.digest[5], (*req).dig_dir.digest[6], (*req).dig_dir.digest[7],
-          (*req).dig_dir.digest[8], (*req).dig_dir.digest[9], (*req).dig_dir.digest[10], (*req).dig_dir.digest[11],
-          (*req).dig_dir.digest[12], (*req).dig_dir.digest[13], (*req).dig_dir.digest[14], (*req).dig_dir.digest[15],
-          (*req).dig_file.digest[0], (*req).dig_file.digest[1], (*req).dig_file.digest[2], (*req).dig_file.digest[3],
-          (*req).dig_file.digest[4], (*req).dig_file.digest[5], (*req).dig_file.digest[6], (*req).dig_file.digest[7],
-          (*req).dig_file.digest[8], (*req).dig_file.digest[9], (*req).dig_file.digest[10], (*req).dig_file.digest[11],
-          (*req).dig_file.digest[12], (*req).dig_file.digest[13], (*req).dig_file.digest[14], (*req).dig_file.digest[15]);
+          dir->digest[0], dir->digest[1], dir->digest[2], dir->digest[3],
+          dir->digest[4], dir->digest[5], dir->digest[6], dir->digest[7],
+          dir->digest[8], dir->digest[9], dir->digest[10], dir->digest[11],
+          dir->digest[12], dir->digest[13], dir->digest[14], dir->digest[15],
+          file->digest[0], file->digest[1], file->digest[2], file->digest[3],
+          file->digest[4], file->digest[5], file->digest[6], file->digest[7],
+          file->digest[8], file->digest[9], file->digest[10], file->digest[11],
+          file->digest[12], file->digest[13], file->digest[14], file->digest[15]);
 
   return file_read_path(path);
 }
