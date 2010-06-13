@@ -111,7 +111,7 @@ fast_process(gpointer data, gpointer user_data)
   req.url = request_store(&req, 2, req.host, c->uri);
   tlog(DEBUG, "host=%s, kwyword=%s, url=%s", req.host, req.keyword, req.url);
 
-  ctx->page=process_get(&ctx->req);
+  ctx->page=process_get(&req);
 
   if (ctx->page!=NULL && ctx->page->head.auth_type == AUTH_NO) {
     send_page(ctx);
