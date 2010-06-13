@@ -119,7 +119,26 @@ slow_process(gpointer data, gpointer user_data)
             tlog(ERROR, "failed to create response buffer");
           } else {
             evhttp_clear_headers(ctx->req->output_headers);
-            evbuffer_add(buf, data.data, data.len);
+            //parse headers
+            size_t header_len = 0, len;
+            if (data.len>9 && strncmp(data.data, "HTTP/1.", 7)==0) {
+              char *s = data.data, *line = NULL, *k, *v;
+              do {
+                line = strsep(&s, "\r\n");
+                len  = strlen(line);
+                header_len += len+1;
+                if (*s == '\n') { s++; header_len++;}
+
+                if (len>2 && strstr(line, ": ")!=NULL) {
+                  k=strsep(&line, ": ");
+                  v=(*line==' ')?line+1:line;
+                  evhttp_add_header(ctx->req->output_headers, k, v);
+                }
+              } while(line!=NULL && len>0);
+            }
+
+            //send remaining
+            evbuffer_add(buf, data.data+header_len, data.len-header_len);
             evhttp_send_reply(ctx->req, HTTP_OK, "OK", buf);
             ctx->sent = true;
             evbuffer_free(buf);
