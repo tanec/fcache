@@ -102,6 +102,7 @@ fast_process(gpointer data, gpointer user_data)
   }
   { // keyword: extract from uri, then transform
     s = zs_http_find_keyword_by_uri(c->uri);
+    tlog(DEBUG, "url from uri: %s -> %s", c->uri, s);
     req.keyword = request_store(&req, 1, s==NULL?"/":s);
     if(s!=NULL) free((void*)s);
     req.keyword = find_keyword(req.host, s);
