@@ -12,13 +12,12 @@ char *
 zs_http_find_keyword_by_uri(const char *orig_uri)
 {
   static char *kw = "keyword=";
-  char *uri, *s, *ret;
+  char *uri, *s, *ret=NULL;
   uri = strdup(orig_uri); // make a copy
   if (uri == NULL) {
     return NULL;
-  } else { // try /path?keyword=xxx
-    s = uri;
-    if (strchr(s, '?') != NULL) strsep(&s, "?");
+  } else if (strchr(s=uri, '?') != NULL) { // try /path?keyword=xxx
+    strsep(&s, "?");
     s = strstr(s, kw);
     if (s != NULL && strchr(s, '&') != NULL) s=strsep(&s, "&");
     if (s != NULL) ret = strdup(s+strlen(kw));
@@ -61,7 +60,7 @@ zs_http_find_igid_by_cookie(struct evhttp_request *req)
 }
 
 bool
-zs_http_pass_req(mmap_array_t *resp, struct evhttp_request *c, const char *host, uint16_t port)
+zs_http_pass_req(mmap_array_t *resp, struct evhttp_request *c, const char *host, uint16_t port, const char *url)
 {
 #define BUFLEN 8192
   char buf[BUFLEN];
@@ -79,8 +78,7 @@ zs_http_pass_req(mmap_array_t *resp, struct evhttp_request *c, const char *host,
     strcat(buf, "\r\n");
   }
   strcat(buf, "Orignal-URL: ");
-  strcat(buf, evhttp_find_header(c->input_headers, "Host"));
-  strcat(buf, c->uri);
+  strcat(buf, url);
   strcat(buf, "\r\n\r\n");
   tlog(DEBUG, "==>request header:{\n%s\n}\n", buf);
 

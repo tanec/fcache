@@ -21,7 +21,7 @@ proxycb(struct evhttp_request *req, void *arg)
     printf("failed to create response buffer");
   } else {
     mmap_array_t resp = {0, NULL};
-    zs_http_pass_req(&resp, req, host, port);
+    zs_http_pass_req(&resp, req, host, port, req->uri);
     printf("resp: {%d, %p}\n", resp.len, resp.data);
     if (resp.data!=NULL) printf("%s\n", resp.data);
     evbuffer_add(buf, resp.data, resp.len);

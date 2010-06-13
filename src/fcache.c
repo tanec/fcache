@@ -93,19 +93,19 @@ fast_process(gpointer data, gpointer user_data)
   struct evhttp_request *c = ctx->client_req;
   request_t req = ctx->req;
   GError *error;
-  const char *s;
+  char *s;
 
   { // host
-    s = evhttp_find_header(c->input_headers, "Host");
+    s = (char *)evhttp_find_header(c->input_headers, "Host");
     if (is_str_empty(s)) s = c->remote_host;
     req.host = request_store(&req, 1, s);
   }
   { // keyword: extract from uri, then transform
     s = zs_http_find_keyword_by_uri(c->uri);
-    tlog(DEBUG, "url from uri: %s -> %s", c->uri, s);
+    tlog(DEBUG, "keyword from uri: %s -> %s", c->uri, s);
     req.keyword = request_store(&req, 1, s==NULL?"/":s);
     if(s!=NULL) free((void*)s);
-    req.keyword = find_keyword(req.host, s);
+    req.keyword = find_keyword(req.host, req.keyword);
   }
   //url: host+uri, discard "http://"
   req.url = request_store(&req, 2, req.host, c->uri);
@@ -134,7 +134,7 @@ slow_process(gpointer data, gpointer user_data)
       server_t *svr = next_server_in_group(&cfg.http);
       if (svr != NULL) {
         mmap_array_t data = {0, NULL};
-        if (zs_http_pass_req(&data, ctx->client_req, svr->host, svr->port)) {
+        if (zs_http_pass_req(&data, ctx->client_req, svr->host, svr->port, ctx->req.url)) {
           if (data.data) tlog(DEBUG, "upstream:{\n%s\n}", data.data);
           struct evbuffer *buf;
           if ((buf = evbuffer_new()) == NULL) {
