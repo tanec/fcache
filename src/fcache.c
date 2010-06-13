@@ -91,27 +91,26 @@ fast_process(gpointer data, gpointer user_data)
 {
   req_ctx_t *ctx = data;
   struct evhttp_request *c = ctx->client_req;
-  request_t req = ctx->req;
   GError *error;
   char *s;
 
   { // host
     s = (char *)evhttp_find_header(c->input_headers, "Host");
     if (is_str_empty(s)) s = c->remote_host;
-    req.host = request_store(&req, 1, s);
+    ctx->req.host = request_store(&ctx->req, 1, s);
   }
   { // keyword: extract from uri, then transform
     s = zs_http_find_keyword_by_uri(c->uri);
     tlog(DEBUG, "keyword from uri: %s -> %s", c->uri, s);
-    req.keyword = request_store(&req, 1, s==NULL?"/":s);
+    ctx->req.keyword = request_store(&ctx->req, 1, s==NULL?"/":s);
     if(s!=NULL) free((void*)s);
-    req.keyword = find_keyword(req.host, req.keyword);
+    ctx->req.keyword = find_keyword(ctx->req.host, ctx->req.keyword);
   }
   //url: host+uri, discard "http://"
-  req.url = request_store(&req, 2, req.host, c->uri);
-  tlog(DEBUG, "host=%s, kwyword=%s, url=%s", req.host, req.keyword, req.url);
+  ctx->req.url = request_store(&ctx->req, 2, ctx->req.host, c->uri);
+  tlog(DEBUG, "host=%s, kwyword=%s, url=%s", ctx->req.host, ctx->req.keyword, ctx->req.url);
 
-  ctx->page=process_get(&req);
+  ctx->page=process_get(&ctx->req);
 
   if (ctx->page!=NULL && ctx->page->head.auth_type == AUTH_NO) {
     send_page(ctx);
