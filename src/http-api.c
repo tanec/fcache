@@ -110,8 +110,7 @@ http_unescape(const char *in, char *out)
   if (curl != NULL) {
     res = curl_easy_unescape(curl, in, 0, &len);
     if (res != NULL && len > 0) {
-      memcpy(out, in, len);
-      *(out+len) = '\0';
+      memcpy(out, res, len+1);
       return true;
     }
   }
