@@ -117,10 +117,15 @@ fast_process(gpointer data, gpointer user_data)
     ctx->req.keyword = find_keyword(ctx->req.host, ctx->req.keyword);
   }
   {//url: host+uri, discard "http://"; parse "/fff"
-    ctx->req.url = request_store(&ctx->req, 2, ctx->req.host, c->uri);
-    if ((strcmp(c->uri+strlen(c->uri)-4), "/fff")==0) {
-      *(ctx->req.url+strlen(ctx->req.url)-4) = '\0';
+    size_t len = strlen(c->uri);
+    if (strcmp(c->uri+len-4, "/fff")==0) {
+      char uri[len+1];
+      memcpy(uri, c->uri, len);
+      uri[len-4] = '\0';
+      ctx->req.url = request_store(&ctx->req, 2, ctx->req.host, uri);
       ctx->req.force_refresh = true;
+    } else {
+      ctx->req.url = request_store(&ctx->req, 2, ctx->req.host, c->uri);
     }
   }
 
