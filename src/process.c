@@ -221,7 +221,7 @@ process_cache(request_t *req, page_t *page)
     }
   } else if (page->from == MEMORY) {
     if (expire) {
-      page_t *p1 = file_get(req->dig_dir, req->dig_file);
+      page_t *p1 = file_get(md5_dir(req), md5_file(req));
       if (p1 == NULL) { // not in fs: delete
         sfree(mem_del(req->dig_file));
       } else if (is_expire(p1)) { // expire in fs
