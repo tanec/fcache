@@ -92,6 +92,7 @@ request_init(request_t *req)
   req->keyword  = NULL;
   req->url      = NULL;
 
+  req->force_refresh = false;
   req->sticky   = false;
 
   req->dig_dir  = NULL;

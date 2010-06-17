@@ -116,11 +116,21 @@ fast_process(gpointer data, gpointer user_data)
     if (is_str_empty(ctx->req.keyword)) ctx->req.keyword = "/";
     ctx->req.keyword = find_keyword(ctx->req.host, ctx->req.keyword);
   }
-  //url: host+uri, discard "http://"
-  ctx->req.url = request_store(&ctx->req, 2, ctx->req.host, c->uri);
+  {//url: host+uri, discard "http://"; parse "/fff"
+    ctx->req.url = request_store(&ctx->req, 2, ctx->req.host, c->uri);
+    if ((strcmp(c->uri+strlen(c->uri)-4), "/fff")==0) {
+      *(ctx->req.url+strlen(ctx->req.url)-4) = '\0';
+      ctx->req.force_refresh = true;
+    }
+  }
+
   tlog(DEBUG, "host=%s, keyword=%s, url=%s", ctx->req.host, ctx->req.keyword, ctx->req.url);
 
   ctx->page=process_get(&ctx->req);
+  if (ctx->req.force_refresh) {
+    if (ctx->page != NULL) ctx->page->head.valid = 0;
+    ctx->page = NULL;
+  }
 
   if (ctx->page!=NULL && ctx->page->head.auth_type == AUTH_NO) {
     send_page(ctx);
