@@ -14,6 +14,7 @@
 #include "settings.h"
 #include "zhongsou_net_auth.h"
 #include "zhongsou_net_udp.h"
+#include "log.h"
 
 #define STAT_HOURS 24
 
@@ -55,6 +56,7 @@ md5_dir(request_t *req)
     memcpy(d+len1, req->keyword, len2);
     d[len1+len2] = '\0';
 
+    tlog(DEBUG, "md5_dir(%s)", d);
     md5_digest(d, len1+len2, req->dig_dir->digest);
   }
   return req->dig_dir;
@@ -66,6 +68,7 @@ md5_file(request_t *req)
   if (req->dig_file==NULL) {
     req->dig_file = &(req->digests[1]);
 
+    tlog(DEBUG, "md5_file(%s)", req->url);
     md5_digest(req->url, strlen(req->url), req->dig_file->digest);
   }
   return req->dig_file;
