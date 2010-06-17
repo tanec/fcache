@@ -97,3 +97,23 @@ http_post(const char *url, http_response_t *resp, int pairs, ...)
   }
   return false;
 }
+
+// out should be enough to hold result
+bool
+http_unescape(const char *in, char *out)
+{
+  int   len = -1;
+  char *res = NULL;
+  CURL *curl;
+
+  curl = curl_easy_init();
+  if (curl != NULL) {
+    res = curl_easy_unescape(curl, in, 0, &len);
+    if (res != NULL && len > 0) {
+      memcpy(out, in, len);
+      *(out+len) = '\0';
+      return true;
+    }
+  }
+  return false;
+}

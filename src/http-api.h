@@ -11,5 +11,6 @@ typedef struct {
 void http_init(void);
 bool http_get(const char *, http_response_t *);
 bool http_post(const char *, http_response_t *, int, ...);
+bool http_unescape(const char *, char *);
 
 #endif // HTTPAPI_H
