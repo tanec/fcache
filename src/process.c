@@ -91,6 +91,7 @@ request_init(request_t *req)
   req->host     = NULL;
   req->keyword  = NULL;
   req->url      = NULL;
+  req->igid     = NULL;
 
   req->force_refresh = false;
   req->sticky   = false;

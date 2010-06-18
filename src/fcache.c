@@ -80,10 +80,36 @@ send_page(req_ctx_t *ctx)
   }
 }
 
+static void
+send_redirect(req_ctx_t *ctx, const char *url)
+{
+  tlog(DEBUG, "send redirect: %s", url);
+  evhttp_add_header(ctx->client_req->output_headers, "Connection", "close");
+  evhttp_add_header(ctx->client_req->output_headers, "Content-Length", "0");
+  evhttp_add_header(ctx->client_req->output_headers, "Location", url);
+  evhttp_send_reply(ctx->client_req, HTTP_MOVETEMP, "Moved Temporarily", NULL);
+  ctx->sent = true;
+}
+
 static inline bool
 is_str_empty(const char *s)
 {
   return s==NULL || strlen(s)<1;
+}
+
+static inline const char *
+find_igid(req_ctx_t *ctx)
+{
+  if (ctx->req.igid == NULL) {
+    char *igid = NULL;
+    igid = zs_http_find_igid_by_cookie(ctx->client_req);
+    tlog(DEBUG, "igid from cookie: %s", igid);
+    if (igid != NULL) {
+      ctx->req.igid = request_store(&ctx->req, 1, igid);
+      free(igid);//igid come from strdup(), must free!
+    }
+  }
+  return ctx->req.igid;
 }
 
 static void
@@ -134,6 +160,15 @@ fast_process(gpointer data, gpointer user_data)
   ctx->page=process_get(&ctx->req);
   if (ctx->req.force_refresh) {
     if (ctx->page != NULL) ctx->page->head.valid = 0;
+    ctx->page = NULL;
+  } else if(ctx->page!=NULL &&
+            strcmp(find_igid(ctx), ctx->page->head.ig)==0) {
+    //owner: redirect
+#define URL_LEN 2048
+    char url[URL_LEN] = {'\0'};
+    strcat(url, "http://admin.zhongsou.net");
+    strcat(url, ctx->client_req->uri);
+    send_redirect(ctx, url);
     ctx->page = NULL;
   }
 

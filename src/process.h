@@ -11,6 +11,7 @@ typedef struct {
   const char *host;
   const char *keyword;
   const char *url;
+  const char *igid;
 
   bool force_refresh;
   bool sticky; // lru or not

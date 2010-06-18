@@ -189,7 +189,7 @@ find_keyword(const char *domain, const char *keyword)
 
   if (kw!=NULL) kw=synonyms2kw(domain, kw);
   tlog(DEBUG, "find_keyword(domain=%s, keyword=%s)->%s", domain, keyword, kw);
-  return kw;
+  return kw==NULL?keyword:kw;
 }
 
 char *
