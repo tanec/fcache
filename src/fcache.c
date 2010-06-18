@@ -250,6 +250,7 @@ slow_process(gpointer data, gpointer user_data)
   } else {
     if (ctx->page == NULL) {
       // bypass to upstream
+      tlog(DEBUG, "pass(not found): %s", ctx->req.url);
       pass_to_upstream(ctx);
     } else {
       // auth
@@ -269,6 +270,7 @@ slow_process(gpointer data, gpointer user_data)
         process_cache(&ctx->req, ctx->page);
       } else {
         // not authorized: pass to upstream
+        tlog(DEBUG, "pass(no permission): %s", ctx->req.url);
         pass_to_upstream(ctx);
       }
     }
