@@ -138,15 +138,15 @@ process_mem(request_t *req, int curr_stat)
 {
   page_t *page;
   uint64_t s = current_time_millis();
-  stat_item_t item = statics[curr_stat].mem;
-  item.total_num++;
+  stat_item_t *item = &statics[curr_stat].mem;
+  item->total_num++;
 
   page = mem_get(md5_file(req));
 
   if (page != NULL) {
-    stat_add(&(item.success), current_time_millis() - s);
+    stat_add(&(item->success), current_time_millis() - s);
   } else {
-    stat_add(&(item.notfound), current_time_millis() - s);
+    stat_add(&(item->notfound), current_time_millis() - s);
   }
   return page;
 }
@@ -156,16 +156,16 @@ process_fs(request_t *req, int curr_stat)
 {
   page_t *page;
   uint64_t s = current_time_millis();
-  stat_item_t item = statics[curr_stat].fs;
-  item.total_num++;
+  stat_item_t *item = &statics[curr_stat].fs;
+  item->total_num++;
 
   page = file_get(md5_dir(req), md5_file(req));
 
   if (page != NULL) {
     if (req->sticky) page->level = -18;
-    stat_add(&(item.success), current_time_millis() - s);
+    stat_add(&(item->success), current_time_millis() - s);
   } else {
-    stat_add(&(item.notfound), current_time_millis() - s);
+    stat_add(&(item->notfound), current_time_millis() - s);
   }
   return page;
 }
@@ -198,16 +198,16 @@ process_auth(const char *igid, page_t *page)
 
   page_t * ret = page;
   uint64_t s = current_time_millis();
-  stat_item_t item = statics[current_stat_slot()].auth;
-  item.total_num++;
+  stat_item_t *item = &statics[current_stat_slot()].auth;
+  item->total_num++;
 
   if (!auth_http(igid, page->head.keyword, page->head.auth_type, page->head.param))
     ret = NULL;
 
   if (page != NULL) {
-    stat_add(&(item.success), current_time_millis() - s);
+    stat_add(&(item->success), current_time_millis() - s);
   } else {
-    stat_add(&(item.notfound), current_time_millis() - s);
+    stat_add(&(item->notfound), current_time_millis() - s);
   }
   return ret;
 }
