@@ -254,9 +254,7 @@ process_stat_html(char *result)
 {
   int i, c;
 
-  result = "";
   strcat(result, "<html><head></head><body>");
-
   c = current_stat_slot();
   for (i=1; i<=STAT_HOURS; i++) {
     stat_t *st = &statics[(c+i)%STAT_HOURS];
