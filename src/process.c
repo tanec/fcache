@@ -192,7 +192,7 @@ process_get(request_t *req)
 }
 
 page_t *
-process_auth(char *igid, page_t *page)
+process_auth(const char *igid, page_t *page)
 {
   if (page == NULL) return NULL;
 

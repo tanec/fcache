@@ -236,14 +236,13 @@ slow_process(gpointer data, gpointer user_data)
     } else {
       // auth
       if (ctx->page->head.auth_type != AUTH_NO) {
-        char *igid;
-        igid = zs_http_find_igid_by_cookie(ctx->client_req);
+        const char *igid;
+        igid = find_igid(ctx);
         if (igid == NULL) { //need auth, but no igid
           tlog(DEBUG, "igid not in cookie, but need auth");
           ctx->page = NULL;
         } else {
           ctx->page = process_auth(igid, ctx->page);
-          free(igid);//igid come from strdup(), must free!
         }
       }
 

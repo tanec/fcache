@@ -32,7 +32,7 @@ md5_digest_t * md5_file(request_t *);
 
 void process_init();
 page_t * process_get(request_t *);
-page_t * process_auth(char *, page_t *);
+page_t * process_auth(const char *, page_t *);
 page_t * process_cache(request_t *, page_t *);
 
 #endif // PROCESS_H

@@ -7,7 +7,7 @@
 #include "log.h"
 
 bool
-auth_http(char *igid, char *keyword, uint32_t auth_type, char *json)
+auth_http(const char *igid, const char *keyword, uint32_t auth_type, const char *json)
 {
   bool ret = false;
   http_response_t resp = {NULL, 0};
