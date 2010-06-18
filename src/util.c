@@ -154,7 +154,6 @@ tcp_read(mmap_array_t *data, const char *host, uint16_t port, char *output)
 #define BUFFSIZE 8192
     char buffer[BUFFSIZE];
     if ((bytes = recv(sock, buffer, BUFFSIZE, 0)) < 1) {
-      printf("Failed to receive bytes from server\n");
       break;
     }
 
