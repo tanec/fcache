@@ -243,26 +243,65 @@ process_cache(request_t *req, page_t *page)
 }
 
 static inline void
-process_stat_item_html(char *html, const char *name, stat_item_t *item)
+ps_itoa(char *dest, const char *fmt, ...)
 {
-  strcat(html, "<div class='stat_item'>");
-  strcat(html, "</div>");
+  va_list args;
+
+  va_start(args, fmt);
+  vsprintf(dest, fmt, args);
+  va_end(args);
+}
+
+static inline void
+process_stat_item_html(char *html, stat_item_t *item)
+{
+  char line[512];
+  strcat(html, "<td><pre>");
+  ps_itoa(line, "total=%llu\n", item->total_num);
+  strcat(html, line);
+  ps_itoa(line, "success=(num=%llu, time=%llu, max=%llu)\n", item->success.num,  item->success.time,  item->success.max_time);
+  strcat(html, line);
+  ps_itoa(line, " failed=(num=%llu, time=%llu, max=%llu)\n", item->notfound.num, item->notfound.time, item->notfound.max_time);
+  strcat(html, line);
+  strcat(html, "</pre></td>");
 }
 
 void
 process_stat_html(char *result)
 {
-  int i, c;
+  int i, c, pos;
+  char buf[512];
 
-  strcat(result, "<html><head></head><body>");
+  strcat(result,
+         "<html><head>\
+         <title>fcache in-memory statistics</title>\
+         <style>\n\
+         table  {border: 3px solid  #333;}\n\
+         tr+tr  {border-top: 2px dotted #333;}\n\
+         th, td {border: 1px dotted gray;}\n\
+          th {}\n\
+         </style></head><body>");
   c = current_stat_slot();
-  for (i=1; i<=STAT_HOURS; i++) {
-    stat_t *st = &statics[(c+i)%STAT_HOURS];
-    process_stat_item_html(result, "memory", &st->mem);
-    process_stat_item_html(result, "file system", &st->fs);
-    process_stat_item_html(result, "authorication", &st->auth);
-    process_stat_item_html(result, "bypass to upstream", &st->net);
+
+  strcat(result, "<table><tr>\
+         <th>slot</th>\
+         <th>memory</th>\
+         <th>file system</th>\
+         <th>authorication</th>\
+         <th>upstream</th>\
+         </tr>");
+  for (i=0; i<STAT_HOURS; i++) {
+    pos = (STAT_HOURS+c-i)%STAT_HOURS;
+    stat_t *st = &statics[pos];
+    strcat(result, "<tr>");
+    sprintf(buf, "<td><pre>cur=%d\npos=%d</pre></td>", c, pos);
+    strcat(result, buf);
+    process_stat_item_html(result, &st->mem);
+    process_stat_item_html(result, &st->fs);
+    process_stat_item_html(result, &st->auth);
+    process_stat_item_html(result, &st->net);
+    strcat(result, "</tr>");
   }
 
-  strcat(result, "</body></html>");
+  strcat(result, "</table></body></html>");
 }

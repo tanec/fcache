@@ -321,7 +321,7 @@ status_handler(struct evhttp_request *req, void *arg)
   if ((buf = evbuffer_new()) == NULL) {
     printf("failed to create response buffer");
   } else {
-    char html[8192] = {'\0'};
+    char html[32768] = {'\0'};
     process_stat_html(html);
     evbuffer_add(buf, html, strlen(html));
     evhttp_send_reply(req, HTTP_OK, "OK", buf);
