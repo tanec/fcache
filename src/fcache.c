@@ -118,7 +118,7 @@ fast_process(gpointer data, gpointer user_data)
   req_ctx_t *ctx = data;
   struct evhttp_request *c = ctx->client_req;
   GError *error;
-  char *s;
+  char *s, *igid;
 
   { // host
     s = (char *)evhttp_find_header(c->input_headers, "Host");
@@ -162,7 +162,9 @@ fast_process(gpointer data, gpointer user_data)
     if (ctx->page != NULL) ctx->page->head.valid = 0;
     ctx->page = NULL;
   } else if(ctx->page!=NULL &&
-            strcmp(find_igid(ctx), ctx->page->head.ig)==0) {
+            (igid=find_igid(ctx))!=NULL &&
+            ctx->page->head.ig!=NULL &&
+            strcmp(igid, ctx->page->head.ig)==0) {
     //owner: redirect
 #define URL_LEN 2048
     char url[URL_LEN] = {'\0'};
