@@ -241,3 +241,30 @@ process_cache(request_t *req, page_t *page)
     }
   }
 }
+
+static inline void
+process_stat_item_html(char *html, const char *name, stat_item_t *item)
+{
+  strcat(html, "<div class='stat_item'>");
+  strcat(html, "</div>");
+}
+
+void
+process_stat_html(char *result)
+{
+  int i, c;
+
+  result = "";
+  strcat(result, "<html><head></head><body>");
+
+  c = current_stat_slot();
+  for (i=1; i<=STAT_HOURS; i++) {
+    stat_t *st = &statics[(c+i)%STAT_HOURS];
+    process_stat_item_html(result, "memory", &st->mem);
+    process_stat_item_html(result, "file system", &st->fs);
+    process_stat_item_html(result, "authorication", &st->auth);
+    process_stat_item_html(result, "bypass to upstream", &st->net);
+  }
+
+  strcat(result, "</body></html>");
+}

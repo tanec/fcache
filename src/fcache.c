@@ -314,6 +314,21 @@ monitor_handler(struct evhttp_request *req, void *arg)
   }
 }
 
+void
+status_handler(struct evhttp_request *req, void *arg)
+{
+  struct evbuffer *buf;
+  if ((buf = evbuffer_new()) == NULL) {
+    printf("failed to create response buffer");
+  } else {
+    char html[8192];
+    process_stat_html(html);
+    evbuffer_add(buf, html, strlen(html));
+    evhttp_send_reply(req, HTTP_OK, "OK", buf);
+    evbuffer_free(buf);
+  }
+}
+
 int
 main(int argc, char**argv)
 {
@@ -419,6 +434,8 @@ main(int argc, char**argv)
   /* Set a callback for requests to "/specific". */
   if (cfg.monitor_path != NULL)
     evhttp_set_cb(httpd, cfg.monitor_path, monitor_handler, NULL);
+  if (cfg.status_path  != NULL)
+    evhttp_set_cb(httpd, cfg.status_path,  status_handler,  NULL);
 
   /* Set a callback for all other requests. */
   evhttp_set_gencb(httpd, page_handler, NULL);
