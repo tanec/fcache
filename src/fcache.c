@@ -195,8 +195,17 @@ slow_process(gpointer data, gpointer user_data)
       // bypass to upstream
       server_t *svr = next_server_in_group(&cfg.http);
       if (svr != NULL) {
+        uint64_t s;
+        int      slot;
+        bool     result;
         mmap_array_t data = {0, NULL};
-        if (zs_http_pass_req(&data, ctx->client_req, svr->host, svr->port, ctx->req.url)) {
+
+        s      = current_time_millis();
+        slot   = process_upstream_start();
+        result = zs_http_pass_req(&data, ctx->client_req, svr->host, svr->port, ctx->req.url);
+        process_upstream_end(slot, s, result);
+
+        if (result) {
           //if (data.data) tlog(DEBUG, "upstream:{\n%s\n}", data.data);
           struct evbuffer *buf;
           if ((buf = evbuffer_new()) == NULL) {

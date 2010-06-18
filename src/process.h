@@ -34,6 +34,10 @@ void process_init();
 page_t * process_get(request_t *);
 page_t * process_auth(const char *, page_t *);
 page_t * process_cache(request_t *, page_t *);
+
+int  process_upstream_start(void);
+void process_upstream_end(int, uint64_t, bool);
+
 void     process_stat_html(char *);
 
 #endif // PROCESS_H

@@ -212,6 +212,28 @@ process_auth(const char *igid, page_t *page)
   return ret;
 }
 
+int
+process_upstream_start(void)
+{
+  int curr;
+
+  curr = current_stat_slot();
+  statics[curr].net.total_num++;
+
+  return curr;
+}
+
+void
+process_upstream_end(int slot, uint64_t start, bool success)
+{
+  stat_item_t *item = &statics[slot].net;
+  if (success) {
+    stat_add(&(item->success), current_time_millis() - start);
+  } else {
+    stat_add(&(item->notfound), current_time_millis() - start);
+  }
+}
+
 page_t *
 process_cache(request_t *req, page_t *page)
 {// send done
