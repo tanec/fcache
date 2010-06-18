@@ -93,6 +93,14 @@ current_time_millis()
   return (uint64_t)tv.tv_sec*1000+(uint64_t)tv.tv_usec/1000;
 }
 
+uint64_t
+current_time_micros()
+{
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return (uint64_t)tv.tv_sec*1000*1000+tv.tv_usec;
+}
+
 static inline void *
 myrealloc(void *ptr, size_t size)
 {

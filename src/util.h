@@ -39,7 +39,9 @@ pid_t daemonize(int, int);
 bool mmap_read(mmap_array_t *, const char *);
 int  mmap_close(mmap_array_t *);
 
+// 1s = 1000 millisecond = 10^6microsecond
 uint64_t current_time_millis(void);
+uint64_t current_time_micros(void);
 
 bool tcp_read(mmap_array_t *, const char *, uint16_t, char *);
 

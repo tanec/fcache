@@ -137,16 +137,16 @@ page_t *
 process_mem(request_t *req, int curr_stat)
 {
   page_t *page;
-  uint64_t s = current_time_millis();
+  uint64_t s = current_time_micros();
   stat_item_t *item = &statics[curr_stat].mem;
   item->total_num++;
 
   page = mem_get(md5_file(req));
 
   if (page != NULL) {
-    stat_add(&(item->success), current_time_millis() - s);
+    stat_add(&(item->success), current_time_micros() - s);
   } else {
-    stat_add(&(item->notfound), current_time_millis() - s);
+    stat_add(&(item->notfound), current_time_micros() - s);
   }
   return page;
 }
@@ -307,10 +307,10 @@ process_stat_html(char *result)
 
   strcat(result, "<table><tr>\
          <th>slot</th>\
-         <th>memory</th>\
-         <th>file system</th>\
-         <th>authorication</th>\
-         <th>upstream</th>\
+         <th>memory(us)</th>\
+         <th>file system(ms)</th>\
+         <th>authorication(ms)</th>\
+         <th>upstream(ms)</th>\
          </tr>");
   for (i=0; i<STAT_HOURS; i++) {
     pos = (STAT_HOURS+c-i)%STAT_HOURS;
