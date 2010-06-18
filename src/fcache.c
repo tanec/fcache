@@ -91,6 +91,63 @@ send_redirect(req_ctx_t *ctx, const char *url)
   ctx->sent = true;
 }
 
+static void
+pass_to_upstream(req_ctx_t *ctx)
+{
+  server_t *svr = next_server_in_group(&cfg.http);
+  if (svr != NULL) {
+    uint64_t s;
+    int      slot;
+    bool     result;
+    mmap_array_t data = {0, NULL};
+
+    s      = current_time_millis();
+    slot   = process_upstream_start();
+    result = zs_http_pass_req(&data, ctx->client_req, svr->host, svr->port, ctx->req.url);
+    process_upstream_end(slot, s, result);
+
+    if (result) {
+      //if (data.data) tlog(DEBUG, "upstream:{\n%s\n}", data.data);
+      struct evbuffer *buf;
+      if ((buf = evbuffer_new()) == NULL) {
+        tlog(ERROR, "failed to create response buffer");
+      } else {
+        evhttp_clear_headers(ctx->client_req->output_headers);
+        //parse headers
+        int code = HTTP_OK;
+        const char *reason = "OK";
+        size_t header_len = 0, len;
+        if (data.len>9 && strncmp(data.data, "HTTP/1.", 7)==0) {
+          char *s = data.data, *line = NULL, *k, *v;
+          do {
+            line = strsep(&s, "\r\n");
+            len  = strlen(line);
+            header_len += len+1;
+            if (*s == '\n') { s++; header_len++;}
+
+            if (len>2 && strstr(line, ": ")!=NULL) {
+              k=strsep(&line, ": ");
+              v=(*line==' ')?line+1:line;
+              evhttp_add_header(ctx->client_req->output_headers, k, v);
+            } else if (strncmp(line, "HTTP/1.", 7)==0) {
+              strsep(&line, " "); // discard "HTTP/1.X"
+              code = atoi(strsep(&line, " "));
+              reason = line;
+            }
+          } while(line!=NULL && len>0);
+        }
+
+        //send remaining
+        evbuffer_add(buf, data.data+header_len, data.len-header_len);
+        evhttp_send_reply(ctx->client_req, code, reason, buf);
+        ctx->sent = true;
+        evbuffer_free(buf);
+      }
+      if (data.data!=NULL) free(data.data);
+    }
+  }
+}
+
 static inline bool
 is_str_empty(const char *s)
 {
@@ -193,58 +250,7 @@ slow_process(gpointer data, gpointer user_data)
   } else {
     if (ctx->page == NULL) {
       // bypass to upstream
-      server_t *svr = next_server_in_group(&cfg.http);
-      if (svr != NULL) {
-        uint64_t s;
-        int      slot;
-        bool     result;
-        mmap_array_t data = {0, NULL};
-
-        s      = current_time_millis();
-        slot   = process_upstream_start();
-        result = zs_http_pass_req(&data, ctx->client_req, svr->host, svr->port, ctx->req.url);
-        process_upstream_end(slot, s, result);
-
-        if (result) {
-          //if (data.data) tlog(DEBUG, "upstream:{\n%s\n}", data.data);
-          struct evbuffer *buf;
-          if ((buf = evbuffer_new()) == NULL) {
-            tlog(ERROR, "failed to create response buffer");
-          } else {
-            evhttp_clear_headers(ctx->client_req->output_headers);
-            //parse headers
-            int code = HTTP_OK;
-            const char *reason = "OK";
-            size_t header_len = 0, len;
-            if (data.len>9 && strncmp(data.data, "HTTP/1.", 7)==0) {
-              char *s = data.data, *line = NULL, *k, *v;
-              do {
-                line = strsep(&s, "\r\n");
-                len  = strlen(line);
-                header_len += len+1;
-                if (*s == '\n') { s++; header_len++;}
-
-                if (len>2 && strstr(line, ": ")!=NULL) {
-                  k=strsep(&line, ": ");
-                  v=(*line==' ')?line+1:line;
-                  evhttp_add_header(ctx->client_req->output_headers, k, v);
-                } else if (strncmp(line, "HTTP/1.", 7)==0) {
-                  strsep(&line, " "); // discard "HTTP/1.X"
-                  code = atoi(strsep(&line, " "));
-                  reason = line;
-                }
-              } while(line!=NULL && len>0);
-            }
-
-            //send remaining
-            evbuffer_add(buf, data.data+header_len, data.len-header_len);
-            evhttp_send_reply(ctx->client_req, code, reason, buf);
-            ctx->sent = true;
-            evbuffer_free(buf);
-          }
-          if (data.data!=NULL) free(data.data);
-        }
-      }
+      pass_to_upstream(ctx);
     } else {
       // auth
       if (ctx->page->head.auth_type != AUTH_NO) {
@@ -262,15 +268,8 @@ slow_process(gpointer data, gpointer user_data)
         send_page(ctx);
         process_cache(&ctx->req, ctx->page);
       } else {
-        // not authorized
-        struct evbuffer *buf;
-        if ((buf = evbuffer_new()) == NULL) {
-          tlog(ERROR, "failed to create response buffer");
-        } else {
-          evbuffer_add_printf(buf, "reply");
-          evhttp_send_reply(ctx->client_req, HTTP_MOVEPERM, "not permit", buf);
-          evbuffer_free(buf);
-        }
+        // not authorized: pass to upstream
+        pass_to_upstream(ctx);
       }
     }
   }
