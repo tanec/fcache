@@ -118,7 +118,8 @@ fast_process(gpointer data, gpointer user_data)
   req_ctx_t *ctx = data;
   struct evhttp_request *c = ctx->client_req;
   GError *error;
-  char *s, *igid;
+  char *s;
+  const char *igid;
 
   { // host
     s = (char *)evhttp_find_header(c->input_headers, "Host");

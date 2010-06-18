@@ -4,6 +4,7 @@
 #include "util.h"
 #include "smalloc.h"
 #include "log.h"
+#include "settings.h"
 
 static str_map_t *domains = NULL;
 static str_map_t *synonyms = NULL;//default: zhongsou
@@ -186,6 +187,18 @@ find_keyword(const char *domain, const char *keyword)
 
   // try domain's default kwyword
   if (kw==NULL || strcmp(kw,"/")==0) kw=domain2kw(domain);
+  // not "www.zhongsou.net", "g.zhonsou.net" ...
+  // must find by domain
+  if (cfg.multi_keyword_domains != NULL) {
+    bool mkd = false;
+    int i;
+    for (i=0; i<cfg.multi_keyword_domains_len; i++) {
+      if (strcmp(domain, cfg.multi_keyword_domains[i])==0)
+        mkd = true;
+      break;
+    }
+    if (!mkd) kw=domain2kw(domain);
+  }
 
   if (kw!=NULL) kw=synonyms2kw(domain, kw);
   tlog(DEBUG, "find_keyword(domain=%s, keyword=%s)->%s", domain, keyword, kw);

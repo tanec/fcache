@@ -61,6 +61,8 @@ init_cfg(void)
   init_server_group(&cfg.auth);
   //http
   init_server_group(&cfg.http);
+  cfg.multi_keyword_domains = NULL;
+  cfg.multi_keyword_domains_len = 0;
 
   set_log_cfg();
 }
@@ -129,6 +131,27 @@ read_cfg(char *file)
     read_server_group(&c, "servers.notify", &cfg.udp_notify);
     read_server_group(&c, "servers.auth",   &cfg.auth);
     read_server_group(&c, "servers.http",   &cfg.http);
+
+
+    config_setting_t *set, *set1;
+    set = config_lookup(&c, "multi_keyword_domains");
+    if (set != NULL) {
+      cfg.multi_keyword_domains_len = config_setting_length(set);
+      if (cfg.multi_keyword_domains_len > 0) {
+        cfg.multi_keyword_domains = calloc(cfg.multi_keyword_domains_len, sizeof(char *));
+        int i;
+        const char *s;
+        for(i=0; i<cfg.multi_keyword_domains_len;i++) {
+          s = config_setting_get_string_elem(set,i);
+          if (s == NULL) {
+            perror("wrong multi_keyword_domains setting");
+            exit(EXIT_FAILURE);
+          }
+          cfg.multi_keyword_domains[i] = strdup(s);
+          tlog(DEBUG, "%d, domain=%s", i, cfg.multi_keyword_domains[i]);
+        }
+      }
+    }
 
     set_log_cfg();
   }

@@ -56,6 +56,9 @@ typedef struct {
 
   //http upstream;
   server_group_t http;
+
+  int multi_keyword_domains_len;
+  const char **multi_keyword_domains;
 } setting_t;
 
 extern setting_t cfg;
