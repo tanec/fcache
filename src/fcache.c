@@ -196,7 +196,7 @@ slow_process(gpointer data, gpointer user_data)
       if (svr != NULL) {
         mmap_array_t data = {0, NULL};
         if (zs_http_pass_req(&data, ctx->client_req, svr->host, svr->port, ctx->req.url)) {
-          if (data.data) tlog(DEBUG, "upstream:{\n%s\n}", data.data);
+          //if (data.data) tlog(DEBUG, "upstream:{\n%s\n}", data.data);
           struct evbuffer *buf;
           if ((buf = evbuffer_new()) == NULL) {
             tlog(ERROR, "failed to create response buffer");
