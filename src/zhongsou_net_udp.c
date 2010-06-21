@@ -86,12 +86,13 @@ handle_expire_request(void *args)
   struct sockaddr_in si_other;
   int i, slen=sizeof(si_other);
 
+  tlog(DEBUG, "udp server @%d start", cfg.udp_server.port);
   if (recvfrom(listen_socket, buf, BUFLEN, 0, (struct sockaddr *)&si_other, &slen)!=-1) {
-    printf("Received packet from %s:%d\nData: %s\n\n",
+    tlog(DEBUG, "Received packet from %s:%d\nData: %s\n\n",
            inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port), buf);
     //TODO
-
   }
+  tlog(ERROR, "udp server @%d shutdown", cfg.udp_server.port);
 }
 
 void
