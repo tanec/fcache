@@ -212,8 +212,11 @@ fast_process(gpointer data, gpointer user_data)
       ctx->req.url = request_store(&ctx->req, 2, ctx->req.host, c->uri);
     }
   }
+  if (strcmp("1", evhttp_find_header(c->input_headers, "Sticky"))==0) {
+    ctx->req.sticky = true;
+  }
 
-  tlog(DEBUG, "host=%s, keyword=%s, url=%s", ctx->req.host, ctx->req.keyword, ctx->req.url);
+  tlog(DEBUG, "[%d]host=%s, keyword=%s, url=%s", ctx->req.sticky, ctx->req.host, ctx->req.keyword, ctx->req.url);
 
   ctx->page=process_get(&ctx->req);
   if (ctx->req.force_refresh) {
