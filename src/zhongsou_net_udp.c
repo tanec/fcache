@@ -87,6 +87,7 @@ handle_expire_request(void *args)
   int i, slen=sizeof(si_other);
 
   tlog(DEBUG, "udp server @%d start", cfg.udp_server.port);
+  while(true)
   if (recvfrom(listen_socket, buf, BUFLEN, 0, (struct sockaddr *)&si_other, &slen)!=-1) {
     tlog(DEBUG, "Received packet from %s:%d\nData: %s\n\n",
            inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port), buf);
