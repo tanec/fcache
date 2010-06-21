@@ -85,19 +85,27 @@ handle_expire_request(void *args)
   char buf[BUFLEN];
   struct sockaddr_in si_other;
   int i, slen=sizeof(si_other);
+  ssize_t len;
 
   tlog(DEBUG, "udp server @%d start", cfg.udp_server.port);
   while(true)
-  if (recvfrom(listen_socket, buf, BUFLEN, 0, (struct sockaddr *)&si_other, &slen)!=-1) {
-    tlog(DEBUG, "Received packet from %s:%d\nData: %s\n\n",
-           inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port), buf);
-    //TODO
+  if ((len=recvfrom(listen_socket, buf, BUFLEN, 0,
+                    (struct sockaddr *)&si_other, &slen))!=-1) {
+    tlog(DEBUG, "Received packet from %s:%d\nData(%d): %s\n\n",
+           inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port), len, buf);
+    if (len==16 && args!=NULL) {
+      md5_digest_t dig;
+      for (i=0; i<16; i++) dig.digest[i] = buf[i];
+
+      expire_cb cb = (expire_cb)args;
+      cb(&dig);
+    }
   }
   tlog(ERROR, "udp server @%d shutdown", cfg.udp_server.port);
 }
 
 void
-udp_listen_expire(void)
+udp_listen_expire(expire_cb cb)
 {
   struct sockaddr_in si_me;
 
@@ -111,5 +119,5 @@ udp_listen_expire(void)
   if (bind(listen_socket, (const struct sockaddr *)&si_me, sizeof(si_me))==-1)
     perror("udp listen: bind");
 
-  create_worker(handle_expire_request, NULL);
+  create_worker(handle_expire_request, cb);
 }

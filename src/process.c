@@ -125,12 +125,30 @@ request_store(request_t *req, int va_num, ...)
 }
 
 void
+process_expire(md5_digest_t *dig)
+{
+  tlog(DEBUG, "expire: %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+       dig->digest[0], dig->digest[1], dig->digest[2], dig->digest[3],
+       dig->digest[4], dig->digest[5], dig->digest[6], dig->digest[7],
+       dig->digest[8], dig->digest[9], dig->digest[10], dig->digest[11],
+       dig->digest[12], dig->digest[13], dig->digest[14], dig->digest[15]);
+
+  page_t *page = mem_get(dig);
+  if (page != NULL) {
+    if (page->level < 0) //sticky
+      page->head.valid = 0;
+    else
+      sfree(mem_del(dig));
+  }
+}
+
+void
 process_init()
 {
   mem_init();
   memset(&statics, 0, sizeof(statics));
 
-  udp_listen_expire();
+  udp_listen_expire(process_expire);
 }
 
 page_t *
