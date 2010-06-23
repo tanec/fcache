@@ -49,7 +49,7 @@ zs_http_find_igid_by_cookie(struct evhttp_request *req)
   do {
     if (strncmp(ck, ks, kslen) == 0) {
       char *igid = strsep(&ck, " ");
-      ret  = igid==NULL?NULL:strdup(igid);
+      ret  = igid==NULL?NULL:strdup(igid+kslen);
       *(ret+strlen(ret)-1)='\0';
     } else {
       strsep(&ck, " ");
