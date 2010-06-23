@@ -33,8 +33,8 @@ zs_http_find_keyword_by_uri(const char *orig_uri)
   return ret;
 }
 
-static char *ks = "igid=";
-static size_t kslen = 5;//strlen(ks);
+static char *ks = "un_web=";
+static size_t kslen = 7;//strlen(ks);
 
 char *
 zs_http_find_igid_by_cookie(struct evhttp_request *req)

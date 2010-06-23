@@ -230,12 +230,7 @@ fast_process(gpointer data, gpointer user_data)
             (igid=find_igid(ctx))!=NULL &&
             ctx->page->head.ig!=NULL &&
             strcmp(igid, ctx->page->head.ig)==0) {
-    //owner: redirect
-#define URL_LEN 2048
-    char url[URL_LEN] = {'\0'};
-    strcat(url, "http://admin.zhongsou.net");
-    strcat(url, ctx->client_req->uri);
-    send_redirect(ctx, url);
+    //owner: pass to upstream
     ctx->page = NULL;
   }
 
