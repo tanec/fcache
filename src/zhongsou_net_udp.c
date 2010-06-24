@@ -93,9 +93,13 @@ handle_expire_request(void *args)
                     (struct sockaddr *)&si_other, &slen))!=-1) {
     tlog(DEBUG, "Received packet from %s:%d\nData(%d): %s\n\n",
            inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port), len, buf);
-    if (len==16 && args!=NULL) {
+    if (len>=20 && args!=NULL
+        && buf[0]==2
+        && buf[1]==0
+        && buf[2]==1
+        && buf[3]==2) {
       md5_digest_t dig;
-      for (i=0; i<16; i++) dig.digest[i] = buf[i];
+      for (i=0; i<16; i++) dig.digest[i] = buf[i+4];
 
       expire_cb cb = (expire_cb)args;
       cb(&dig);
