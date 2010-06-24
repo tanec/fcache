@@ -26,14 +26,16 @@ test(gpointer data, gpointer user_data)
   for (i=0; i<dn; i++) {
     vals[i].num = tn*1000 + i;
     vals[i].tm  = time(NULL);
-    md5_digest(&vals[i].tm, sizeof(time_t), vals[i].key.digest);
+    md5_digest(&vals[i].num, sizeof(int), vals[i].key.digest);
 
     //map_remove(cache, &vals[i].key);
   }
 
   for (i=0; i<dn; i++) {
     sleep(time(NULL)%2);
-    map_set(cache, &vals[i].key, (map_val_t)&vals[i]);
+    map_val_t v = map_set(cache, &vals[i].key, (map_val_t)&vals[i]);
+    if (v != NULL)
+      printf("+>set error: v(%p).num = %d\n", v, ((val_t *)v)->num);
   }
 
   for (i=0; i<dn; i++) {
@@ -56,6 +58,30 @@ test(gpointer data, gpointer user_data)
       if (md5_compare(((map_key_t)v)->digest,
                       ((map_key_t)&vals[i].key)->digest)!=0) {
         printf("-> get wrong: md5\n");
+      }
+    }
+  }
+
+  for (i=0; i<dn; i++) {
+    val_t *v = (val_t *)map_remove(cache, &vals[i].key);
+    if (v == NULL) {
+      printf("-> remove wrong: v=%p\n", v);
+    } else {
+      if (v != &vals[i]) {
+        printf("-> remove wrong: v(%p) != vals[%d](%p)\n",
+               v, i, &vals[i]);
+      }
+      if (v->num != vals[i].num) {
+        printf("-> remove wrong: v->num(%d) != vals[%d].num(%d)\n",
+               v->num, i, vals[i].num);
+      }
+      if (v->tm  != vals[i].tm) {
+        printf("-> remove wrong: v->tm (%d) != vals[%d].tm (%d)\n",
+               v->tm,  i, vals[i].tm);
+      }
+      if (md5_compare(((map_key_t)v)->digest,
+                      ((map_key_t)&vals[i].key)->digest)!=0) {
+        printf("-> remove wrong: md5\n");
       }
     }
   }
@@ -101,7 +127,7 @@ int main(int argc, char **argv)
     tn = atoi(argv[1]);
     dn = atoi(argv[2]);
 
-    if (tn > 1) {
+    if (tn > 0) {
       cache = map_alloc(&MAP_IMPL_SL, &mem_keytype);
 
       g_thread_init(NULL);
