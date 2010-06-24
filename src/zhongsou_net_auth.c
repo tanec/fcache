@@ -18,7 +18,7 @@ auth_http(const char *igid, const char *keyword, uint32_t auth_type, const char 
     tlog(DEBUG, "result=%s", resp.reply);
     // strlen("{"PageAuth":0,"GroupAuth":0}")=28
     if (resp.reply!=NULL && resp.size>15)
-      ret = (*(resp.reply+12) != '0');
+      ret = (*(resp.reply+12) != '0') && (*(resp.reply+26) != '0');
   }
   if (resp.reply != NULL) free(resp.reply);
   return ret;
