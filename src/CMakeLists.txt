@@ -67,3 +67,6 @@ add_library(ZSKW zhongsou_keyword.c)
 
 add_executable (fcache fcache.c)
 target_link_libraries(fcache ${EVENT_LIB} SETTING LOG UTIL THREAD PROCESS ZSKW ${GLIB_LIBRARIES} ${GTHREAD_LIBRARIES} ZSHTTP)
+
+add_executable (ishc ishc.c)
+target_link_libraries(ishc ${EVENT_LIB} ${GLIB_LIBRARIES} ${GTHREAD_LIBRARIES} LOG UTIL)
