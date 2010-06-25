@@ -87,7 +87,7 @@ sl_free(skiplist_t *sl)
   while (item) {
     node_t *next = STRIP_MARK(item->next[0]);
     if (sl->key_type != NULL) {
-      free((void *)item->key);
+      //free((void *)item->key);
     }
     free(item);
     item = next;
@@ -313,7 +313,7 @@ sl_cas(skiplist_t *sl, map_key_t key, map_val_t expectation, map_val_t new_val)
 
     // Lost a race to another thread modifying the skiplist. Free the new item we allocated and retry.
     if (sl->key_type != NULL) {
-      free((void *)new_key);
+      //free((void *)new_key);
     }
     free(new_item);
     return sl_cas(sl, key, expectation, new_val); // tail call
@@ -409,7 +409,7 @@ sl_remove(skiplist_t *sl, map_key_t key)
 
   // free the node
   if (sl->key_type != NULL) {
-    free((void *)item->key);
+    //free((void *)item->key);
   }
   free(item);
 

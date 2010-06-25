@@ -6,7 +6,7 @@
 
 #include "skiplist.h"
 
-static int run = 0;
+static int run = 0, ret = 0;
 static map_t *cache = NULL;
 
 typedef struct {
@@ -22,41 +22,49 @@ test(gpointer data, gpointer user_data)
 
   printf("===> test start: %d\n", tn);
   val_t vals[dn];
-  int i;
+  int i, mul=1;
+  while (mul < dn) mul *= 10;
   for (i=0; i<dn; i++) {
-    vals[i].num = tn*1000 + i;
+    vals[i].num = tn*mul + i;
     vals[i].tm  = time(NULL);
     md5_digest(&vals[i].num, sizeof(int), vals[i].key.digest);
 
-    //map_remove(cache, &vals[i].key);
+    map_remove(cache, &vals[i].key);
   }
 
   for (i=0; i<dn; i++) {
     sleep(time(NULL)%2);
     map_val_t v = map_set(cache, &vals[i].key, (map_val_t)&vals[i]);
-    if (v != NULL)
+    if (v != NULL) {
+      ret = 1;
       printf("+>set error: v(%p).num = %d\n", v, ((val_t *)v)->num);
+    }
   }
 
   for (i=0; i<dn; i++) {
     val_t *v = (val_t *)map_get(cache, &vals[i].key);
     if (v == NULL) {
+      ret = 2;
       printf("-> get wrong: v=%p\n", v);
     } else {
       if (v != &vals[i]) {
+        ret = 2;
         printf("-> get wrong: v(%p) != vals[%d](%p)\n",
                v, i, &vals[i]);
       }
       if (v->num != vals[i].num) {
+        ret = 2;
         printf("-> get wrong: v->num(%d) != vals[%d].num(%d)\n",
                v->num, i, vals[i].num);
       }
       if (v->tm  != vals[i].tm) {
+        ret = 2;
         printf("-> get wrong: v->tm (%d) != vals[%d].tm (%d)\n",
                v->tm,  i, vals[i].tm);
       }
       if (md5_compare(((map_key_t)v)->digest,
                       ((map_key_t)&vals[i].key)->digest)!=0) {
+        ret = 2;
         printf("-> get wrong: md5\n");
       }
     }
@@ -65,22 +73,27 @@ test(gpointer data, gpointer user_data)
   for (i=0; i<dn; i++) {
     val_t *v = (val_t *)map_remove(cache, &vals[i].key);
     if (v == NULL) {
+      ret = 3;
       printf("-> remove wrong: v=%p\n", v);
     } else {
       if (v != &vals[i]) {
+        ret = 3;
         printf("-> remove wrong: v(%p) != vals[%d](%p)\n",
                v, i, &vals[i]);
       }
       if (v->num != vals[i].num) {
+        ret = 3;
         printf("-> remove wrong: v->num(%d) != vals[%d].num(%d)\n",
                v->num, i, vals[i].num);
       }
       if (v->tm  != vals[i].tm) {
+        ret = 3;
         printf("-> remove wrong: v->tm (%d) != vals[%d].tm (%d)\n",
                v->tm,  i, vals[i].tm);
       }
       if (md5_compare(((map_key_t)v)->digest,
                       ((map_key_t)&vals[i].key)->digest)!=0) {
+        ret = 3;
         printf("-> remove wrong: md5\n");
       }
     }
@@ -146,6 +159,8 @@ int main(int argc, char **argv)
       }
 
       while (run > 0);
+      printf("done.\n");
     }
   }
+  return ret;
 }
