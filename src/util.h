@@ -1,6 +1,10 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <sys/types.h>
@@ -45,4 +49,7 @@ uint64_t current_time_micros(void);
 
 bool tcp_read(mmap_array_t *, const char *, uint16_t, char *);
 
+#ifdef __cplusplus
+}
+#endif
 #endif // UTIL_H

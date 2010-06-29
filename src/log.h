@@ -1,6 +1,10 @@
 #ifndef LOG_H
 #define LOG_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef int err_t;
 
 #define MAX_ERROR_NUM   2048
@@ -20,4 +24,7 @@ extern log_level_t default_level;
 extern char *log_file;
 extern int consolelog;
 
+#ifdef __cplusplus
+}
+#endif
 #endif // LOG_H
