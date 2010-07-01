@@ -119,6 +119,7 @@ pass_to_upstream(req_ctx_t *ctx)
         size_t header_len = 0, len;
         if (data.len>9 && strncmp(data.data, "HTTP/1.", 7)==0) {
           char *s = data.data, *line = NULL, *k, *v;
+          bool chunked = false;
           do {
             line = strsep(&s, "\r\n");
             len  = strlen(line);
@@ -128,13 +129,27 @@ pass_to_upstream(req_ctx_t *ctx)
             if (len>2 && strstr(line, ": ")!=NULL) {
               k=strsep(&line, ": ");
               v=(*line==' ')?line+1:line;
-              evhttp_add_header(ctx->client_req->output_headers, k, v);
+              if (strcmp(k, "Transfer-Encoding")==0 && strcmp(v, "chunked")==0)
+                chunked = true;
+              else
+                evhttp_add_header(ctx->client_req->output_headers, k, v);
             } else if (strncmp(line, "HTTP/1.", 7)==0) {
               strsep(&line, " "); // discard "HTTP/1.X"
               code = atoi(strsep(&line, " "));
               reason = line;
             }
           } while(line!=NULL && len>0);
+
+          if (chunked) {
+            // eat extra length line
+            for(;;) {
+              line = strsep(&s, "\r\n");
+              len  = strlen(line);
+              header_len += len+1;
+              if (*s == '\n') { s++; header_len++;}
+              if (len > 0) break;
+            }
+          }
         }
 
         //send remaining
