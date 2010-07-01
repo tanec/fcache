@@ -48,18 +48,7 @@ cfg = {
 typedef struct {
   struct evhttp_request *req;
   void *arg;
-
 } req_ctx_t;
-
-static void
-send_page(req_ctx_t *ctx)
-{
-  struct evbuffer *buf;
-  if ((buf = evbuffer_new()) == NULL) {
-    tlog(ERROR, "failed to create response buffer");
-  } else {
-  }
-}
 
 static inline bool
 is_str_empty(const char *s)
@@ -67,15 +56,22 @@ is_str_empty(const char *s)
   return s==NULL || strlen(s)<1;
 }
 
-
-/* ishc section start */
-/* ishc section end   */
+int i_shc_handler(evbuffer *buf, char *fullurl);
 
 static void
 process(gpointer data, gpointer user_data)
 {
   req_ctx_t *ctx = (req_ctx_t *)data;
   GError *error;
+
+  struct evbuffer *buf;
+  if ((buf = evbuffer_new()) == NULL) {
+    tlog(ERROR, "failed to create response buffer");
+  } else {
+    i_shc_handler(buf, ctx->req->uri);
+    evhttp_send_reply(ctx->req, HTTP_OK, "OK", buf);
+    evbuffer_free(buf);
+  }
 
   free(ctx);
 }
