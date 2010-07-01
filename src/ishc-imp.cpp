@@ -958,13 +958,13 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
       sprintf(I_MSP_CSSANDJSPATH,"/a/img_css/");
       bInitFlag=true;
     } else {
-      fprintf(stderr,"<!--不能读取配置文件-->");
+      evbuffer_add_printf(buf,"<!--不能读取配置文件-->");
       return ret;
     }
 
     proBlockChange = new CProBlockChange("/zhongsou/i/a/blockchange.dat");
     if(proBlockChange -> ReadChangeFileResult != 0) {
-      fprintf(stderr,"<!--初始化错误块配置文件失败-->");
+      evbuffer_add_printf(buf,"<!--初始化错误块配置文件失败-->");
       //return OK;
     }
   }
@@ -972,7 +972,7 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
   URLPARAMETER *para = new URLPARAMETER;
   ret = SetUrlParameters(para, fullurl);
   if(ret < 0) {
-    fprintf(stderr,"<!--读取参数失败-->");
+    evbuffer_add_printf(buf,"<!--读取参数失败-->");
     return OK;
   }
   //imsp框架
