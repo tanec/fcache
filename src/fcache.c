@@ -107,7 +107,7 @@ pass_to_upstream(req_ctx_t *ctx)
     process_upstream_end(slot, s, result);
 
     if (result) {
-      //if (data.data) tlog(DEBUG, "upstream:{\n%s\n}", data.data);
+      tlog(DEBUG, "upstream response length: %d", data.len);
       struct evbuffer *buf;
       if ((buf = evbuffer_new()) == NULL) {
         tlog(ERROR, "failed to create response buffer");
