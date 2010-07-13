@@ -69,6 +69,7 @@ process(gpointer data, gpointer user_data)
     tlog(ERROR, "failed to create response buffer");
   } else {
     i_shc_handler(buf, ctx->req->uri);
+    evhttp_add_header(ctx->client_req->output_headers, "Content-Type", "text/html; charset=gbk");
     evhttp_send_reply(ctx->req, HTTP_OK, "OK", buf);
     evbuffer_free(buf);
   }
