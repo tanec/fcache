@@ -7,20 +7,11 @@
 static FILE *log = NULL;
 log_level_t default_level = DEBUG;
 char *log_file = NULL;
-int consolelog = 1;
 
 void
 tlog(log_level_t level, const char *fmt, ...)
 {
   if (level >= default_level) {
-    if (consolelog) {
-      va_list args;
-      va_start(args, fmt);
-      vprintf(fmt, args);
-      va_end(args);
-      printf("\n");
-      return;
-    }
     if (log == NULL) {
       log = fopen(log_file, "a");
     }

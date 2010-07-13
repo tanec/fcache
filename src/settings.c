@@ -21,7 +21,6 @@ set_log_cfg(void)
 {
   default_level = cfg.log_level;
   log_file = (char*)cfg.log_file;
-  consolelog = cfg.daemon?0:1;
 }
 
 void
