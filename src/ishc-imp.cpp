@@ -5,6 +5,8 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <event.h>
+#include <ctype.h>
+#include <unistd.h>
 
 #include "ProBlockChange.h"
 using namespace std;
