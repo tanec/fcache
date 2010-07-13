@@ -79,7 +79,7 @@ size_t WriteFile( const void *buf, size_t itemSize, size_t items, FILE *fd ) {
 }
 //去掉空格、回车、换行符
 int CancelEnter(char *p) {
-  long lLen = strlen(p) -1;
+  int lLen = strlen(p) -1;
   while(lLen >= 0 &&
         (p[lLen] == (char)0x0d ||
          p[lLen] == (char)0x0a ||
@@ -565,7 +565,7 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
       if(DEBUGFLAG) { fprintf(stderr,"bId:%d\n",bId); }
       /**debug info**/
 
-      long tempUrlLen = 44 + strlen(para->b) + strlen(para->u);
+      int tempUrlLen = 44 + strlen(para->b) + strlen(para->u);
       char *tempUrl = new char[tempUrlLen];
       sprintf(tempUrl,"u=[%s]&f=%s&b=%d&v=%d",para->u,strFid,bId,para->t);
       tempUrlLen = strlen(tempUrl);
@@ -576,12 +576,12 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
 
       *(sendChildDataBuf+SendChildDataLength) = 2;
       SendChildDataLength += 1;
-      *(long*)(sendChildDataBuf + SendChildDataLength) = tempUrlLen;//信息源url长度
-      SendChildDataLength += sizeof(long);
+      *(int*)(sendChildDataBuf + SendChildDataLength) = tempUrlLen;//信息源url长度
+      SendChildDataLength += sizeof(int);
       memcpy(sendChildDataBuf+SendChildDataLength,tempUrl,tempUrlLen);//信息源url
       SendChildDataLength += tempUrlLen;
-      *(long*)(sendChildDataBuf + SendChildDataLength) = (long)0;//属性长度
-      SendChildDataLength += sizeof(long);
+      *(int*)(sendChildDataBuf + SendChildDataLength) = (int)0;//属性长度
+      SendChildDataLength += sizeof(int);
       delete tempUrl;
 
       *(UINT64*)(sendChildDataBuf + SendChildDataLength) = fId;//formatid
@@ -605,8 +605,8 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
     if(DEBUGFLAG) { fprintf(stderr,"SendDataLength:%d\n",SendDataLength); }
     /**debug info**/
 
-    *(long*)(sendDataBuf + SendDataLength) = (long)(sizeof(UINT64)+sizeof(char)+sizeof(long) + SendChildDataLength);
-    SendDataLength += sizeof(long);
+    *(int*)(sendDataBuf + SendDataLength) = (int)(sizeof(UINT64)+sizeof(char)+sizeof(int) + SendChildDataLength);
+    SendDataLength += sizeof(int);
     *(UINT64*)(sendDataBuf + SendDataLength) = (UINT64)0;
     SendDataLength += sizeof(UINT64);
     if(para->s == 1) {
@@ -615,8 +615,8 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
       *(sendDataBuf+SendDataLength) = 0;
     }
     SendDataLength += 1;
-    *(long*)(sendDataBuf + SendDataLength) = (long)SendChildDataLength;
-    SendDataLength += sizeof(long);
+    *(int*)(sendDataBuf + SendDataLength) = (int)SendChildDataLength;
+    SendDataLength += sizeof(int);
     memcpy(sendDataBuf+SendDataLength,sendChildDataBuf,SendChildDataLength);
     SendDataLength += SendChildDataLength;
 
@@ -658,13 +658,13 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
     }
     if(strncmp(verifyCode,"COMM",4) != 0) {
       if(strlen(err) == 0) {
-        sprintf(err,"校验错误COMMSTR,code:%ld！",(long)*(long*)(verifyCode+4));
+        sprintf(err,"校验错误COMMSTR,code:%ld！",(int)*(int*)(verifyCode+4));
       }
       return -5003;
     }
 
     //验证数据的合法性
-    int verifyDataLen=strlen(idCode) + sizeof(long);
+    int verifyDataLen=strlen(idCode) + sizeof(int);
     nAllLen=0;
     nOneLen = 0;
     do {
@@ -697,14 +697,14 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
     *(sendDataBuf + temLen) = 0;
     if(strncmp(sendDataBuf,idCode,temLen) != 0) {
       if(strlen(err) == 0) {
-        sprintf(err,"校验错误VERIFYCODESTR,code:%ld！",(long)*(long*)(sendDataBuf+temLen));
+        sprintf(err,"校验错误VERIFYCODESTR,code:%ld！",(int)*(int*)(sendDataBuf+temLen));
       }
       return -5005;
     }
     *(sendDataBuf + temLen) = ch;
     char *temBuf;
     temBuf = (sendDataBuf + temLen);
-    allRecvDataLength = (long)*(long*)(temBuf);
+    allRecvDataLength = (int)*(int*)(temBuf);
 
     /**debug info**/
     if(DEBUGFLAG) { fprintf(stderr,"allRecvDataLength:%d\n",allRecvDataLength); }
@@ -804,16 +804,16 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
     temLen = strlen(idCode);
     memcpy(sendDataBuf+SendDataLength,idCode,temLen);//验证码
     SendDataLength += temLen;
-    *(long*)(sendDataBuf + SendDataLength) = (long)(sizeof(UINT64)+sizeof(short)*2 + sizeof(long) + SendChildDataLength);
-    SendDataLength += sizeof(long);
+    *(int*)(sendDataBuf + SendDataLength) = (int)(sizeof(UINT64)+sizeof(short)*2 + sizeof(int) + SendChildDataLength);
+    SendDataLength += sizeof(int);
     *(UINT64*)(sendDataBuf + SendDataLength) = (UINT64)0;//保留位
     SendDataLength += sizeof(UINT64);
     *(short*)(sendDataBuf + SendDataLength) = (short)para->f;//刷新等级
     SendDataLength += sizeof(short);
     *(short*)(sendDataBuf + SendDataLength) = (short)1;//请求数目
     SendDataLength += sizeof(short);
-    *(long*)(sendDataBuf + SendDataLength) = (long)SendChildDataLength;
-    SendDataLength += sizeof(long);
+    *(int*)(sendDataBuf + SendDataLength) = (int)SendChildDataLength;
+    SendDataLength += sizeof(int);
     memcpy(sendDataBuf+SendDataLength,sendChildDataBuf,SendChildDataLength);
     SendDataLength += SendChildDataLength;
 
@@ -859,13 +859,13 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
     }
     if(strncmp(verifyCode,"COMM",4) != 0) {
       if(strlen(err) == 0) {
-        sprintf(err,"校验错误COMMSTR,code:%ld！",(long)*(long*)(verifyCode+4));
+        sprintf(err,"校验错误COMMSTR,code:%ld！",(int)*(int*)(verifyCode+4));
       }
       return -5003;
     }
 
     //验证数据的合法性
-    int verifyDataLen=strlen(idCode) + sizeof(long);
+    int verifyDataLen=strlen(idCode) + sizeof(int);
     nAllLen=0;
     do {
       nOneLen=recv(pSocket,sendDataBuf+nAllLen,verifyDataLen-nAllLen,0);
@@ -884,7 +884,7 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
     *(sendDataBuf + temLen) = 0;
     if(strncmp(sendDataBuf,idCode,temLen) != 0) {
       if(strlen(err) == 0) {
-        sprintf(err,"校验错误VERIFYCODESTR,code:%ld！",(long)*(long*)(sendDataBuf+temLen));
+        sprintf(err,"校验错误VERIFYCODESTR,code:%ld！",(int)*(int*)(sendDataBuf+temLen));
       }
       return -5005;
     }
@@ -892,7 +892,7 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
     *(sendDataBuf + temLen) = ch;
     char *temBuf;
     temBuf = (sendDataBuf + temLen);
-    allRecvDataLength = (long)*(long*)(temBuf);
+    allRecvDataLength = (int)*(int*)(temBuf);
     if(allRecvDataLength < 4) {
       if(strlen(err) == 0) {
         sprintf(err,"数据不完整错误ALLDATALENGTH,code:%ld！",allRecvDataLength);
@@ -1033,7 +1033,7 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
       int dataLenPos;
       /*if(para->a == 1)
       {
-        dataLenPos = 10 + sizeof(long)*4 + sizeof(char)*2;
+        dataLenPos = 10 + sizeof(int)*4 + sizeof(char)*2;
         unsigned char md5Len[10] = {0};
         memcpy(md5Len,pBuf + dataLenPos,8);
         char outMd5[20] = {0};
@@ -1046,9 +1046,9 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
       else*/
       {
         if(para->s == 1) {
-          dataLenPos = 10 + sizeof(long)*8 + sizeof(char)*2;
+          dataLenPos = 10 + sizeof(int)*8 + sizeof(char)*2;
         } else {
-          dataLenPos = 10 + sizeof(long)*10 + sizeof(char)*3 + sizeof(short)*2 + strlen(para->u);
+          dataLenPos = 10 + sizeof(int)*10 + sizeof(char)*3 + sizeof(short)*2 + strlen(para->u);
         }
         /**debug info**/
         if(DEBUGFLAG) { fprintf(stderr,"dataLenPos:%d\n",dataLenPos); }
@@ -1056,7 +1056,7 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
 
         char strDataLen[10] = {0};
         memcpy(strDataLen,pBuf + dataLenPos,4);
-        long dataLen = (long)*(long*)strDataLen;
+        int dataLen = (int)*(int*)strDataLen;
         if(dataLen > 0) {
           dataLenPos += 4;
           evbuffer_add_printf(buf, "%s", pBuf+dataLenPos);
@@ -1077,17 +1077,17 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
     if(iRet==-5001) {
       I_SHC_36_PrintfErrorHtmlPage(buf,"因为您当前访问的网页超时，请重试。\n",iRet,errorStr);
     } else if(iRet>0) {
-      int dataLenPos = 10 + sizeof(long)*8 + sizeof(short)*4 + sizeof(char)*2 + strlen(para->u);
+      int dataLenPos = 10 + sizeof(int)*8 + sizeof(short)*4 + sizeof(char)*2 + strlen(para->u);
       char strDataLen[10] = {0};
       memcpy(strDataLen,pBuf + dataLenPos,4);
-      long statusCode = (long)*(long*)strDataLen;
-      dataLenPos += sizeof(long);
+      int statusCode = (int)*(int*)strDataLen;
+      dataLenPos += sizeof(int);
       memcpy(strDataLen,pBuf + dataLenPos,4);
-      long errorCodeTime = (long)*(long*)strDataLen;
-      dataLenPos += sizeof(long);
+      int errorCodeTime = (int)*(int*)strDataLen;
+      dataLenPos += sizeof(int);
       memcpy(strDataLen,pBuf + dataLenPos,4);
-      long errorCode = (long)*(long*)strDataLen;
-      dataLenPos += sizeof(long);
+      int errorCode = (int)*(int*)strDataLen;
+      dataLenPos += sizeof(int);
 
       if(para->f > 1 && errorCode < 0) {
         if(pBuf!=NULL) {
@@ -1150,8 +1150,8 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
           }
 
           int indiLen = strlen(outBuf);
-          //static long temLen = errorCode + indiLen;
-          long temLen = errorCode + indiLen;
+          //static int temLen = errorCode + indiLen;
+          int temLen = errorCode + indiLen;
 
           if(para->f > 1) {
             evbuffer_add_printf(buf,"%s",pBuf+dataLenPos);
