@@ -151,6 +151,56 @@ process_init()
   udp_listen_expire(process_expire);
 }
 
+void
+process_sticky()
+{//load sticky page
+  if (cfg.sticky_url_file != NULL) {
+    page_t *page;
+    FILE *file;
+    int len = 512, i;
+    char line[len], domain[len], keyword[len], *l;
+    md5_digest_t md5d, md5f;
+
+    file = fopen(cfg.sticky_url_file, "r");
+    if (file != NULL) {
+      do {
+        l=fgets(line, len, file);
+        if (l==NULL) break;
+
+        for(i=0; i<strlen(l); i++) {
+          keyword[i] = *(l+i);
+          switch(keyword[i]) {
+          case ' ':
+          case '\t':
+            keyword[i] = '\0';
+          }
+
+          if (keyword[i] == '\0') break;
+        }
+
+        l = strstr(line, "://");
+        if (strncmp(l, "://", 3)==0) l+=3;
+
+        for(i=0; i<strlen(l); i++) {
+          domain[i] = *(l+i);
+          if (domain[i] == '\0') break;
+        }
+
+        strcat(domain, keyword);
+        md5_digest(domain, strlen(domain), md5d.digest);
+        md5_digest(l, strlen(l), md5f.digest);
+        page = file_get(&md5d, &md5f);
+        if (page != NULL) {
+          page->level = -18;
+          sfree(mem_set(&md5f, page));
+        }
+      } while(1);
+
+      fclose(file);
+    }
+  }
+}
+
 page_t *
 process_mem(request_t *req, int curr_stat)
 {

@@ -447,6 +447,7 @@ main(int argc, char**argv)
   // keywords
   if (cfg.doamin_file != NULL)  read_domain(cfg.doamin_file);
   if (cfg.synonyms_file != NULL)read_synonyms(cfg.synonyms_file);
+  process_sticky();
 
   // initialize libraries
   struct evhttp *httpd;

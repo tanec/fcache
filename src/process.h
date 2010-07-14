@@ -25,6 +25,7 @@ typedef struct {
 } request_t;
 
 void request_init(request_t *);
+void process_sticky(void);
 const char * request_store(request_t *, int, ...);
 
 md5_digest_t * md5_dir(request_t *);

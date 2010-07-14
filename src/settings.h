@@ -45,6 +45,7 @@ typedef struct {
   const char *page_encoding;
   const char *doamin_file;
   const char *synonyms_file;
+  const char *sticky_url_file;
 
   //udp notify other server
   server_group_t udp_notify;

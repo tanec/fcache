@@ -124,6 +124,7 @@ read_cfg(char *file)
     r=config_lookup_string(&c, "fs.encoding",    &cfg.page_encoding); tlog(DEBUG, "%d, cfg.page_encoding=%s", r,cfg.page_encoding);
     r=config_lookup_string(&c, "keyword.domain", &cfg.doamin_file);   tlog(DEBUG, "%d, cfg.doamin_file=%s",   r,cfg.doamin_file);
     r=config_lookup_string(&c, "keyword.sino",   &cfg.synonyms_file); tlog(DEBUG, "%d, cfg.synonyms_file=%s", r,cfg.synonyms_file);
+    r=config_lookup_string(&c, "keyword.sticky", &cfg.sticky_url_file);tlog(DEBUG,"%d, cfg.sticky_url_file=%s", r,cfg.sticky_url_file);
     r=config_lookup_string(&c, "udp_server.host",&cfg.udp_server.host);tlog(DEBUG,"%d, cfg.udp_server.host=%s", r,cfg.udp_server.host);
     r=config_lookup_int   (&c, "udp_server.port",&cfg.udp_server.port);tlog(DEBUG,"%d, cfg.udp_server.port=%d", r,cfg.udp_server.port);
 
