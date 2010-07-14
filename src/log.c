@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <time.h>
 #include "log.h"
 
 static FILE *log = NULL;
@@ -16,6 +17,15 @@ tlog(log_level_t level, const char *fmt, ...)
       log = fopen(log_file, "a");
     }
     if (log != NULL) {
+      time_t rawtime;
+      struct tm * timeinfo;
+      char strtime[80];
+
+      time(&rawtime);
+      timeinfo = localtime(&rawtime);
+      strftime(strtime, 80, "[%F %T]", timeinfo);
+      fprintf(log, "%s ", strtime);
+
       va_list args;
       va_start(args, fmt);
       vfprintf(log, fmt, args);
