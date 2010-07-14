@@ -210,6 +210,10 @@ process_mem(request_t *req, int curr_stat)
   item->total_num++;
 
   page = mem_get(md5_file(req));
+  if (page != NULL) {
+    if(strcmp(req->keyword, page->head.keyword)!=0)
+      page = NULL;
+  }
 
   if (page != NULL) {
     stat_add(&(item->success), current_time_micros() - s);
