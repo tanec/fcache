@@ -14,7 +14,6 @@ typedef struct {
   const char *igid;
 
   bool force_refresh;
-  bool sticky; // lru or not
 
   md5_digest_t *dig_dir;
   md5_digest_t *dig_file;

@@ -94,7 +94,6 @@ request_init(request_t *req)
   req->igid     = NULL;
 
   req->force_refresh = false;
-  req->sticky   = false;
 
   req->dig_dir  = NULL;
   req->dig_file = NULL;
@@ -234,7 +233,6 @@ process_fs(request_t *req, int curr_stat)
   page = file_get(md5_dir(req), md5_file(req));
 
   if (page != NULL) {
-    if (req->sticky) page->level = -18;
     stat_add(&(item->success), current_time_millis() - s);
   } else {
     stat_add(&(item->notfound), current_time_millis() - s);
