@@ -37,6 +37,7 @@ typedef enum {
 
 typedef struct {
   page_head_t head;
+  uint32_t sign;
   page_from_t from;
   uint64_t level; // lru
   md5_digest_t digest; // key md5 digest
@@ -46,4 +47,5 @@ typedef struct {
 
 void * page_print(page_t *);
 
+#define PSIGN 12345
 #endif // READER_H

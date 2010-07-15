@@ -211,7 +211,7 @@ process_mem(request_t *req, int curr_stat)
 
   page = mem_get(md5_file(req));
   if (page != NULL) {
-    if(strcmp(req->keyword, page->head.keyword)!=0)
+    if(page->sign!=PSIGN || strcmp(req->keyword, page->head.keyword)!=0)
       page = NULL;
   }
 
