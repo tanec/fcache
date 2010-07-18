@@ -134,10 +134,11 @@ process_expire(md5_digest_t *dig)
 
   page_t *page = mem_get(dig);
   if (page != NULL) {
+    mem_release(page);
     if (page->level < 0) //sticky
       page->head.valid = 0;
     else
-      sfree(mem_del(dig));
+      mem_del(dig);
   }
 }
 
@@ -191,7 +192,7 @@ process_sticky()
         page = file_get(&md5d, &md5f);
         if (page != NULL) {
           page->level = -18;
-          sfree(mem_set(&md5f, page));
+          mem_set(&md5f, page);
         }
       } while(1);
 
@@ -210,7 +211,7 @@ process_mem(request_t *req, int curr_stat)
 
   page = mem_get(md5_file(req));
   if (page != NULL) {
-    if(page->sign!=PSIGN || strcmp(req->keyword, page->head.keyword)!=0)
+    if(strcmp(req->keyword, page->head.keyword)!=0)
       page = NULL;
   }
 
@@ -311,25 +312,31 @@ process_cache(request_t *req, page_t *page)
 
   bool expire = is_expire(page);
   if (page->from == FILESYSTEM) {
-    sfree(mem_set(req->dig_file, page)); // save in memory if expired?
+    mem_set(req->dig_file, page); // save in memory if expired?
     mem_lru();
     if (expire) {
       udp_notify_expire(req, page); //udp: notify
     }
   } else if (page->from == MEMORY) {
     if (expire) {
+      // page in memory is expired
       page_t *p1 = file_get(md5_dir(req), md5_file(req));
       if (p1 == NULL) { // not in fs: delete
-        sfree(mem_del(req->dig_file));
+        mem_release(page);
+        mem_del(req->dig_file);
       } else if (is_expire(p1)) { // expire in fs
         udp_notify_expire(req, p1); // udp: notify
         sfree(p1);
+        mem_release(page);
       } else { // valid on fs
-        sfree(mem_set(req->dig_file, p1));
+        mem_release(page);
+        mem_set(req->dig_file, p1);
         mem_lru(); // necessary?
       }
     } else {
+      // page in memory is not expired
       mem_access(page);
+      mem_release(page);
     }
   }
 }

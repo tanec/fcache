@@ -42,7 +42,7 @@ file_read_path(char *path)
     /* |<-- page_t -->|<-- body data -->|<-- head strings -->| */
     /* about 32 bytes in head is not for strings */
     page_t *page = (page_t*)smalloc(sizeof(page_t)+blen+hlen-32);
-    page->sign  = PSIGN;
+    page->ref   = 0;
     page->level = 0;
     page->body_len = blen;
     page->body = (char*)page+sizeof(page_t);

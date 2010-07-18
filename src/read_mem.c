@@ -48,43 +48,67 @@ mem_init()
   count = 0;
 }
 
+static void
+mem_free(page_t *page)
+{
+  int i;
+  if (page==NULL) return;
+  for (i=0; i<9; i++) {
+    if (page->ref < 1) {
+      sfree(page);
+      break;
+    } else {
+      usleep(100);
+    }
+  }
+}
+
 page_t *
 mem_get(md5_digest_t *md5)
 {
-  return map_get(cache, md5);
+  page_t *ret = map_get(cache, md5);
+  ret->ref ++;
+  return ret;
 }
 
-page_t *
+void
+mem_release(page_t *page)
+{
+  if (page!=NULL)
+    page->ref --;
+}
+
+void
 mem_set(md5_digest_t *md5, page_t *page)
 {
-  page_t *ret;
-  if (page == NULL) return NULL;
+  page_t *old;
+  if (page == NULL) return;
 
   memcpy(&(page->digest), md5, sizeof(md5_digest_t));
-  ret = map_set(cache, &(page->digest), page);
-  if (ret != NULL && ret->level < 0) page->level=ret->level;
+  old = map_set(cache, &(page->digest), page);
+  if (old != NULL && old->level < 0) page->level=old->level;
   if (page->level >= 0) { // level < 0: sticky
     page->level = max++;
     total += page->level;
-    if (ret != NULL)
-      total -= ret->level; // replace
+    if (old != NULL)
+      total -= old->level; // replace
     else
       count++; //add
   }
-  return ret;
+  mem_free(old);
 }
 
-page_t *
+void
 mem_del(map_key_t key)
 {
-  page_t *ret;
+  page_t *old;
 
-  ret = map_remove(cache, key);
-  if (ret != NULL && ret->level >= 0) {
-    count --;
-    total -= ret->level;
+  old = map_remove(cache, key);
+  if (old != NULL && old->level >= 0) {
+      count --;
+      total -= old->level;
   }
-  return ret;
+  mem_free(old);
 }
 
 void
@@ -109,7 +133,7 @@ mem_lru(void)
       while(cfg.maxmem - smalloc_used_memory() < cfg.max_reserve) {
       page = (page_t*)map_iter_next(iter, &key);
       if (page!=NULL && 0<=page->level && page->level<avg) {
-        sfree(mem_del(key));
+        mem_del(key);
       }
     }
     map_iter_free(iter);
