@@ -37,10 +37,11 @@ exit_on_sig(const int sig)
   exit(EXIT_SUCCESS);
 }
 
-/* fastp: just handle, read mem/fs, write to client;
-   slowp: possible auth, bypass, cache maitain
+/* fastp: just handle, read mem/fs
+   slowp: possible auth, bypass
+   cache: cache maitain
  */
-static GThreadPool *fastp, *slowp;
+static GThreadPool *fastp, *slowp, *cache;
 typedef struct {
   // from client
   struct evhttp_request *client_req;
@@ -50,34 +51,33 @@ typedef struct {
   request_t req;
 
   page_t *page;
-  bool sent;
+  // response
+  int              resp_code;
+  const char      *resp_reason;
+  struct evbuffer *resp_buf;
 } req_ctx_t;
 
 static void
 send_page(req_ctx_t *ctx)
 {
-  struct evbuffer *buf;
-  if ((buf = evbuffer_new()) == NULL) {
-    tlog(ERROR, "failed to create response buffer");
-  } else {
-    tlog(DEBUG, "send page: %s", ctx->page->head.param);
-    static char *content_type="text/html; charset=";
-    const char *enc = cfg.page_encoding;
-    if (enc==NULL||strlen(enc)<2) enc="UTF-8";
-    char ct[strlen(content_type)+strlen(enc)+1];
+  tlog(DEBUG, "send page: %s", ctx->page->head.param);
+  static char *content_type="text/html; charset=";
+  const char *enc = cfg.page_encoding;
+  if (enc==NULL||strlen(enc)<2) enc="UTF-8";
+  char ct[strlen(content_type)+strlen(enc)+1];
 
-    size_t len1=strlen(content_type), len2=strlen(enc);
-    memcpy(ct, content_type, len1);
-    memcpy(ct+len1, enc, len2);
-    ct[len1+len2]='\0';
+  size_t len1=strlen(content_type), len2=strlen(enc);
+  memcpy(ct, content_type, len1);
+  memcpy(ct+len1, enc, len2);
+  ct[len1+len2]='\0';
 
-    evbuffer_add(buf, ctx->page->body, ctx->page->body_len);
-    evhttp_add_header(ctx->client_req->output_headers, "Content-Type", ct);
-    evhttp_add_header(ctx->client_req->output_headers, "Content-Encoding", "gzip");
-    evhttp_send_reply(ctx->client_req, HTTP_OK, "OK", buf);
-    ctx->sent = true;
-    evbuffer_free(buf);
-  }
+  evhttp_add_header(ctx->client_req->output_headers, "Content-Type", ct);
+  evhttp_add_header(ctx->client_req->output_headers, "Content-Encoding", "gzip");
+
+  ctx->resp_code   = HTTP_OK;
+  ctx->resp_reason = "OK";
+  evbuffer_add(ctx->resp_buf, ctx->page->body, ctx->page->body_len);
+  //TODO: get back to main thread with ctx set
 }
 
 static void
@@ -87,8 +87,10 @@ send_redirect(req_ctx_t *ctx, const char *url)
   evhttp_add_header(ctx->client_req->output_headers, "Connection", "close");
   evhttp_add_header(ctx->client_req->output_headers, "Content-Length", "0");
   evhttp_add_header(ctx->client_req->output_headers, "Location", url);
-  evhttp_send_reply(ctx->client_req, HTTP_MOVETEMP, "Moved Temporarily", NULL);
-  ctx->sent = true;
+
+  ctx->resp_code   = HTTP_MOVETEMP;
+  ctx->resp_reason = "Moved Temporarily";
+  //TODO: get back to main thread with ctx set
 }
 
 static void
@@ -108,57 +110,52 @@ pass_to_upstream(req_ctx_t *ctx)
 
     if (result) {
       tlog(DEBUG, "upstream response length: %d", data.len);
-      struct evbuffer *buf;
-      if ((buf = evbuffer_new()) == NULL) {
-        tlog(ERROR, "failed to create response buffer");
-      } else {
-        evhttp_clear_headers(ctx->client_req->output_headers);
-        //parse headers
-        int code = HTTP_OK;
-        const char *reason = "OK";
-        size_t header_len = 0, len;
-        if (data.len>9 && strncmp(data.data, "HTTP/1.", 7)==0) {
-          char *s = data.data, *line = NULL, *k, *v;
-          bool chunked = false;
-          do {
+
+      evhttp_clear_headers(ctx->client_req->output_headers);
+      //parse headers
+      ctx->resp_code   = HTTP_OK;
+      ctx->resp_reason = "OK";
+      size_t header_len = 0, len;
+      if (data.len>9 && strncmp(data.data, "HTTP/1.", 7)==0) {
+        char *s = data.data, *line = NULL, *k, *v;
+        bool chunked = false;
+        do {
+          line = strsep(&s, "\r\n");
+          len  = strlen(line);
+          header_len += len+1;
+          if (*s == '\n') { s++; header_len++;}
+
+          if (len>2 && strstr(line, ": ")!=NULL) {
+            k=strsep(&line, ": ");
+            v=(*line==' ')?line+1:line;
+            if (strcmp(k, "Transfer-Encoding")==0 && strcmp(v, "chunked")==0)
+              chunked = true;
+            else
+              evhttp_add_header(ctx->client_req->output_headers, k, v);
+          } else if (strncmp(line, "HTTP/1.", 7)==0) {
+            strsep(&line, " "); // discard "HTTP/1.X"
+            ctx->resp_code   = atoi(strsep(&line, " "));
+            ctx->resp_reason = line;
+          }
+        } while(line!=NULL && len>0);
+
+        if (chunked) {
+          // eat extra length line
+          for(;;) {
             line = strsep(&s, "\r\n");
             len  = strlen(line);
             header_len += len+1;
             if (*s == '\n') { s++; header_len++;}
-
-            if (len>2 && strstr(line, ": ")!=NULL) {
-              k=strsep(&line, ": ");
-              v=(*line==' ')?line+1:line;
-              if (strcmp(k, "Transfer-Encoding")==0 && strcmp(v, "chunked")==0)
-                chunked = true;
-              else
-                evhttp_add_header(ctx->client_req->output_headers, k, v);
-            } else if (strncmp(line, "HTTP/1.", 7)==0) {
-              strsep(&line, " "); // discard "HTTP/1.X"
-              code = atoi(strsep(&line, " "));
-              reason = line;
-            }
-          } while(line!=NULL && len>0);
-
-          if (chunked) {
-            // eat extra length line
-            for(;;) {
-              line = strsep(&s, "\r\n");
-              len  = strlen(line);
-              header_len += len+1;
-              if (*s == '\n') { s++; header_len++;}
-              if (len > 0) break;
-            }
+            if (len > 0) break;
           }
         }
-
-        //send remaining
-        evbuffer_add(buf, data.data+header_len, data.len-header_len);
-        evhttp_send_reply(ctx->client_req, code, reason, buf);
-        ctx->sent = true;
-        evbuffer_free(buf);
       }
+
+      //send remaining
+      evbuffer_add(ctx->resp_buf, data.data+header_len, data.len-header_len);
+
       if (data.data!=NULL) free(data.data);
+      //TODO: get back to main thread with ctx set
     }
   }
 }
@@ -244,10 +241,10 @@ fast_process(gpointer data, gpointer user_data)
 
   if (ctx->page!=NULL && ctx->page->head.auth_type == AUTH_NO) {
     send_page(ctx);
+  } else {
+    tlog(DEBUG, "push %s to slow pool(page=%p)", ctx->client_req->uri, ctx->page);
+    g_thread_pool_push(slowp, ctx, &error);
   }
-
-  tlog(DEBUG, "push %s to slow pool(page=%p)", ctx->client_req->uri, ctx->page);
-  g_thread_pool_push(slowp, ctx, &error);
 }
 
 static void
@@ -255,39 +252,41 @@ slow_process(gpointer data, gpointer user_data)
 {
   req_ctx_t *ctx = data;
 
-  if (ctx->sent) {
-    process_cache(&ctx->req, ctx->page);
+  if (ctx->page == NULL) {
+    // bypass to upstream
+    tlog(DEBUG, "pass(not found): %s", ctx->req.url);
+    pass_to_upstream(ctx);
   } else {
-    if (ctx->page == NULL) {
-      // bypass to upstream
-      tlog(DEBUG, "pass(not found): %s", ctx->req.url);
-      pass_to_upstream(ctx);
-    } else {
-      // auth
-      if (ctx->page->head.auth_type != AUTH_NO) {
-        const char *igid;
-        igid = find_igid(ctx);
-        if (igid == NULL) { //need auth, but no igid
-          tlog(DEBUG, "igid not in cookie, but need auth");
-          ctx->page = NULL;
-        } else {
-          ctx->page = process_auth(igid, ctx->page);
-        }
-      }
-
-      if (ctx->page != NULL) {
-        send_page(ctx);
-        process_cache(&ctx->req, ctx->page);
+    // auth
+    if (ctx->page->head.auth_type != AUTH_NO) {
+      const char *igid;
+      igid = find_igid(ctx);
+      if (igid == NULL) { //need auth, but no igid
+        tlog(DEBUG, "igid not in cookie, but need auth");
+        ctx->page = NULL;
       } else {
-        // not authorized: pass to upstream
-        tlog(DEBUG, "pass(no permission): %s", ctx->req.url);
-        pass_to_upstream(ctx);
+        ctx->page = process_auth(igid, ctx->page);
       }
     }
-  }
 
-  // finish
-  free(ctx);
+    if (ctx->page != NULL) {
+      send_page(ctx);
+    } else {
+      // not authorized: pass to upstream
+      tlog(DEBUG, "pass(no permission): %s", ctx->req.url);
+      pass_to_upstream(ctx);
+    }
+  }
+}
+
+static void
+cache_process(gpointer data, gpointer user_data)
+{
+  req_ctx_t *ctx = data;
+  if (ctx != NULL) {
+    process_cache(&ctx->req, ctx->page);
+    free(ctx);
+  }
 }
 
 static void
@@ -300,7 +299,8 @@ init_fcache()
   g_thread_init(NULL);
   fastp = g_thread_pool_new(fast_process, NULL, nth, false, &error);
   slowp = g_thread_pool_new(slow_process, NULL, nth, false, &error);
-  if (fastp == NULL || slowp == NULL) {
+  cache = g_thread_pool_new(cache_process,NULL, 4, false, &error);
+  if (fastp == NULL || slowp == NULL || cache == NULL) {
     perror("can not initialize thread pool!");
     exit(1);
   }
@@ -310,14 +310,37 @@ void
 page_handler(struct evhttp_request *req, void *arg)
 {
   GError *error;
-  req_ctx_t *ctx = calloc(1, sizeof(req_ctx_t));
-  ctx->client_req  = req;
-  ctx->arg  = arg;
-  ctx->page = NULL;
-  ctx->sent = false;
-  request_init(&ctx->req);
-  tlog(DEBUG, "push %s to fast pool", req->uri);
-  g_thread_pool_push(fastp, ctx, &error);
+  req_ctx_t *ctx ;
+
+  if (arg == NULL) {
+    // enter from evhttpd
+    if ((ctx = calloc(1, sizeof(req_ctx_t))) == NULL) {
+      tlog(ERROR, "failed to create context: %s", req->uri);
+      return;
+    }
+    if ((ctx->resp_buf = evbuffer_new()) == NULL) {
+      tlog(ERROR, "failed to create response buffer for: %s", req->uri);
+      return;
+    }
+    ctx->resp_code   = HTTP_OK;
+    ctx->resp_reason = "OK";
+
+    ctx->client_req  = req;
+    ctx->arg  = arg;
+    ctx->page = NULL;
+    request_init(&ctx->req);
+    tlog(DEBUG, "push %s to fast pool", req->uri);
+    g_thread_pool_push(fastp, ctx, &error);
+  } else {
+    //processed, get back again
+    req_ctx_t *ctx = arg;
+    evhttp_send_reply(ctx->client_req,
+                      ctx->resp_code,
+                      ctx->resp_reason,
+                      ctx->resp_buf);
+    evbuffer_free(ctx->resp_buf);
+    g_thread_pool_push(cache, ctx, &error);
+  }
 }
 
 void
