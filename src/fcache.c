@@ -56,6 +56,18 @@ typedef struct {
   const char      *resp_reason;
   struct evbuffer *resp_buf;
 } req_ctx_t;
+static const char *send_start_path = "/fcache/send/start";
+static void
+send_queue_push(req_ctx_t *ctx)
+{
+
+}
+static req_ctx_t *
+send_queue_pop(void)
+{
+
+}
+
 
 static void
 send_page(req_ctx_t *ctx)
@@ -77,7 +89,7 @@ send_page(req_ctx_t *ctx)
   ctx->resp_code   = HTTP_OK;
   ctx->resp_reason = "OK";
   evbuffer_add(ctx->resp_buf, ctx->page->body, ctx->page->body_len);
-  //TODO: get back to main thread with ctx set
+  send_queue_push(ctx);
 }
 
 static void
@@ -90,7 +102,7 @@ send_redirect(req_ctx_t *ctx, const char *url)
 
   ctx->resp_code   = HTTP_MOVETEMP;
   ctx->resp_reason = "Moved Temporarily";
-  //TODO: get back to main thread with ctx set
+  send_queue_push(ctx);
 }
 
 static void
@@ -155,9 +167,9 @@ pass_to_upstream(req_ctx_t *ctx)
       evbuffer_add(ctx->resp_buf, data.data+header_len, data.len-header_len);
 
       if (data.data!=NULL) free(data.data);
-      //TODO: get back to main thread with ctx set
     }
   }
+  send_queue_push(ctx);
 }
 
 static inline bool
@@ -312,35 +324,42 @@ page_handler(struct evhttp_request *req, void *arg)
   GError *error;
   req_ctx_t *ctx ;
 
-  if (arg == NULL) {
-    // enter from evhttpd
-    if ((ctx = calloc(1, sizeof(req_ctx_t))) == NULL) {
-      tlog(ERROR, "failed to create context: %s", req->uri);
-      return;
-    }
-    if ((ctx->resp_buf = evbuffer_new()) == NULL) {
-      tlog(ERROR, "failed to create response buffer for: %s", req->uri);
-      return;
-    }
-    ctx->resp_code   = HTTP_OK;
-    ctx->resp_reason = "OK";
+  // enter from evhttpd
+  if ((ctx = calloc(1, sizeof(req_ctx_t))) == NULL) {
+    tlog(ERROR, "failed to create context: %s", req->uri);
+    return;
+  }
+  if ((ctx->resp_buf = evbuffer_new()) == NULL) {
+    tlog(ERROR, "failed to create response buffer for: %s", req->uri);
+    return;
+  }
+  ctx->resp_code   = HTTP_OK;
+  ctx->resp_reason = "OK";
 
-    ctx->client_req  = req;
-    ctx->arg  = arg;
-    ctx->page = NULL;
-    request_init(&ctx->req);
-    tlog(DEBUG, "push %s to fast pool", req->uri);
-    g_thread_pool_push(fastp, ctx, &error);
-  } else {
-    //processed, get back again
-    req_ctx_t *ctx = arg;
+  ctx->client_req  = req;
+  ctx->arg  = arg;
+  ctx->page = NULL;
+  request_init(&ctx->req);
+  tlog(DEBUG, "push %s to fast pool", req->uri);
+  g_thread_pool_push(fastp, ctx, &error);
+}
+
+void
+send_handler(struct evhttp_request *req, void *arg)
+{
+  GError *error;
+  req_ctx_t *ctx = NULL;
+  while(true) {
+    ctx = send_queue_pop();
+    if (ctx == NULL) break;
     evhttp_send_reply(ctx->client_req,
                       ctx->resp_code,
                       ctx->resp_reason,
                       ctx->resp_buf);
     evbuffer_free(ctx->resp_buf);
     g_thread_pool_push(cache, ctx, &error);
-  }
+  };
+  evhttp_send_error(req, HTTP_NOCONTENT, "No Content");
 }
 
 void
@@ -480,6 +499,7 @@ main(int argc, char**argv)
     evhttp_set_cb(httpd, cfg.monitor_path, monitor_handler, NULL);
   if (cfg.status_path  != NULL)
     evhttp_set_cb(httpd, cfg.status_path,  status_handler,  NULL);
+  evhttp_set_cb(httpd, send_start_path,  send_handler,  NULL);
 
   /* Set a callback for all other requests. */
   evhttp_set_gencb(httpd, page_handler, NULL);
