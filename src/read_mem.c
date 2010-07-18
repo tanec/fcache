@@ -67,7 +67,7 @@ page_t *
 mem_get(md5_digest_t *md5)
 {
   page_t *ret = map_get(cache, md5);
-  ret->ref ++;
+  if(ret!=NULL) ret->ref ++;
   return ret;
 }
 
