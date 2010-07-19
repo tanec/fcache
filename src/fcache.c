@@ -56,18 +56,56 @@ typedef struct {
   const char      *resp_reason;
   struct evbuffer *resp_buf;
 } req_ctx_t;
+
+typedef struct ctx_node_s ctx_node_t;
+struct ctx_node_s {
+  req_ctx_t  *ctx;
+  ctx_node_t *next;
+};
+
 static const char *send_start_path = "/fcache/send/start";
+static char send_start_request[512] = {0};
+static ctx_node_t ctx_lst = {NULL, NULL};
+
 static void
-send_queue_push(req_ctx_t *ctx)
+send_list_push(req_ctx_t *ctx)
 {
+  ctx_node_t *node, *next;
 
+  node = calloc(1, sizeof(ctx_node_t));
+  if (node == NULL) return;
+
+  node->ctx  = ctx;
+  while(1) {
+    next = ctx_lst.next;
+    node->next = next;
+    if(next == SYNC_CAS(&ctx_lst.next, next, node)) break;
+  }
+
+  // notify
+  mmap_array_t resp = {0, NULL};
+  const char *host = cfg.bind_addr;
+
+  if (strcmp(cfg.bind_addr, "0.0.0.0") == 0)
+    host= "127.0.0.1";
+  if (send_start_request[0] == 0)
+    sprintf(send_start_request, "GET %s HTTP/1.0\r\n\r\n", send_start_path);
+  tcp_read(&resp, host, cfg.port, send_start_request);
 }
+
 static req_ctx_t *
-send_queue_pop(void)
+send_list_pop(void)
 {
-
+  ctx_node_t *node = NULL;
+  while(1) {
+    node = ctx_lst.next;
+    if (node == NULL) return NULL;
+    if (node == SYNC_CAS(&ctx_lst.next, node, node->next)) break;
+  }
+  req_ctx_t *ctx = (node==NULL)?NULL:node->ctx;
+  free(node);
+  return ctx;
 }
-
 
 static void
 send_page(req_ctx_t *ctx)
@@ -89,7 +127,7 @@ send_page(req_ctx_t *ctx)
   ctx->resp_code   = HTTP_OK;
   ctx->resp_reason = "OK";
   evbuffer_add(ctx->resp_buf, ctx->page->body, ctx->page->body_len);
-  send_queue_push(ctx);
+  send_list_push(ctx);
 }
 
 static void
@@ -102,7 +140,7 @@ send_redirect(req_ctx_t *ctx, const char *url)
 
   ctx->resp_code   = HTTP_MOVETEMP;
   ctx->resp_reason = "Moved Temporarily";
-  send_queue_push(ctx);
+  send_list_push(ctx);
 }
 
 static void
@@ -169,7 +207,7 @@ pass_to_upstream(req_ctx_t *ctx)
       if (data.data!=NULL) free(data.data);
     }
   }
-  send_queue_push(ctx);
+  send_list_push(ctx);
 }
 
 static inline bool
@@ -350,8 +388,9 @@ send_handler(struct evhttp_request *req, void *arg)
   GError *error;
   req_ctx_t *ctx = NULL;
   while(true) {
-    ctx = send_queue_pop();
+    ctx = send_list_pop();
     if (ctx == NULL) break;
+    tlog(DEBUG, "send %s", ctx->client_req->uri);
     evhttp_send_reply(ctx->client_req,
                       ctx->resp_code,
                       ctx->resp_reason,
