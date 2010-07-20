@@ -105,14 +105,17 @@ http_unescape(const char *in, char *out)
   int   len = -1;
   char *res = NULL;
   CURL *curl;
+  bool ret = false;
 
   curl = curl_easy_init();
   if (curl != NULL) {
     res = curl_easy_unescape(curl, in, 0, &len);
     if (res != NULL && len > 0) {
       memcpy(out, res, len+1);
-      return true;
+      ret = true;
     }
+    curl_easy_cleanup(curl);
+    return ret;
   }
   return false;
 }
