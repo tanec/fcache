@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdio.h>
 #include "md5.h"
 
 #undef BYTE_ORDER       /* 1 = big-endian, -1 = little-endian, 0 = unknown */
@@ -347,4 +348,13 @@ md5_compare(md5_byte_t digest1[16], md5_byte_t digest2[16])
     return digest1[i] - digest2[i];
   }
   return 0;
+}
+
+void
+md5_str(char dest[33], md5_byte_t digest[16])
+{
+  int i;
+  for (i=0; i< 16; i++)
+    sprintf(&dest[i*2], "%02x", digest[i]);
+  dest[32] = '\0';
 }

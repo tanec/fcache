@@ -21,5 +21,6 @@ void md5_append(md5_state_t *, const md5_byte_t *, int);
 void md5_finish(md5_state_t *state, md5_byte_t digest[16]);
 void md5_digest(const void *ptr, int size, md5_byte_t digest[16]);
 int  md5_compare(md5_byte_t digest1[16], md5_byte_t digest2[16]);
+void md5_str(char dest[33], md5_byte_t digest[16]);
 
 #endif // MD5_H
