@@ -281,12 +281,14 @@ fast_process(gpointer data, gpointer user_data)
   ctx->page=process_get(&ctx->req);
   if (ctx->req.force_refresh) {
     if (ctx->page != NULL) ctx->page->head.valid = 0;
+    process_discard(ctx->page);
     ctx->page = NULL;
   } else if(ctx->page!=NULL &&
             (igid=find_igid(ctx))!=NULL &&
             ctx->page->head.ig!=NULL &&
             strcmp(igid, ctx->page->head.ig)==0) {
     //owner: pass to upstream
+    process_discard(ctx->page);
     ctx->page = NULL;
   }
 
@@ -305,7 +307,7 @@ slow_process(gpointer data, gpointer user_data)
 
   if (ctx->page == NULL) {
     // bypass to upstream
-    tlog(DEBUG, "pass(not found): %s", ctx->req.url);
+    tlog(DEBUG, "pass2upstream: %s", ctx->req.url);
     pass_to_upstream(ctx);
   } else {
     // auth
@@ -314,9 +316,13 @@ slow_process(gpointer data, gpointer user_data)
       igid = find_igid(ctx);
       if (igid == NULL) { //need auth, but no igid
         tlog(DEBUG, "igid not in cookie, but need auth");
+        process_discard(ctx->page);
         ctx->page = NULL;
       } else {
-        ctx->page = process_auth(igid, ctx->page);
+        if (!process_auth(igid, ctx->page)) {
+          process_discard(ctx->page);
+          ctx->page = NULL;
+        }
       }
     }
 

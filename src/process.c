@@ -262,20 +262,32 @@ process_get(request_t *req)
   return NULL;
 }
 
-page_t *
+void
+process_discard(page_t *page)
+{
+  if (page != NULL) {
+    if (page->from == MEMORY) {
+      mem_release(page);
+    } else {
+      sfree(page);
+    }
+  }
+}
+
+bool
 process_auth(const char *igid, page_t *page)
 {
-  if (page == NULL) return NULL;
+  if (page == NULL) return false;
 
-  page_t * ret = page;
+  bool ret = false;
   uint64_t s = current_time_millis();
   stat_item_t *item = &statics[current_stat_slot()].auth;
   item->total_num++;
 
   if (!auth_http(igid, page->head.keyword, page->head.auth_type, page->head.param))
-    ret = NULL;
+    ret = false;
 
-  if (page != NULL) {
+  if (ret != false) {
     stat_add(&(item->success), current_time_millis() - s);
   } else {
     stat_add(&(item->notfound), current_time_millis() - s);
