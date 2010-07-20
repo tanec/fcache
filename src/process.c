@@ -332,16 +332,14 @@ process_cache(request_t *req, page_t *page)
   } else if (page->from == MEMORY) {
     if (expire) {
       // page in memory is expired
+      mem_release(page);
       page_t *p1 = file_get(md5_dir(req), md5_file(req));
       if (p1 == NULL) { // not in fs: delete
-        mem_release(page);
         mem_del(req->dig_file);
       } else if (is_expire(p1)) { // expire in fs
         udp_notify_expire(req, p1); // udp: notify
         sfree(p1);
-        mem_release(page);
       } else { // valid on fs
-        mem_release(page);
         mem_set(req->dig_file, p1);
         mem_lru(); // necessary?
       }

@@ -5,6 +5,7 @@
 #include "smalloc.h"
 #include "settings.h"
 #include "md5.h"
+#include "util.h"
 
 static map_t *cache = NULL;
 static time_t total=0, max=0;
@@ -52,7 +53,7 @@ page_t *
 mem_get(md5_digest_t *md5)
 {
   page_t *ret = map_get(cache, md5);
-  if(ret!=NULL) ret->ref ++;
+  if(ret!=NULL) SYNC_ADD(&ret->ref, 1);
   return ret;
 }
 
@@ -60,8 +61,7 @@ void
 mem_release(page_t *page)
 {
   if (page != NULL) {
-    page->ref --;
-    if (page->ref < 1) {
+    if (SYNC_SUB(&page->ref, 1) < 1) {
       sfree(page);
     }
   }
@@ -85,7 +85,7 @@ mem_set(md5_digest_t *md5, page_t *page)
       count++; //add
   }
   if (old != page) {
-    page->ref++;
+    SYNC_ADD(&page->ref, 1);
     mem_release(old);
   }
 }
