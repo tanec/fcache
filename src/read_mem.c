@@ -48,21 +48,6 @@ mem_init()
   count = 0;
 }
 
-static void
-mem_free(page_t *page)
-{
-  int i;
-  if (page==NULL) return;
-  for (i=0; i<9; i++) {
-    if (page->ref < 1) {
-      sfree(page);
-      break;
-    } else {
-      usleep(100);
-    }
-  }
-}
-
 page_t *
 mem_get(md5_digest_t *md5)
 {
@@ -74,8 +59,12 @@ mem_get(md5_digest_t *md5)
 void
 mem_release(page_t *page)
 {
-  if (page!=NULL)
+  if (page != NULL) {
     page->ref --;
+    if (page->ref < 1) {
+      sfree(page);
+    }
+  }
 }
 
 void
@@ -95,7 +84,10 @@ mem_set(md5_digest_t *md5, page_t *page)
     else
       count++; //add
   }
-  mem_free(old);
+  if (old != page) {
+    page->ref++;
+    mem_release(old);
+  }
 }
 
 void
@@ -108,7 +100,7 @@ mem_del(map_key_t key)
       count --;
       total -= old->level;
   }
-  mem_free(old);
+  mem_release(old);
 }
 
 void
