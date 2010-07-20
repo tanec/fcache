@@ -91,6 +91,7 @@ send_list_push(req_ctx_t *ctx)
   if (send_start_request[0] == 0)
     sprintf(send_start_request, "GET %s HTTP/1.0\r\n\r\n", send_start_path);
   tcp_read(&resp, host, cfg.port, send_start_request);
+  if (resp.data != NULL) free(resp.data);
 }
 
 static req_ctx_t *
