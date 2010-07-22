@@ -1,13 +1,16 @@
 #include <string.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include "zhongsou_keyword.h"
 #include "util.h"
-#include "smalloc.h"
 #include "log.h"
 #include "settings.h"
 
+pthread_mutex_t dlock, slock;
+
 static str_map_t *domains = NULL;
 static str_map_t *synonyms = NULL;//default: zhongsou
+static char *domain_keywords_domains = NULL;
 #define MAX_DOMAIN 1024
 struct dm_s {
   char *domain;
@@ -44,7 +47,7 @@ read_strmap(const char *file)
                + sizeof(str_map_node_t *)
                + len*sizeof(str_map_node_t);
     char *str;
-    ret = smalloc(pln + mt.len + 1);
+    ret = malloc(pln + mt.len + 1);
     memset(ret, '\n', pln + mt.len + 1);// ensure last '\n'
     ret->len = len;
     ret->base= (str_map_node_t *)((char *)ret + sizeof(size_t) + sizeof(str_map_node_t *));
@@ -88,12 +91,28 @@ read_strmap(const char *file)
 }
 
 void
-read_domain(const char *file)
-{tlog(DEBUG, "read_domain(%s)", file);
-  domains = read_strmap(file);
+read_lock_init(void)
+{
+  pthread_mutex_init(&dlock, NULL);
+  pthread_mutex_init(&slock, NULL);
+  domains  = NULL;
+  synonyms = NULL;
+  domain_keywords_domains = NULL;
+  memset(domain_keywords, 0, MAX_DOMAIN*sizeof(struct dm_s));
 }
 
 void
+read_domain(const char *file)
+{tlog(DEBUG, "read_domain(%s)", file);
+  if (pthread_mutex_trylock(&dlock) == 0) {
+    str_map_t *old = domains;
+    domains = read_strmap(file);
+    if (old != NULL) free(old);
+    pthread_mutex_unlock(&dlock);
+  }
+}
+
+static inline void
 read_domain_synonyms(char *domain, char *file)
 {tlog(DEBUG, "read_domain_synonyms(%s, %s)", domain, file);
   int i;
@@ -105,7 +124,11 @@ read_domain_synonyms(char *domain, char *file)
       break;
     }
   }
-  if(current != NULL) current->map = read_strmap(file);
+  if(current != NULL) {
+    str_map_t *old = current->map;
+    current->map = read_strmap(file);
+    if (old != NULL) free(old);
+  }
 }
 
 void
@@ -113,10 +136,23 @@ read_synonyms(const char *file)
 {tlog(DEBUG, "read_synonyms(%s)", file);
   mmap_array_t mt;
   char *files, *f1=NULL, *f2=NULL;
-  memset(domain_keywords, 0, MAX_DOMAIN*sizeof(struct dm_s));
+  int i;
+
+  if (pthread_mutex_trylock(&slock) != 0) return;
   if (mmap_read(&mt, file)) {
-    int i;
-    files = smalloc(mt.len+1);
+    // clear old domain specific synonyms
+    for(i=0; i<MAX_DOMAIN; i++) {
+      if(domain_keywords[i].domain != NULL) {
+        domain_keywords[i].domain = NULL;
+      }
+      if(domain_keywords[i].map != NULL) {
+        free(domain_keywords[i].map);
+        domain_keywords[i].map = NULL;
+      }
+    }
+
+    // store domain names
+    files = malloc(mt.len+1);
     memset(files, '\n', mt.len+1);
     memcpy(files, mt.data, mt.len);
 
@@ -129,7 +165,9 @@ read_synonyms(const char *file)
         *(files+i) = '\0';
         if (f1!=NULL && f2!=NULL && c=='\n') {
           if (strcmp(f1, "default")==0) {
+            str_map_t *old = synonyms;
             synonyms = read_strmap(f2);
+            if (old != NULL) free(old);
           } else {
             read_domain_synonyms(f1, f2);
           }
@@ -144,7 +182,10 @@ read_synonyms(const char *file)
         }
       }
     }
+    if (domain_keywords_domains != NULL) free(domain_keywords_domains);
+    domain_keywords_domains = files;
   }
+  pthread_mutex_unlock(&slock);
 }
 
 char * search(str_map_t *map, const char *key, size_t s, size_t e);

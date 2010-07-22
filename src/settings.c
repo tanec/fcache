@@ -39,8 +39,9 @@ init_cfg(void)
   cfg.doamin_file = NULL;
   cfg.synonyms_file= NULL;
 
-  cfg.status_path = "/fcache-status";
-  cfg.monitor_path = "/m";
+  cfg.status_path = "/fcache/status";
+  cfg.monitor_path = "/fcache/mon";
+  cfg.read_kw_path = "/fcache/readkw";
   cfg.pid_file = "/var/run/fcache.pid";
 
   cfg.num_threads = 16;
@@ -115,6 +116,7 @@ read_cfg(char *file)
     r=config_lookup_string(&c, "conn.pipe",      &cfg.socketpath);    tlog(DEBUG, "%d, cfg.socketpath=%s",    r,cfg.socketpath);
     r=config_lookup_string(&c, "run.status",     &cfg.status_path);   tlog(DEBUG, "%d, cfg.status_path=%s",   r,cfg.status_path);
     r=config_lookup_string(&c, "run.monitor",    &cfg.monitor_path);  tlog(DEBUG, "%d, cfg.monitor_path=%s",  r,cfg.monitor_path);
+    r=config_lookup_string(&c, "run.readkw",     &cfg.read_kw_path);  tlog(DEBUG, "%d, cfg.read_kw_path=%s",  r,cfg.read_kw_path);
     r=config_lookup_string(&c, "run.pidfile",    &cfg.pid_file);      tlog(DEBUG, "%d, cfg.pid_file=%s",      r,cfg.pid_file);
     r=config_lookup_int   (&c, "thread.num",     &cfg.num_threads);   tlog(DEBUG, "%d, cfg.num_threads=%d",   r,cfg.num_threads);
     r=config_lookup_int   (&c, "mem.max",        &n);if(r) cfg.maxmem     =(uint64_t)n*1024*1024; tlog(DEBUG, "%d, cfg.maxmem=%llu",      r,cfg.maxmem);

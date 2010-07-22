@@ -437,6 +437,14 @@ status_handler(struct evhttp_request *req, void *arg)
   }
 }
 
+void
+read_kw_handler(struct evhttp_request *req, void *arg)
+{
+  if (cfg.doamin_file != NULL)  read_domain(cfg.doamin_file);
+  if (cfg.synonyms_file != NULL)read_synonyms(cfg.synonyms_file);
+  evhttp_send_error(req, HTTP_NOCONTENT, "No Content");
+}
+
 int
 main(int argc, char**argv)
 {
@@ -526,6 +534,7 @@ main(int argc, char**argv)
   process_init();
   init_fcache();
   // keywords
+  read_lock_init();
   if (cfg.doamin_file != NULL)  read_domain(cfg.doamin_file);
   if (cfg.synonyms_file != NULL)read_synonyms(cfg.synonyms_file);
   process_sticky();
@@ -545,6 +554,8 @@ main(int argc, char**argv)
     evhttp_set_cb(httpd, cfg.monitor_path, monitor_handler, NULL);
   if (cfg.status_path  != NULL)
     evhttp_set_cb(httpd, cfg.status_path,  status_handler,  NULL);
+  if (cfg.read_kw_path != NULL)
+    evhttp_set_cb(httpd, cfg.read_kw_path,  read_kw_handler,  NULL);
   evhttp_set_cb(httpd, send_start_path,  send_handler,  NULL);
 
   /* Set a callback for all other requests. */

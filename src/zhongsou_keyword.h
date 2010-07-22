@@ -13,6 +13,7 @@ typedef struct {
   str_map_node_t *base;
 } str_map_t;
 
+void read_lock_init(void);
 void read_domain(const char *);
 void read_synonyms(const char *);
 

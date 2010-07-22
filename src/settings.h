@@ -32,6 +32,7 @@ typedef struct {
   const char *socketpath;
   const char *status_path;
   const char *monitor_path;
+  const char *read_kw_path;
 
   const char *pid_file;
   int num_threads;
