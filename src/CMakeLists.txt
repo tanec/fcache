@@ -70,3 +70,6 @@ target_link_libraries(fcache ${EVENT_LIB} SETTING LOG UTIL THREAD PROCESS ZSKW $
 
 add_executable (ishc ishc.cpp ProBlockChange.cpp ishc-imp.cpp)
 target_link_libraries(ishc ${EVENT_LIB} ${GLIB_LIBRARIES} ${GTHREAD_LIBRARIES} LOG UTIL)
+
+add_executable (keeprun keeprun.c)
+target_link_libraries(keeprun UTIL)
