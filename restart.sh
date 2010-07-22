@@ -15,5 +15,5 @@ function start() {
 esac
 }
 
-pkill -9 $1
-ps -ef | grep -v grep | grep -E "keeprun .*$1" || start $1
+pkill -9 $1 || true
+ps -ef | grep -v grep | grep -E "keeprun $D/$1" || start $1
