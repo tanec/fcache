@@ -1,5 +1,5 @@
+#include <stdlib.h>
 #include "tmap.h"
-#include "smalloc.h"
 
 struct map {
   const map_impl_t *impl;
@@ -14,7 +14,7 @@ struct map_iter {
 inline map_t *
 map_alloc(const map_impl_t *map_impl, const datatype_t *key_type)
 {
-  map_t *map = (map_t *)smalloc(sizeof(map_t));
+  map_t *map = (map_t *)malloc(sizeof(map_t));
   map->impl  = map_impl;
   map->data  = map->impl->alloc(key_type);
   return map;
@@ -77,7 +77,7 @@ map_remove(map_t *map, map_key_t key)
 inline map_iter_t *
 map_iter_begin(map_t *map, map_key_t key)
 {
-  map_iter_t *iter = (map_iter_t *)smalloc(sizeof(map_iter_t));
+  map_iter_t *iter = (map_iter_t *)malloc(sizeof(map_iter_t));
   iter->impl  = map->impl;
   iter->state = map->impl->iter_begin(map->data, key);
   return iter;
@@ -93,5 +93,5 @@ inline void
 map_iter_free(map_iter_t *iter)
 {
   iter->impl->iter_free(iter->state);
-  sfree(iter);
+  free(iter);
 }

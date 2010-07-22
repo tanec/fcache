@@ -39,7 +39,7 @@ target_link_libraries(HTTP ${CURL_LIBRARIES})
 
 add_library(MAP tmap.c)
 add_library(SKIPLIST skiplist.c)
-target_link_libraries(SKIPLIST  SMALLOC MAP)
+target_link_libraries(SKIPLIST MAP)
 
 ########################################
 add_library(READER reader.c)
