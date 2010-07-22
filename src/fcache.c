@@ -186,7 +186,7 @@ pass_to_upstream(req_ctx_t *ctx)
           } else if (strncmp(line, "HTTP/1.", 7)==0) {
             strsep(&line, " "); // discard "HTTP/1.X"
             ctx->resp_code   = atoi(strsep(&line, " "));
-            ctx->resp_reason = line;
+            ctx->resp_reason = request_store(&ctx->req, 1, line);
           }
         } while(line!=NULL && len>0);
 
