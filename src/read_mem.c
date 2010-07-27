@@ -73,8 +73,7 @@ mem_set(md5_digest_t *md5, page_t *page)
   page_t *old;
   if (page == NULL) return;
 
-  memcpy(&(page->digest), md5, sizeof(md5_digest_t));
-  old = map_set(cache, &(page->digest), page);
+  old = map_set(cache, md5, page);
   if (old != NULL && old->level < 0) page->level=old->level;
   if (page->level >= 0) { // level < 0: sticky
     page->level = max++;

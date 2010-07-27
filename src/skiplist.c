@@ -19,6 +19,7 @@ typedef size_t markable_t;
 typedef struct node {
   map_key_t key;
   map_val_t val;
+  md5_digest_t digest;
   unsigned num_levels;
   markable_t next[1];
 } node_t;
@@ -297,6 +298,7 @@ sl_cas(skiplist_t *sl, map_key_t key, map_val_t expectation, map_val_t new_val)
   TRACE("s3", "sl_cas: attempting to insert a new item between %p and %p", preds[0], nexts[0]);
   map_key_t new_key = sl->key_type == NULL ? key : (map_key_t)sl->key_type->clone((void *)key);
   new_item = node_alloc(n, new_key, new_val);
+  memcpy(&new_item->digest, key, sizeof(md5_digest_t));
 
   // Set <new_item>'s next pointers to their proper values
   markable_t next = new_item->next[0] = (markable_t)nexts[0];

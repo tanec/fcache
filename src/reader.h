@@ -40,7 +40,6 @@ typedef struct {
   uint32_t ref;
   page_from_t from;
   uint64_t level; // lru
-  md5_digest_t digest; // key md5 digest
   uint32_t body_len;
   void *body; // 文件内容;
 } page_t;
