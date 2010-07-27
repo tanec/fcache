@@ -299,6 +299,7 @@ sl_cas(skiplist_t *sl, map_key_t key, map_val_t expectation, map_val_t new_val)
   map_key_t new_key = sl->key_type == NULL ? key : (map_key_t)sl->key_type->clone((void *)key);
   new_item = node_alloc(n, new_key, new_val);
   memcpy(&new_item->digest, key, sizeof(md5_digest_t));
+  new_item->key = &new_item->digest;
 
   // Set <new_item>'s next pointers to their proper values
   markable_t next = new_item->next[0] = (markable_t)nexts[0];
