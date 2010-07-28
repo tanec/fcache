@@ -134,49 +134,49 @@ find_preds(node_t **preds, node_t **succs, int n, skiplist_t *sl, map_key_t key,
 
       // A tag means an item is logically removed but not physically unlinked yet.
       while (EXPECT_FALSE(HAS_MARK(next))) {
-	TRACE("s3", "find_preds: found marked item %p (next is %p)", item, next);
-	if (unlink == DONT_UNLINK) {
+        TRACE("s3", "find_preds: found marked item %p (next is %p)", item, next);
+        if (unlink == DONT_UNLINK) {
 
-	  // Skip over logically removed items.
-	  item = STRIP_MARK(next);
-	  if (EXPECT_FALSE(item == NULL))
-	    break;
-	  next = item->next[level];
-	} else {
+          // Skip over logically removed items.
+          item = STRIP_MARK(next);
+          if (EXPECT_FALSE(item == NULL))
+            break;
+          next = item->next[level];
+        } else {
 
-	  // Unlink logically removed items.
-	  markable_t other = SYNC_CAS(&pred->next[level], (markable_t)item, (markable_t)STRIP_MARK(next));
-	  if (other == (markable_t)item) {
-	    TRACE("s3", "find_preds: unlinked item from pred %p", pred, 0);
-	    item = STRIP_MARK(next);
-	  } else {
-	    TRACE("s3", "find_preds: lost race to unlink item pred %p's link changed to %p", pred, other);
-	    if (HAS_MARK(other))
-	      return find_preds(preds, succs, n, sl, key, unlink); // retry
-	    item = GET_NODE(other);
-	  }
-	  next = (item != NULL) ? item->next[level] : DOES_NOT_EXIST;
-	}
+          // Unlink logically removed items.
+          markable_t other = SYNC_CAS(&pred->next[level], (markable_t)item, (markable_t)STRIP_MARK(next));
+          if (other == (markable_t)item) {
+            TRACE("s3", "find_preds: unlinked item from pred %p", pred, 0);
+            item = STRIP_MARK(next);
+          } else {
+            TRACE("s3", "find_preds: lost race to unlink item pred %p's link changed to %p", pred, other);
+            if (HAS_MARK(other))
+              return find_preds(preds, succs, n, sl, key, unlink); // retry
+            item = GET_NODE(other);
+          }
+          next = (item != NULL) ? item->next[level] : DOES_NOT_EXIST;
+        }
       }
 
       if (EXPECT_FALSE(item == NULL)) {
-	TRACE("s3", "find_preds: past the last item in the skiplist", 0, 0);
-	break;
+        TRACE("s3", "find_preds: past the last item in the skiplist", 0, 0);
+        break;
       }
 
       TRACE("s4", "find_preds: visiting item %p (next is %p)", item, next);
       TRACE("s4", "find_preds: key %p val %p", STRIP_MARK(item->key), item->val);
 
       if (EXPECT_TRUE(sl->key_type == NULL)) {
-	d = item->key - key;
+        d = item->key - key;
       } else {
-	d = sl->key_type->cmp((void *)item->key, (void *)key);
+        d = sl->key_type->cmp((void *)item->key, (void *)key);
       }
 
       if (d > 0)
-	break;
+        break;
       if (d == 0 && unlink != FORCE_UNLINK)
-	break;
+        break;
 
       pred = item;
       item = GET_NODE(next);
@@ -186,10 +186,10 @@ find_preds(node_t **preds, node_t **succs, int n, skiplist_t *sl, map_key_t key,
 
     if (level < n) {
       if (preds != NULL) {
-	preds[level] = pred;
+        preds[level] = pred;
       }
       if (succs != NULL) {
-	succs[level] = item;
+        succs[level] = item;
       }
     }
   }
@@ -334,28 +334,28 @@ sl_cas(skiplist_t *sl, map_key_t key, map_val_t expectation, map_val_t new_val)
 
       markable_t other = SYNC_CAS(&pred->next[level], (markable_t)nexts[level], (markable_t)new_item);
       if (other == (markable_t)nexts[level])
-	break; // successfully linked <new_item> into the skiplist at the current <level>
+        break; // successfully linked <new_item> into the skiplist at the current <level>
       TRACE("s3", "sl_cas: lost a race. failed to change pred's link. expected %p found %p", nexts[level], other);
 
       // Find <new_item>'s new preds and nexts.
       find_preds(preds, nexts, new_item->num_levels, sl, key, ASSIST_UNLINK);
 
       for (i = level; i < new_item->num_levels; ++i) {
-	markable_t old_next = new_item->next[i];
-	if ((markable_t)nexts[i] == old_next)
-	  continue;
+        markable_t old_next = new_item->next[i];
+        if ((markable_t)nexts[i] == old_next)
+          continue;
 
-	// Update <new_item>'s inconsistent next pointer before trying again. Use a CAS so if another thread
-	// is trying to remove the new item concurrently we do not stomp on the mark it places on the item.
-	TRACE("s3", "sl_cas: attempting to update the new item's link from %p to %p", old_next, nexts[i]);
-	other = SYNC_CAS(&new_item->next[i], old_next, (markable_t)nexts[i]);
-	ASSERT(other == old_next || other == MARK_NODE(old_next));
+        // Update <new_item>'s inconsistent next pointer before trying again. Use a CAS so if another thread
+        // is trying to remove the new item concurrently we do not stomp on the mark it places on the item.
+        TRACE("s3", "sl_cas: attempting to update the new item's link from %p to %p", old_next, nexts[i]);
+        other = SYNC_CAS(&new_item->next[i], old_next, (markable_t)nexts[i]);
+        ASSERT(other == old_next || other == MARK_NODE(old_next));
 
-	// If another thread is removing this item we can stop linking it into to skiplist
-	if (HAS_MARK(other)) {
-	  find_preds(NULL, NULL, 0, sl, key, FORCE_UNLINK); // see comment below
-	  return DOES_NOT_EXIST;
-	}
+        // If another thread is removing this item we can stop linking it into to skiplist
+        if (HAS_MARK(other)) {
+          find_preds(NULL, NULL, 0, sl, key, FORCE_UNLINK); // see comment below
+          return DOES_NOT_EXIST;
+        }
       }
     } while (1);
   }
@@ -394,10 +394,10 @@ sl_remove(skiplist_t *sl, map_key_t key)
       next = old_next;
       old_next = SYNC_CAS(&item->next[level], next, MARK_NODE((node_t *)next));
       if (HAS_MARK(old_next)) {
-	TRACE("s2", "sl_remove: %p is already marked for removal by another thread (next %p)", item, old_next);
-	if (level == 0)
-	  return DOES_NOT_EXIST;
-	break;
+        TRACE("s2", "sl_remove: %p is already marked for removal by another thread (next %p)", item, old_next);
+        if (level == 0)
+          return DOES_NOT_EXIST;
+        break;
       }
     } while (next != old_next);
   }
@@ -428,17 +428,17 @@ sl_print(skiplist_t *sl, int verbose)
     for (level = MAX_LEVELS - 1; level >= 0; --level) {
       node_t *item = sl->head;
       if (item->next[level] == DOES_NOT_EXIST)
-	continue;
+        continue;
       printf("(%d) ", level);
       int i = 0;
       while (item) {
-	markable_t next = item->next[level];
-	printf("%s%p ", HAS_MARK(next) ? "*" : "", item);
-	item = STRIP_MARK(next);
-	if (i++ > 30) {
-	  printf("...");
-	  break;
-	}
+        markable_t next = item->next[level];
+        printf("%s%p ", HAS_MARK(next) ? "*" : "", item);
+        item = STRIP_MARK(next);
+        if (i++ > 30) {
+          printf("...");
+          break;
+        }
       }
       printf("\n");
       fflush(stdout);
@@ -449,23 +449,23 @@ sl_print(skiplist_t *sl, int verbose)
       int is_marked = HAS_MARK(item->next[0]), level;
       printf("%s%p:0x%llx ", is_marked ? "*" : "", item, item->key);
       if (item != sl->head) {
-	printf("[%d]", item->num_levels);
+        printf("[%d]", item->num_levels);
       } else {
-	printf("[HEAD]");
+        printf("[HEAD]");
       }
       for (level = 1; level < item->num_levels; ++level) {
-	node_t *next = STRIP_MARK(item->next[level]);
-	is_marked = HAS_MARK(item->next[0]);
-	printf(" %p%s", next, is_marked ? "*" : "");
-	if (item == sl->head && item->next[level] == DOES_NOT_EXIST)
-	  break;
+        node_t *next = STRIP_MARK(item->next[level]);
+        is_marked = HAS_MARK(item->next[0]);
+        printf(" %p%s", next, is_marked ? "*" : "");
+        if (item == sl->head && item->next[level] == DOES_NOT_EXIST)
+          break;
       }
       printf("\n");
       fflush(stdout);
       item = STRIP_MARK(item->next[0]);
       if (i++ > 30) {
-	printf("...\n");
-	break;
+        printf("...\n");
+        break;
       }
     }
   }
