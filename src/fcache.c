@@ -517,6 +517,8 @@ main(int argc, char**argv)
     }
   }
 
+  tlog(INFO, "fcache start.");
+
   if (cfg.daemon) {
     if (sigignore(SIGHUP) == -1) {
       perror("Failed to ignore SIGHUP");
