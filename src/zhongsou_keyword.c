@@ -237,9 +237,10 @@ find_keyword(const char *domain, const char *keyword)
       bool mkd = false;
       int i;
       for (i=0; i<cfg.multi_keyword_domains_len; i++) {
-        if (strcmp(domain, cfg.multi_keyword_domains[i])==0)
+        if (strcmp(domain, cfg.multi_keyword_domains[i])==0) {
           mkd = true;
-        break;
+	  break;
+	}
       }
       if (!mkd) kw=domain2kw(domain);
     }
