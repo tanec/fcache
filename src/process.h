@@ -10,7 +10,8 @@
 typedef struct {
   const char *host;
   const char *keyword;
-  const char *url;
+  const char *url; // inner use
+  const char *url_orig; // pass to upstream
   const char *igid;
 
   bool force_refresh;

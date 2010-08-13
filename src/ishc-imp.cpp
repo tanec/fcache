@@ -17,22 +17,22 @@ using namespace std;
 
 #define OK 1
 
-/**å…¨å±€å˜é‡å®šä¹‰**/
-static bool				DEBUGFLAG=false;		   //SOCKETè¶…æ—¶æ—¶é—´(å•ä½ï¼šç§’)
-static unsigned int		SOCKETOUTTIME=10;		   //SOCKETè¶…æ—¶æ—¶é—´(å•ä½ï¼šç§’)
-static unsigned int		SERVERIPMAX=0;			   //å½“å‰IPæ€»æ•°
-static bool				bInitFlag=false;		   //æ˜¯å¦åˆå§‹åŒ–
-static char				widgetVersion[20];		   //æ˜¯å¦æ‰“å°ä¿¡æ¯
+/**È«¾Ö±äÁ¿¶¨Òå**/
+static bool				DEBUGFLAG=false;		   //SOCKET³¬Ê±Ê±¼ä(µ¥Î»£ºÃë)
+static unsigned int		SOCKETOUTTIME=10;		   //SOCKET³¬Ê±Ê±¼ä(µ¥Î»£ºÃë)
+static unsigned int		SERVERIPMAX=0;			   //µ±Ç°IP×ÜÊı
+static bool				bInitFlag=false;		   //ÊÇ·ñ³õÊ¼»¯
+static char				widgetVersion[20];		   //ÊÇ·ñ´òÓ¡ĞÅÏ¢
 static char					I_MSP_CGIPATH[70];
 static char					I_MSP_IMAGEPATH[70];
 static char					I_MSP_CSSANDJSPATH[70];
 
 struct CONNECTSERVERIPSTRUCT {
-  char strIP[16];			//æœåŠ¡å™¨IP
-  int	iPort;				//æœåŠ¡å™¨PORT
-  bool bConnect;			//æ˜¯å¦èƒ½è¿æ¥æœåŠ¡å™¨
+  char strIP[16];			//·şÎñÆ÷IP
+  int	iPort;				//·şÎñÆ÷PORT
+  bool bConnect;			//ÊÇ·ñÄÜÁ¬½Ó·şÎñÆ÷
 
-  pthread_mutex_t		pThreadMutex;	//çº¿ç¨‹è¯»å†™é”
+  pthread_mutex_t		pThreadMutex;	//Ïß³Ì¶ÁĞ´Ëø
 
   CONNECTSERVERIPSTRUCT() {
     bConnect=true;
@@ -43,7 +43,7 @@ struct CONNECTSERVERIPSTRUCT {
     pthread_mutex_destroy(&pThreadMutex);
   }
 
-  //è¿æ¥å€¼å¢åŠ 
+  //Á¬½ÓÖµÔö¼Ó
   void ChangeIsConnectValue(bool bC) {
     pthread_mutex_lock(&pThreadMutex);
     bConnect=bC;
@@ -51,20 +51,20 @@ struct CONNECTSERVERIPSTRUCT {
   }
 };
 
-//url å‚æ•°
+//url ²ÎÊı
 struct URLPARAMETER {
-  int s;    //0 æ—  : isch, 1:imsp
-  int t;    //å—ç‰ˆæœ¬
-  int ds;   //0 æ— ï¼šå–imspå‰ªåˆ‡é¡µçš„æºç ï¼Œ1ï¼šå–imspçš„æ¡†æ¶
-  int f;    //åˆ·æ–°ç­‰çº§
-  int a;	  //1ï¼šæ–°åŠ å—ï¼Œ0 æ— ï¼šå·²æœ‰å—
-  char b[50];	  //ishc å—id
+  int s;    //0 ÎŞ : isch, 1:imsp
+  int t;    //¿é°æ±¾
+  int ds;   //0 ÎŞ£ºÈ¡imsp¼ôÇĞÒ³µÄÔ´Âë£¬1£ºÈ¡imspµÄ¿ò¼Ü
+  int f;    //Ë¢ĞÂµÈ¼¶
+  int a;	  //1£ºĞÂ¼Ó¿é£¬0 ÎŞ£ºÒÑÓĞ¿é
+  char b[50];	  //ishc ¿éid
   char u[256];   //url
 };
 
 CONNECTSERVERIPSTRUCT *pServerIP = NULL;
 CProBlockChange *proBlockChange = NULL;
-/**åŠŸèƒ½å‡½æ•°**/
+/**¹¦ÄÜº¯Êı**/
 size_t WriteFile( const void *buf, size_t itemSize, size_t items, FILE *fd ) {
   size_t saved = 0;
   size_t count;
@@ -79,7 +79,7 @@ size_t WriteFile( const void *buf, size_t itemSize, size_t items, FILE *fd ) {
   saved += count;
   return saved;
 }
-//å»æ‰ç©ºæ ¼ã€å›è½¦ã€æ¢è¡Œç¬¦
+//È¥µô¿Õ¸ñ¡¢»Ø³µ¡¢»»ĞĞ·û
 int CancelEnter(char *p) {
   int lLen = strlen(p) -1;
   while(lLen >= 0 &&
@@ -91,7 +91,7 @@ int CancelEnter(char *p) {
   p[lLen] = 0;
   return lLen;
 }
-//åˆ é™¤å·¦å³ç©ºæ ¼
+//É¾³ı×óÓÒ¿Õ¸ñ
 int TrimLeft_RightBlank(char *strWordBuf) {
   if(strWordBuf==NULL || strWordBuf[0]==0) return -1;
 
@@ -118,7 +118,7 @@ int TrimLeft_RightBlank(char *strWordBuf) {
   }
   return nStrLen;
 }
-//URLè§£ç 
+//URL½âÂë
 int TwoHex2Int(char *pC) {
   int Hi,Lo,Result;
   Hi = pC[0];
@@ -164,7 +164,7 @@ int GetUrlHost(char *url, char * &host) {
   return 0;
 }
 
-//è¯»å–é…ç½®æ–‡ä»¶
+//¶ÁÈ¡ÅäÖÃÎÄ¼ş
 int  ReadConfigFile(const char *filename) {
   FILE *fp = fopen(filename,"r");
   if(fp == NULL) { return -1; }
@@ -215,7 +215,7 @@ int  ReadConfigFile(const char *filename) {
   return 0;
 }
 
-//åˆ›å»ºsocketè¿æ¥
+//´´½¨socketÁ¬½Ó
 int CreateSocket(const char *sServerIP,const int nPort,const int lTimeOut=10) {
   if(sServerIP==NULL || nPort<=0) return -2;
 
@@ -246,7 +246,7 @@ int CreateSocket(const char *sServerIP,const int nPort,const int lTimeOut=10) {
 
   return pSocket;
 }
-//éšæœºipè¿æ¥æœåŠ¡å™¨
+//Ëæ»úipÁ¬½Ó·şÎñÆ÷
 int RandConnectServer(int &iIPIndex,const int iIPMAX,CONNECTSERVERIPSTRUCT *pServerIP,bool *ipS) {
   /**debug info**/
   if(DEBUGFLAG) {
@@ -277,7 +277,7 @@ int RandConnectServer(int &iIPIndex,const int iIPMAX,CONNECTSERVERIPSTRUCT *pSer
   return pSocket;
 }
 
-//è·å–å‚æ•°
+//»ñÈ¡²ÎÊı
 // piScr sample:
 // http://www.zhongsou.net/a/ishc?t=0&u=[http://www.steel114.com.cn/]&n=1&b=16598147728496656451_0&f=1
 int fScanStr(char *poRes,int iResLen,char *piScr, const char *piMark) {
@@ -288,50 +288,29 @@ int fScanStr(char *poRes,int iResLen,char *piScr, const char *piMark) {
   char *p=piScr;
 
   poRes[0]=0;
-  if(strncmp(p,piMark,nMarkLen)==0 && p[nMarkLen]=='=') {
-    i=nMarkLen+1;
-  } else if(*p=='?' && strncmp(p+1,piMark,nMarkLen)==0 && p[nMarkLen+1]=='=') {
-    i=nMarkLen+2;
-  } else {
-    if(*p!='&') {
-      if(*p=='?') { p++; }
-      while(*p && *p!='=')p++;
-      if(*p!='=') return 0;
-      p++;
-
-      if(*p=='[') {
-        while(*p && *p!=']') p++;
-        if(*p!=']') return 0;
-      }
-    }
-
-    while(*p) {
-      if(*p=='&') {
-        if(strncmp(p+1,piMark,nMarkLen)==0 && p[nMarkLen+1]=='=') {
-          i=p-piScr+2+nMarkLen; break;
-        }
-
-        if(*(p+nMarkLen+2)=='[') {
-          p+=nMarkLen+2;
-          while(*p && *p!=']') p++;
-          if(*p!=']') return 0;
-        }
-      }
-      p++;
-    }
-    if(*p==0) return -2;
+ find_head:
+  while(*p!=0 && !(strncmp(p,piMark,nMarkLen)==0 && p[nMarkLen]=='=')) {
+    if (*p=='[') {
+      while(*p && *p!=']') p++;
+      if(*p!=']') return 0;
+    } else p++;
+  }
+  if (*p==0) return 0;
+  if (p>piScr) {
+    if(*(p-1) != '?' && *(p-1) != '&') { p++; goto find_head; }
   }
 
-  if(piScr[i]=='[') {
+  i=nMarkLen+1;
+  if(p[i]=='[') {
     i++;
-    while( piScr[i] != '\0' && j<iResLen) {
-      if(piScr[i] == ']') { break; }
-      poRes[j++] = piScr[i++];
+    while( p[i] != '\0' && j<iResLen) {
+      if(p[i] == ']') { break; }
+      poRes[j++] = p[i++];
     }
   } else {
-    while( piScr[i] != '\0' && j<iResLen) {
-      if(piScr[i] == '&') { break; }
-      poRes[j++] = piScr[i++];
+    while( p[i] != '\0' && j<iResLen) {
+      if(p[i] == '&') { break; }
+      poRes[j++] = p[i++];
     }
   }
 
@@ -339,7 +318,7 @@ int fScanStr(char *poRes,int iResLen,char *piScr, const char *piMark) {
   poRes[j] = '\0';
   return 0;
 }
-//å¡«å……urlå‚æ•°
+//Ìî³äurl²ÎÊı
 int SetUrlParameters(URLPARAMETER * &para,char *pReg) {
   UrlDecode(pReg);
 
@@ -375,14 +354,14 @@ int SetUrlParameters(URLPARAMETER * &para,char *pReg) {
   return 0;
 }
 
-//æ‰“å°imspæ¡†æ¶
+//´òÓ¡imsp¿ò¼Ü
 void I_MSP_PrintfHtmlPage(evbuffer *buf,char *strUrl) {
   if(strUrl==NULL) return ;
 
   evbuffer_add_printf(buf, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\"><html>\n");
   evbuffer_add_printf(buf, "<head>\n");
-  evbuffer_add_printf(buf, "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n");
-  evbuffer_add_printf(buf, "<title>ç½‘é¡µè®¢åˆ¶</title>\n");
+  evbuffer_add_printf(buf, "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=gbk\">\n");
+  evbuffer_add_printf(buf, "<title>ÍøÒ³¶©ÖÆ</title>\n");
 
   evbuffer_add_printf(buf, "<link href=\"%sblue.css\" rel=\"stylesheet\" type=\"text/css\">\n\n",I_MSP_CSSANDJSPATH);
   evbuffer_add_printf(buf, "<script type=\"text/javascript\" src=\'%spreviewselect.js\'></script>\n",I_MSP_CGIPATH);
@@ -394,11 +373,11 @@ void I_MSP_PrintfHtmlPage(evbuffer *buf,char *strUrl) {
 
   evbuffer_add_printf(buf, "				<td class=\"blo_im\"><img src=\"%szs.gif\" width=\"16\" height=\"16\"/></td>\n",I_MSP_IMAGEPATH);
 
-  evbuffer_add_printf(buf, "				<td class=\"blo_ti\"><span>é€‰æ‹©å†…å®¹åŒºåŸŸ</span></td>\n");
+  evbuffer_add_printf(buf, "				<td class=\"blo_ti\"><span>Ñ¡ÔñÄÚÈİÇøÓò</span></td>\n");
   evbuffer_add_printf(buf, "				<td class=\"blo_li\">&nbsp;</td>\n");
   evbuffer_add_printf(buf, "				<td class=\"blo_sl\">&nbsp;</td>\n");
 
-  evbuffer_add_printf(buf, "				<td class=\"blo_cl\"><a href=\"#\" onClick=\"OnCloseWindow();\"><img src=\"%sclose.gif\" alt=\"å–æ¶ˆè®¢é˜…\" width=\"12\" height=\"12\" border=\"0\"></a></td>\n",I_MSP_IMAGEPATH);
+  evbuffer_add_printf(buf, "				<td class=\"blo_cl\"><a href=\"#\" onClick=\"OnCloseWindow();\"><img src=\"%sclose.gif\" alt=\"È¡Ïû¶©ÔÄ\" width=\"12\" height=\"12\" border=\"0\"></a></td>\n",I_MSP_IMAGEPATH);
 
   evbuffer_add_printf(buf, "			</tr>\n");
   evbuffer_add_printf(buf, "			<tr style=\"\">\n");
@@ -412,7 +391,7 @@ void I_MSP_PrintfHtmlPage(evbuffer *buf,char *strUrl) {
   evbuffer_add_printf(buf, "                              <tr>\n");
   evbuffer_add_printf(buf, "                              <form name=\"form_sub\" onsubmit=\"return FormatHtmlPage();\">\n");
   evbuffer_add_printf(buf, "                                <td>&nbsp;</td>\n");
-  evbuffer_add_printf(buf, "                                <td height=\"45\" align=\"right\" ><span style=\"color:333333;\">ç½‘é¡µåœ°å€ï¼š</span>\n");
+  evbuffer_add_printf(buf, "                                <td height=\"45\" align=\"right\" ><span style=\"color:333333;\">ÍøÒ³µØÖ·£º</span>\n");
 
   if(strUrl[0]==0) {
     evbuffer_add_printf(buf, "                                  <input name=\"biga_addw_inp\" type=\"text\" id=\"biga_addw_inp\" value=\"\" size=\"40\">\n");
@@ -422,20 +401,20 @@ void I_MSP_PrintfHtmlPage(evbuffer *buf,char *strUrl) {
     evbuffer_add_printf(buf, "                                  <input type=\"hidden\" name=\"hideurltext\" value=\"%s\">\n",strUrl);
   }
 
-  evbuffer_add_printf(buf, "                                  <input name=\"dzbutton\"  type=\"submit\" value=\" æ‰“å¼€ \" >\n");
+  evbuffer_add_printf(buf, "                                  <input name=\"dzbutton\"  type=\"submit\" value=\" ´ò¿ª \" >\n");
   evbuffer_add_printf(buf, "                                <label></label></td>\n");
   evbuffer_add_printf(buf, "                                </form>\n");
-  evbuffer_add_printf(buf, "                                <td width=\"120\" align=\"right\" style=\"color:#666666;font-weight: bold;;\">æ“ä½œæç¤ºï¼š</td>\n");
+  evbuffer_add_printf(buf, "                                <td width=\"120\" align=\"right\" style=\"color:#666666;font-weight: bold;;\">²Ù×÷ÌáÊ¾£º</td>\n");
   evbuffer_add_printf(buf, "                              </tr>\n");
   evbuffer_add_printf(buf, "                            </table>\n");
   evbuffer_add_printf(buf, "                              <table width=\"100%\" height=\"50\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\">\n");
   evbuffer_add_printf(buf, "                                <tr>\n");
   evbuffer_add_printf(buf, "                                  <td width=\"200\">&nbsp;</td>\n");
-  evbuffer_add_printf(buf, "                                  <td align=\"center\"><input style=\"font-size:14px; font-weight:bold;\" name=\"dybutton\"  disabled type=\"button\" value=\" å®Œ æˆ \" onClick=\"SubmitSelectBlocks();\">\n");
+  evbuffer_add_printf(buf, "                                  <td align=\"center\"><input style=\"font-size:14px; font-weight:bold;\" name=\"dybutton\"  disabled type=\"button\" value=\" Íê ³É \" onClick=\"SubmitSelectBlocks();\">\n");
   evbuffer_add_printf(buf, "																	&nbsp;\n");
-  evbuffer_add_printf(buf, "																	<input  name=\"unselectbutton\"  disabled type=\"button\" style=\"font-size:14px; \" value=\"å–æ¶ˆé€‰æ‹©\" onClick=\"UnSelectRange();\">\n");
+  evbuffer_add_printf(buf, "																	<input  name=\"unselectbutton\"  disabled type=\"button\" style=\"font-size:14px; \" value=\"È¡ÏûÑ¡Ôñ\" onClick=\"UnSelectRange();\">\n");
   evbuffer_add_printf(buf, "																	&nbsp;\n");
-  evbuffer_add_printf(buf, "																	<input name=\"ReturnButton\" type=\"button\" style=\"font-size:14px; \" value=\"è¿” å›\" onClick=\"OnCloseWindow();\"></td>\n");
+  evbuffer_add_printf(buf, "																	<input name=\"ReturnButton\" type=\"button\" style=\"font-size:14px; \" value=\"·µ »Ø\" onClick=\"OnCloseWindow();\"></td>\n");
   evbuffer_add_printf(buf, "                                </tr>\n");
   evbuffer_add_printf(buf, "                              </table></td>\n");
 
@@ -472,42 +451,42 @@ void I_MSP_PrintfHtmlPage(evbuffer *buf,char *strUrl) {
   evbuffer_add_printf(buf, "</body>\n");
   evbuffer_add_printf(buf, "</html>\n");
 }
-//æ‰“å°imspé”™è¯¯é¡µ
+//´òÓ¡imsp´íÎóÒ³
 void I_MSP_PrintfErrorHtmlPage(evbuffer *buf, char *strMsg, char *strUrl) {
   if(strMsg==NULL) return;
 
-  evbuffer_add_printf(buf, "<html><head><TITLE>ç½‘é¡µè®¢åˆ¶</TITLE><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></head><body>");
-  evbuffer_add_printf(buf, "<!-- æ‰“å¼€é¡µé¢å¤±è´¥ï¼Œå¤±è´¥åŸå› ï¼š%s -->",strMsg);
+  evbuffer_add_printf(buf, "<html><head><TITLE>ÍøÒ³¶©ÖÆ</TITLE><meta http-equiv=\"Content-Type\" content=\"text/html; charset=gbk\"></head><body>");
+  evbuffer_add_printf(buf, "<!-- ´ò¿ªÒ³ÃæÊ§°Ü£¬Ê§°ÜÔ­Òò£º%s -->",strMsg);
 
   /*if(strUrl==NULL) {
     evbuffer_add_printf(buf, "\n<SCRIPT language=\"JavaScript\">\nparent.ShowTitle(\" %s\",false);\n</SCRIPT>\n",strMsg);
   } else {
-    evbuffer_add_printf(buf, "\n<SCRIPT language=\"JavaScript\">\nparent.ShowTitle(\"ä¸èƒ½è¿æ¥åˆ° %s,è¯·ç¨åé‡è¯•ã€‚\",false);\n</SCRIPT>\n",strUrl);
+    evbuffer_add_printf(buf, "\n<SCRIPT language=\"JavaScript\">\nparent.ShowTitle(\"²»ÄÜÁ¬½Óµ½ %s,ÇëÉÔºóÖØÊÔ¡£\",false);\n</SCRIPT>\n",strUrl);
   }*/
   evbuffer_add_printf(buf, "</body></html>");
 }
-//æ‰“å°ishcé”™è¯¯é¡µ
+//´òÓ¡ishc´íÎóÒ³
 void I_SHC_36_PrintfErrorHtmlPage(evbuffer *buf, const char *strMsg, int iRet, char* errcode) {
   if(strMsg==NULL) return;
 
-  evbuffer_add_printf(buf, "<html>\n<head>\n<TITLE>ç½‘é¡µè®¢åˆ¶</TITLE>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n<style type=\"text/css\">\n<!--\nbody,td,th {\n	font-size: 12px;\n	text-align: center;\n}\na:link {\n	color: #0000CC;\n}\nbody {\n	margin-top: 4px;\n	margin-bottom: 4px;\n}\n-->\n</style>\n</head>\n<body>\n");
+  evbuffer_add_printf(buf, "<html>\n<head>\n<TITLE>ÍøÒ³¶©ÖÆ</TITLE>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=gbk\">\n<style type=\"text/css\">\n<!--\nbody,td,th {\n	font-size: 12px;\n	text-align: center;\n}\na:link {\n	color: #0000CC;\n}\nbody {\n	margin-top: 4px;\n	margin-bottom: 4px;\n}\n-->\n</style>\n</head>\n<body>\n");
 
   evbuffer_add_printf(buf, "<div id=\"Block_Topbar\" style=\"background:#FFFFE1; text-align:center;padding:2px 0px 0px;display:\'\'; border:1px solid #ccc;position:absolute;top:0;left:0;width:100%;z-index:100 \">\n");
   evbuffer_add_printf(buf, "<div id=\"iewarning\" style=\"width:19px; padding:1px 2px 0px 4px;float:left;\">\n");
   evbuffer_add_printf(buf, "<img align=\"absmiddle\" src=\"http://i0.zhongso.com/img/warning_otip.gif\" border=\"0\" ></div>\n");
   evbuffer_add_printf(buf, "<div id=\"closeimg\" style=\"width:19px; float:right;padding:4px;\">\n");
-  evbuffer_add_printf(buf, "<a href=\"javascript:closediv(\'Block_Topbar\');\" title=\"å…³é—­æç¤º\">\n");
+  evbuffer_add_printf(buf, "<a href=\"javascript:closediv(\'Block_Topbar\');\" title=\"¹Ø±ÕÌáÊ¾\">\n");
   evbuffer_add_printf(buf, "<img src=\"http://i0.zhongso.com/img/close_otip.gif\" align=\"absmiddle\" border=\"0\" ></a></div>\n");
   evbuffer_add_printf(buf, "<div style=\" marign-left:4px;font-size:12px;color:#F35B37;padding:2px\" id=\"Block_Topbar_info\">\n");
-  evbuffer_add_printf(buf, "é¡µé¢æš‚æ—¶æ— æ³•æ‰“å¼€ï¼Œ<a href=\"javascript:window.location.reload();\"  style=\"color:#0000FF;text-decoration:underline\" id=\"Block_Topbar_link\">\n");
-  evbuffer_add_printf(buf, "<b>è¯·åˆ·æ–°</b></a></div></div><div style=\"clear:both\"></div>\n");
+  evbuffer_add_printf(buf, "Ò³ÃæÔİÊ±ÎŞ·¨´ò¿ª£¬<a href=\"javascript:window.location.reload();\"  style=\"color:#0000FF;text-decoration:underline\" id=\"Block_Topbar_link\">\n");
+  evbuffer_add_printf(buf, "<b>ÇëË¢ĞÂ</b></a></div></div><div style=\"clear:both\"></div>\n");
   evbuffer_add_printf(buf, "<script>function closediv(i) {document.getElementById(i).style.display=\'none\'; }</script>\n");
 
-  evbuffer_add_printf(buf, "\n<!--å–å¾—æ¨¡å—å¤±è´¥åŸå› ï¼š%d,%s,%s-->\n",iRet,errcode,strMsg);
+  evbuffer_add_printf(buf, "\n<!--È¡µÃÄ£¿éÊ§°ÜÔ­Òò£º%d,%s,%s-->\n",iRet,errcode,strMsg);
   evbuffer_add_printf(buf, "</body></html>");
 }
 
-//å–æ•°æ®
+//È¡Êı¾İ
 int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err) {
   if(pSocket<0 || pBuf!=NULL) return -1;
 
@@ -522,8 +501,8 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
     int temLen = 0;
     short urlLen = (short)strlen(para->u);
 
-    //æ‹¼å­æ•°æ®åè®®
-    if(para->s == 1) {//é¢„è§ˆ
+    //Æ´×ÓÊı¾İĞ­Òé
+    if(para->s == 1) {//Ô¤ÀÀ
       *(sendChildDataBuf+SendChildDataLength) = 2;
       SendChildDataLength += 1;
       *(short*)(sendChildDataBuf + SendChildDataLength) = urlLen;
@@ -532,7 +511,7 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
       SendChildDataLength += urlLen;
       *(sendChildDataBuf+SendChildDataLength) = 0;
       SendChildDataLength += 1;
-    } else {//ç‰©ç†å—åˆ›å»º
+    } else {//ÎïÀí¿é´´½¨
       /**debug info**/
       if(DEBUGFLAG) { fprintf(stderr,"para->b:%s\n",para->b); }
       /**debug info**/
@@ -578,11 +557,11 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
 
       *(sendChildDataBuf+SendChildDataLength) = 2;
       SendChildDataLength += 1;
-      *(int*)(sendChildDataBuf + SendChildDataLength) = tempUrlLen;//ä¿¡æ¯æºurlé•¿åº¦
+      *(int*)(sendChildDataBuf + SendChildDataLength) = tempUrlLen;//ĞÅÏ¢Ô´url³¤¶È
       SendChildDataLength += sizeof(int);
-      memcpy(sendChildDataBuf+SendChildDataLength,tempUrl,tempUrlLen);//ä¿¡æ¯æºurl
+      memcpy(sendChildDataBuf+SendChildDataLength,tempUrl,tempUrlLen);//ĞÅÏ¢Ô´url
       SendChildDataLength += tempUrlLen;
-      *(int*)(sendChildDataBuf + SendChildDataLength) = (int)0;//å±æ€§é•¿åº¦
+      *(int*)(sendChildDataBuf + SendChildDataLength) = (int)0;//ÊôĞÔ³¤¶È
       SendChildDataLength += sizeof(int);
       delete tempUrl;
 
@@ -590,17 +569,17 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
       SendChildDataLength += sizeof(UINT64);
       *(short*)(sendChildDataBuf + SendChildDataLength) = bId;//blockid
       SendChildDataLength += sizeof(short);
-      *(sendChildDataBuf+SendChildDataLength) = para->t;//å—ç‰ˆæœ¬
+      *(sendChildDataBuf+SendChildDataLength) = para->t;//¿é°æ±¾
       SendChildDataLength += 1;
-      *(short*)(sendChildDataBuf + SendChildDataLength) = urlLen;//urlé•¿åº¦
+      *(short*)(sendChildDataBuf + SendChildDataLength) = urlLen;//url³¤¶È
       SendChildDataLength += sizeof(short);
       memcpy(sendChildDataBuf+SendChildDataLength,para->u,urlLen);//url
       SendChildDataLength += urlLen;
     }
 
-    //æ‹¼å‘é€æ•°æ®åè®®
+    //Æ´·¢ËÍÊı¾İĞ­Òé
     temLen = strlen(idCode);
-    memcpy(sendDataBuf+SendDataLength,idCode,temLen);//éªŒè¯ç 
+    memcpy(sendDataBuf+SendDataLength,idCode,temLen);//ÑéÖ¤Âë
     SendDataLength += temLen;
 
     /**debug info**/
@@ -640,10 +619,10 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
     }while(nOneLen>0 && nAllLen<SendDataLength);
 
     if(nAllLen!=SendDataLength) {
-      if(strlen(err) == 0) { sprintf(err,"å‘é€æ•°æ®å¤±è´¥ï¼"); }
+      if(strlen(err) == 0) { sprintf(err,"·¢ËÍÊı¾İÊ§°Ü£¡"); }
       return -5001;
     }
-    //éªŒè¯å¯¹æ–¹æ˜¯å¦æ”¶åˆ°
+    //ÑéÖ¤¶Ô·½ÊÇ·ñÊÕµ½
     int verifyCodeLen = 8;
     char verifyCode[9];
     nAllLen=0;
@@ -654,18 +633,18 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
 
     if(nAllLen!=verifyCodeLen) {
       if(strlen(err) == 0) {
-        sprintf(err,"æ•°æ®ä¸å®Œæ•´é”™è¯¯COMMLENGTH,vn:%d,rn:%d,rd:%sï¼",verifyCodeLen,nAllLen,verifyCode);
+        sprintf(err,"Êı¾İ²»ÍêÕû´íÎóCOMMLENGTH,vn:%d,rn:%d,rd:%s£¡",verifyCodeLen,nAllLen,verifyCode);
       }
       return -5002;
     }
     if(strncmp(verifyCode,"COMM",4) != 0) {
       if(strlen(err) == 0) {
-        sprintf(err,"æ ¡éªŒé”™è¯¯COMMSTR,code:%ldï¼",(int)*(int*)(verifyCode+4));
+        sprintf(err,"Ğ£Ñé´íÎóCOMMSTR,code:%ld£¡",(int)*(int*)(verifyCode+4));
       }
       return -5003;
     }
 
-    //éªŒè¯æ•°æ®çš„åˆæ³•æ€§
+    //ÑéÖ¤Êı¾İµÄºÏ·¨ĞÔ
     int verifyDataLen=strlen(idCode) + sizeof(int);
     nAllLen=0;
     nOneLen = 0;
@@ -684,7 +663,7 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
 
     if(nAllLen!=verifyDataLen) {
       if(strlen(err) == 0) {
-        sprintf(err,"æ•°æ®ä¸å®Œæ•´é”™è¯¯VERIFYCODELENGTH,vn:%d,rn:%d,rd:%sï¼",verifyDataLen,nAllLen,sendDataBuf);
+        sprintf(err,"Êı¾İ²»ÍêÕû´íÎóVERIFYCODELENGTH,vn:%d,rn:%d,rd:%s£¡",verifyDataLen,nAllLen,sendDataBuf);
       }
       return -5004;
     }
@@ -699,7 +678,7 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
     *(sendDataBuf + temLen) = 0;
     if(strncmp(sendDataBuf,idCode,temLen) != 0) {
       if(strlen(err) == 0) {
-        sprintf(err,"æ ¡éªŒé”™è¯¯VERIFYCODESTR,code:%ldï¼",(int)*(int*)(sendDataBuf+temLen));
+        sprintf(err,"Ğ£Ñé´íÎóVERIFYCODESTR,code:%ld£¡",(int)*(int*)(sendDataBuf+temLen));
       }
       return -5005;
     }
@@ -714,7 +693,7 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
 
     if(allRecvDataLength < 4) {
       if(strlen(err) == 0) {
-        sprintf(err,"æ•°æ®ä¸å®Œæ•´é”™è¯¯ALLDATALENGTH,code:%ldï¼",allRecvDataLength);
+        sprintf(err,"Êı¾İ²»ÍêÕû´íÎóALLDATALENGTH,code:%ld£¡",allRecvDataLength);
       }
       return -5006;
     }
@@ -722,7 +701,7 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
     pBuf = new char[allRecvDataLength + verifyDataLen];
 
     if(pBuf ==	NULL) {
-      if(strlen(err) == 0) { sprintf(err,"ç³»ç»Ÿå†…éƒ¨é”™è¯¯1ï¼"); }
+      if(strlen(err) == 0) { sprintf(err,"ÏµÍ³ÄÚ²¿´íÎó1£¡"); }
       return -5007;
     }
 
@@ -735,7 +714,7 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
     }while(nOneLen>0 && nAllLen<allRecvDataLength);
     if(nAllLen!=allRecvDataLength) {
       if(strlen(err) == 0) {
-        sprintf(err,"æ•°æ®ä¸å®Œæ•´é”™è¯¯ALLRECVDATALENGTH,code:%ldï¼",nAllLen);
+        sprintf(err,"Êı¾İ²»ÍêÕû´íÎóALLRECVDATALENGTH,code:%ld£¡",nAllLen);
       }
       return -5008;
     }
@@ -761,10 +740,10 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
     int temLen = 0;
     short urlLen = (short)strlen(para->u);
 
-    //æ‹¼å­æ•°æ®åè®®
-    *(sendChildDataBuf+SendChildDataLength) = 2;//å—ç±»å‹
+    //Æ´×ÓÊı¾İĞ­Òé
+    *(sendChildDataBuf+SendChildDataLength) = 2;//¿éÀàĞÍ
     SendChildDataLength += 1;
-    *(UINT64*)(sendChildDataBuf + SendChildDataLength) = (UINT64)0;//æ•°æ®id
+    *(UINT64*)(sendChildDataBuf + SendChildDataLength) = (UINT64)0;//Êı¾İid
     SendChildDataLength += sizeof(UINT64);
 
     /**debug info**/
@@ -795,24 +774,24 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
 
     *(short*)(sendChildDataBuf + SendChildDataLength) = bId;//blockid
     SendChildDataLength += sizeof(short);
-    *(sendChildDataBuf+SendChildDataLength) = para->t;//å—ç‰ˆæœ¬
+    *(sendChildDataBuf+SendChildDataLength) = para->t;//¿é°æ±¾
     SendChildDataLength += 1;
-    *(short*)(sendChildDataBuf + SendChildDataLength) = urlLen;//urlé•¿åº¦
+    *(short*)(sendChildDataBuf + SendChildDataLength) = urlLen;//url³¤¶È
     SendChildDataLength += sizeof(short);
     memcpy(sendChildDataBuf+SendChildDataLength,para->u,urlLen);//url
     SendChildDataLength += urlLen;
 
-    //æ‹¼å‘é€æ•°æ®åè®®
+    //Æ´·¢ËÍÊı¾İĞ­Òé
     temLen = strlen(idCode);
-    memcpy(sendDataBuf+SendDataLength,idCode,temLen);//éªŒè¯ç 
+    memcpy(sendDataBuf+SendDataLength,idCode,temLen);//ÑéÖ¤Âë
     SendDataLength += temLen;
     *(int*)(sendDataBuf + SendDataLength) = (int)(sizeof(UINT64)+sizeof(short)*2 + sizeof(int) + SendChildDataLength);
     SendDataLength += sizeof(int);
-    *(UINT64*)(sendDataBuf + SendDataLength) = (UINT64)0;//ä¿ç•™ä½
+    *(UINT64*)(sendDataBuf + SendDataLength) = (UINT64)0;//±£ÁôÎ»
     SendDataLength += sizeof(UINT64);
-    *(short*)(sendDataBuf + SendDataLength) = (short)para->f;//åˆ·æ–°ç­‰çº§
+    *(short*)(sendDataBuf + SendDataLength) = (short)para->f;//Ë¢ĞÂµÈ¼¶
     SendDataLength += sizeof(short);
-    *(short*)(sendDataBuf + SendDataLength) = (short)1;//è¯·æ±‚æ•°ç›®
+    *(short*)(sendDataBuf + SendDataLength) = (short)1;//ÇëÇóÊıÄ¿
     SendDataLength += sizeof(short);
     *(int*)(sendDataBuf + SendDataLength) = (int)SendChildDataLength;
     SendDataLength += sizeof(int);
@@ -836,11 +815,11 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
     }while(nOneLen>0 && nAllLen<SendDataLength);
 
     if(nAllLen!=SendDataLength) {
-      if(strlen(err) == 0) { sprintf(err,"å‘é€æ•°æ®å¤±è´¥ï¼"); }
+      if(strlen(err) == 0) { sprintf(err,"·¢ËÍÊı¾İÊ§°Ü£¡"); }
       return -5001;
     }
 
-    //éªŒè¯å¯¹æ–¹æ˜¯å¦æ”¶åˆ°
+    //ÑéÖ¤¶Ô·½ÊÇ·ñÊÕµ½
     int verifyCodeLen = 8;
     char verifyCode[9];
     nAllLen=0;
@@ -855,18 +834,18 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
 
     if(nAllLen!=verifyCodeLen) {
       if(strlen(err) == 0) {
-        sprintf(err,"æ•°æ®ä¸å®Œæ•´é”™è¯¯COMMLength,vn:%d,rn:%d,rd:%sï¼",verifyCodeLen,nAllLen,verifyCode);
+        sprintf(err,"Êı¾İ²»ÍêÕû´íÎóCOMMLength,vn:%d,rn:%d,rd:%s£¡",verifyCodeLen,nAllLen,verifyCode);
       }
       return -5002;
     }
     if(strncmp(verifyCode,"COMM",4) != 0) {
       if(strlen(err) == 0) {
-        sprintf(err,"æ ¡éªŒé”™è¯¯COMMSTR,code:%ldï¼",(int)*(int*)(verifyCode+4));
+        sprintf(err,"Ğ£Ñé´íÎóCOMMSTR,code:%ld£¡",(int)*(int*)(verifyCode+4));
       }
       return -5003;
     }
 
-    //éªŒè¯æ•°æ®çš„åˆæ³•æ€§
+    //ÑéÖ¤Êı¾İµÄºÏ·¨ĞÔ
     int verifyDataLen=strlen(idCode) + sizeof(int);
     nAllLen=0;
     do {
@@ -876,7 +855,7 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
 
     if(nAllLen!=verifyDataLen) {
       if(strlen(err) == 0) {
-        sprintf(err,"æ•°æ®ä¸å®Œæ•´é”™è¯¯VERIFYCODELENGTH,vn:%d,rn:%d,rd:%sï¼",verifyDataLen,nAllLen,sendDataBuf);
+        sprintf(err,"Êı¾İ²»ÍêÕû´íÎóVERIFYCODELENGTH,vn:%d,rn:%d,rd:%s£¡",verifyDataLen,nAllLen,sendDataBuf);
       }
       return -5004;
     }
@@ -886,7 +865,7 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
     *(sendDataBuf + temLen) = 0;
     if(strncmp(sendDataBuf,idCode,temLen) != 0) {
       if(strlen(err) == 0) {
-        sprintf(err,"æ ¡éªŒé”™è¯¯VERIFYCODESTR,code:%ldï¼",(int)*(int*)(sendDataBuf+temLen));
+        sprintf(err,"Ğ£Ñé´íÎóVERIFYCODESTR,code:%ld£¡",(int)*(int*)(sendDataBuf+temLen));
       }
       return -5005;
     }
@@ -897,14 +876,14 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
     allRecvDataLength = (int)*(int*)(temBuf);
     if(allRecvDataLength < 4) {
       if(strlen(err) == 0) {
-        sprintf(err,"æ•°æ®ä¸å®Œæ•´é”™è¯¯ALLDATALENGTH,code:%ldï¼",allRecvDataLength);
+        sprintf(err,"Êı¾İ²»ÍêÕû´íÎóALLDATALENGTH,code:%ld£¡",allRecvDataLength);
       }
       return -5006;
     }
 
     pBuf = new char[allRecvDataLength + verifyDataLen+2];
     if(pBuf ==	NULL) {
-      if(strlen(err) == 0) { sprintf(err,"ç³»ç»Ÿå†…éƒ¨é”™è¯¯1ï¼"); }
+      if(strlen(err) == 0) { sprintf(err,"ÏµÍ³ÄÚ²¿´íÎó1£¡"); }
       return -5007;
     }
 
@@ -921,7 +900,7 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
     }while(nOneLen>0 && nAllLen<allRecvDataLength);
     if(nAllLen != allRecvDataLength) {
       if(strlen(err) == 0) {
-        sprintf(err,"æ•°æ®ä¸å®Œæ•´é”™è¯¯ALLRECVDATALENGTH,code:%ldï¼",nAllLen);
+        sprintf(err,"Êı¾İ²»ÍêÕû´íÎóALLRECVDATALENGTH,code:%ld£¡",nAllLen);
       }
       return -5008;
     }
@@ -946,7 +925,7 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
   return allRecvDataLength;
 }
 
-/**ä¸»å‡½æ•°**/
+/**Ö÷º¯Êı**/
 int i_shc_handler(evbuffer *buf, char *fullurl) {
   int ret = -1;
 
@@ -960,13 +939,13 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
       sprintf(I_MSP_CSSANDJSPATH,"/a/img_css/");
       bInitFlag=true;
     } else {
-      evbuffer_add_printf(buf,"<!--ä¸èƒ½è¯»å–é…ç½®æ–‡ä»¶-->");
+      evbuffer_add_printf(buf,"<!--²»ÄÜ¶ÁÈ¡ÅäÖÃÎÄ¼ş-->");
       return ret;
     }
 
     proBlockChange = new CProBlockChange("/zhongsou/i/a/blockchange.dat");
     if(proBlockChange -> ReadChangeFileResult != 0) {
-      evbuffer_add_printf(buf,"<!--åˆå§‹åŒ–é”™è¯¯å—é…ç½®æ–‡ä»¶å¤±è´¥-->");
+      evbuffer_add_printf(buf,"<!--³õÊ¼»¯´íÎó¿éÅäÖÃÎÄ¼şÊ§°Ü-->");
       //return OK;
     }
   }
@@ -974,16 +953,16 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
   URLPARAMETER *para = new URLPARAMETER;
   ret = SetUrlParameters(para, fullurl);
   if(ret < 0) {
-    evbuffer_add_printf(buf,"<!--è¯»å–å‚æ•°å¤±è´¥-->");
+    evbuffer_add_printf(buf,"<!--¶ÁÈ¡²ÎÊıÊ§°Ü-->");
     return OK;
   }
-  //imspæ¡†æ¶
+  //imsp¿ò¼Ü
   if(para->s == 1 && para->ds == 1) {
     I_MSP_PrintfHtmlPage(buf, para->u);
     return OK;
   }
 
-  //åˆ›å»ºsocket
+  //´´½¨socket
   int connIpIndex = 0;
   if(SERVERIPMAX > 1) { connIpIndex = rand()%SERVERIPMAX; }
   bool *ipStatus = new bool[SERVERIPMAX];
@@ -997,7 +976,7 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
   char strTmp[500]={0};
 
   if(pSocket<0) {
-    sprintf(strTmp,"æ­¤æ—¶ç½‘ç»œç¹å¿™,è¯·é‡è¯•!!!\n");
+    sprintf(strTmp,"´ËÊ±ÍøÂç·±Ã¦,ÇëÖØÊÔ!!!\n");
     I_MSP_PrintfErrorHtmlPage(buf,strTmp,para->u);
     return OK;
   }
@@ -1007,12 +986,12 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
   bool reGetFlag = false;
 
   GETHTML:
-  //é€šè¿‡åè®®å–å†…å®¹
+  //Í¨¹ıĞ­ÒéÈ¡ÄÚÈİ
   memset(errorStr,0,256);
   int iRet=GetMakeHtmlPage(pSocket,para,pBuf,errorStr);
 
-  //æ‰“å°ä¿¡æ¯
-  if(para->s == 1 || (para->s != 1 && para->a == 1)) { //imsp æˆ– åˆ›å»ºå—
+  //´òÓ¡ĞÅÏ¢
+  if(para->s == 1 || (para->s != 1 && para->a == 1)) { //imsp »ò ´´½¨¿é
     if(iRet > -10000 && iRet < -5000) {
       if(iRet == -5001 || iRet == -5002) {
         ipStatus[connIpIndex] = false;
@@ -1021,7 +1000,7 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
           close(pSocket);
           pSocket = RandConnectServer(connIpIndex,SERVERIPMAX,pServerIP,ipStatus);
           if(pSocket<0) {
-            sprintf(strTmp,"re1-æ­¤æ—¶ç½‘ç»œç¹å¿™ï¼Œè¯·é‡è¯•!!!\n");
+            sprintf(strTmp,"re1-´ËÊ±ÍøÂç·±Ã¦£¬ÇëÖØÊÔ!!!\n");
             I_MSP_PrintfErrorHtmlPage(buf,strTmp,para->u);
             return OK;
           }
@@ -1029,7 +1008,7 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
         }
       }
 
-      sprintf(strTmp,"%sï¼Œè¯·é‡è¯•(%d)ã€‚",errorStr,iRet);
+      sprintf(strTmp,"%s£¬ÇëÖØÊÔ(%d)¡£",errorStr,iRet);
       I_MSP_PrintfErrorHtmlPage(buf,strTmp,para->u);
     } else if(iRet>0) {
       int dataLenPos;
@@ -1063,7 +1042,7 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
           dataLenPos += 4;
           evbuffer_add_printf(buf, "%s", pBuf+dataLenPos);
         } else {
-          sprintf(strTmp,"å–æ•°æ®å¤±è´¥<!--(%ld)-->ï¼ï¼ï¼",dataLen);
+          sprintf(strTmp,"È¡Êı¾İÊ§°Ü<!--(%ld)-->£¡£¡£¡",dataLen);
           I_MSP_PrintfErrorHtmlPage(buf,strTmp,para->u);
         }
       }
@@ -1071,13 +1050,13 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
       if(para->a == 1) {
         evbuffer_add_printf(buf,"<!--%s-->\n",errorStr);
       } else {
-        sprintf(strTmp,"æ²¡æœ‰æ‰¾åˆ°ï¼š%s å¯¹åº”çš„ç½‘é¡µï¼Œè¯·ç¡®è®¤è¯¥URLæ˜¯å¦æ­£ç¡®ï¼ï¼ï¼,%s",para->u,errorStr);
+        sprintf(strTmp,"Ã»ÓĞÕÒµ½£º%s ¶ÔÓ¦µÄÍøÒ³£¬ÇëÈ·ÈÏ¸ÃURLÊÇ·ñÕıÈ·£¡£¡£¡,%s",para->u,errorStr);
         I_MSP_PrintfErrorHtmlPage(buf,strTmp,para->u);
       }
     }
-  } else  { // æ‰“å°å—æ£€ç´¢å†…å®¹
+  } else  { // ´òÓ¡¿é¼ìË÷ÄÚÈİ
     if(iRet==-5001) {
-      I_SHC_36_PrintfErrorHtmlPage(buf,"å› ä¸ºæ‚¨å½“å‰è®¿é—®çš„ç½‘é¡µè¶…æ—¶ï¼Œè¯·é‡è¯•ã€‚\n",iRet,errorStr);
+      I_SHC_36_PrintfErrorHtmlPage(buf,"ÒòÎªÄúµ±Ç°·ÃÎÊµÄÍøÒ³³¬Ê±£¬ÇëÖØÊÔ¡£\n",iRet,errorStr);
     } else if(iRet>0) {
       int dataLenPos = 10 + sizeof(int)*8 + sizeof(short)*4 + sizeof(char)*2 + strlen(para->u);
       char strDataLen[10] = {0};
@@ -1109,7 +1088,7 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
         /**debug info**/
 
         if(pSocket<0) {
-          sprintf(strTmp,"re2-ä¸èƒ½è¿æ¥æ‰€æœ‰æœåŠ¡å™¨ï¼Œè¯·é‡è¯•!!!\n");
+          sprintf(strTmp,"re2-²»ÄÜÁ¬½ÓËùÓĞ·şÎñÆ÷£¬ÇëÖØÊÔ!!!\n");
           I_MSP_PrintfErrorHtmlPage(buf,strTmp,para->u);
           return OK;
         }
@@ -1118,13 +1097,13 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
       /**debug info**/
       if(DEBUGFLAG) { fprintf(stderr,"errorCode:%ld -- statusCode:%ld\n",errorCode,statusCode); }
       /**debug info**/
-      if(statusCode == 0) { // æ­£å¸¸å–å›æ•°æ®
+      if(statusCode == 0) { // Õı³£È¡»ØÊı¾İ
         if(errorCode > 0) {
           evbuffer_add_printf(buf, "%s\n", pBuf+dataLenPos);
           evbuffer_add_printf(buf, "<!--errorCode:%ld,statusCode:%ld-->",
                               errorCode, statusCode);
         } else {
-          I_SHC_36_PrintfErrorHtmlPage(buf,"å–å¾—æ•°æ®æ¨¡å—å¤±è´¥ï¼ï¼",errorCode,errorStr);
+          I_SHC_36_PrintfErrorHtmlPage(buf,"È¡µÃÊı¾İÄ£¿éÊ§°Ü£¡£¡",errorCode,errorStr);
         }
       } else {
         //CProBlockChange *proBlockChange = new CProBlockChange("/zhongsou/i/a/blockchange.dat");
@@ -1201,7 +1180,7 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
         }
       }
     } else {
-      I_SHC_36_PrintfErrorHtmlPage(buf,"å–å¾—æ•°æ®æ¨¡å—å¤±è´¥ï¼ï¼",iRet,errorStr);
+      I_SHC_36_PrintfErrorHtmlPage(buf,"È¡µÃÊı¾İÄ£¿éÊ§°Ü£¡£¡",iRet,errorStr);
     }
   }
 

@@ -27,7 +27,7 @@ void
 init_cfg(void)
 {
   cfg.daemon = 0;
-  cfg.log_file = "/var/log/fcache.log";
+  cfg.log_file = NULL;
   cfg.log_level = DEBUG;
 
   cfg.conn_type = tcp;

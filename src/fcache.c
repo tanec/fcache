@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <signal.h>
 #include <string.h>
+#include <ctype.h>
 #include <netinet/tcp.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -156,7 +157,7 @@ pass_to_upstream(req_ctx_t *ctx)
 
     s      = current_time_millis();
     slot   = process_upstream_start();
-    result = zs_http_pass_req(&data, ctx->client_req, svr->host, svr->port, ctx->req.url);
+    result = zs_http_pass_req(&data, ctx->client_req, svr->host, svr->port, ctx->req.url_orig);
     process_upstream_end(slot, s, result);
 
     if (result) {
@@ -167,9 +168,9 @@ pass_to_upstream(req_ctx_t *ctx)
       ctx->resp_code   = HTTP_OK;
       ctx->resp_reason = "OK";
       size_t header_len = 0, len;
+      bool chunked = false;
       if (data.len>9 && strncmp(data.data, "HTTP/1.", 7)==0) {
         char *s = data.data, *line = NULL, *k, *v;
-        bool chunked = false;
         do {
           line = strsep(&s, "\r\n");
           len  = strlen(line);
@@ -189,21 +190,26 @@ pass_to_upstream(req_ctx_t *ctx)
             ctx->resp_reason = request_store(&ctx->req, 1, line);
           }
         } while(line!=NULL && len>0);
-
-        if (chunked) {
-          // eat extra length line
-          for(;;) {
-            line = strsep(&s, "\r\n");
-            len  = strlen(line);
-            header_len += len+1;
-            if (*s == '\n') { s++; header_len++;}
-            if (len > 0) break;
-          }
-        }
       }
 
-      //send remaining
-      evbuffer_add(ctx->resp_buf, data.data+header_len, data.len-header_len);
+      if (chunked) {
+	char *s = data.data+header_len, *line = NULL;
+	for(;;) {
+	  line = strsep(&s, "\r\n");
+	  if (line == NULL) break;
+	  if (*s == '\n') { s++; }
+	  len  = strlen(line);
+	  if (len==1 && line[0]=='0') break;
+	  len = strtol(line, NULL, 16);
+	  if (len > 0) {
+	    evbuffer_add(ctx->resp_buf, s, len);
+	    s += len + 2;
+	  }
+	}
+      } else {
+	//send remaining
+	evbuffer_add(ctx->resp_buf, data.data+header_len, data.len-header_len);
+      }
 
       if (data.data!=NULL) free(data.data);
     }
@@ -240,11 +246,13 @@ fast_process(gpointer data, gpointer user_data)
   GError *error;
   char *s;
   const char *igid;
+  bool kw_from_uri = true;
 
   { // host
     s = (char *)evhttp_find_header(c->input_headers, "Host");
     if (is_str_empty(s)) s = c->remote_host;
     ctx->req.host = request_store(&ctx->req, 1, s);
+    strtolower((char *)ctx->req.host);
   }
   { // keyword: extract from uri, then transform
     s = zs_http_find_keyword_by_uri(c->uri);
@@ -261,19 +269,38 @@ fast_process(gpointer data, gpointer user_data)
     }
 
     if (is_str_empty(ctx->req.keyword)) ctx->req.keyword = "/";
+    strtolower((char *)ctx->req.keyword);
+    const char *oldkw = ctx->req.keyword;
     ctx->req.keyword = find_keyword(ctx->req.host, ctx->req.keyword);
+    kw_from_uri = strcmp(oldkw, ctx->req.keyword)==0;
   }
-  {//url: host+uri, discard "http://"; parse "/fff"
+  {//url: host+uri, discard "http://"; parse "/fff", "&fff=1"
+    if (kw_from_uri) {
+      char *s = c->uri;
+      if (*s == '/') s++;
+      while(*s!='/' && *s!='\0' && *s!='?') {
+	if (isupper(*s)) *s = tolower(*s);
+	s++;
+      }
+    }
     size_t len = strlen(c->uri);
-    if (strcmp(c->uri+len-4, "/fff")==0) {
-      char uri[len+1];
-      memcpy(uri, c->uri, len);
+    char uri[len+1];
+    memcpy(uri, c->uri, len+1);
+    if (len>=4 && strcmp(c->uri+len-4, "/fff")==0) {
       uri[len-4] = '\0';
-      ctx->req.url = request_store(&ctx->req, 2, ctx->req.host, uri);
       ctx->req.force_refresh = true;
     } else {
-      ctx->req.url = request_store(&ctx->req, 2, ctx->req.host, c->uri);
+      if (len>=6 && strcmp(c->uri+len-6, "&fff=1")==0) {
+        uri[len-6] = '\0';
+        ctx->req.force_refresh = true;
+      }
     }
+    ctx->req.url      = request_store(&ctx->req, 2, ctx->req.host, uri);
+    ctx->req.url_orig = request_store(&ctx->req, 2, ctx->req.host, c->uri);
+    char *s = (char *)ctx->req.url;
+    len = strlen(s);    if (s[len-1]=='/') s[len-1] ='\0';
+    s = (char *)ctx->req.url_orig;
+    len = strlen(s);    if (s[len-1]=='/') s[len-1] ='\0';
   }
 
   tlog(DEBUG, "host=%s, keyword=%s, url=%s", ctx->req.host, ctx->req.keyword, ctx->req.url);

@@ -390,6 +390,8 @@ process_stat_html(char *result)
          th, td {border: 1px dotted gray;}\n\
           th {}\n\
          </style></head><body>");
+  sprintf(buf,"page use %d M<br/>", smalloc_used_memory()/1024/1024);
+  strcat(result, buf);
   c = current_stat_slot();
 
   strcat(result, "<table><tr>\

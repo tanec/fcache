@@ -52,6 +52,7 @@ mmap_read(mmap_array_t *ma, const char *file)
 {
   int fd;
   struct stat sb;
+  bool ret = true;
 
   fd = open(file, O_RDONLY);
   if (fd == -1) {
@@ -59,24 +60,27 @@ mmap_read(mmap_array_t *ma, const char *file)
     return false;
   }
   if (fstat(fd, &sb) == -1) {
-    return false;
+    ret = false;
+    goto close_fd;
   }
   if (!S_ISREG(sb.st_mode)) {
-    return false;
+    ret = false;
+    goto close_fd;
   }
 
   ma->len = sb.st_size;
   ma->data = mmap(0, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
   if (ma->data == MAP_FAILED) {
     fprintf(stderr, "mmap(%p, %d, %d, %d, %d, %d) failed!\n", 0, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
-    return false;
+    ret = false;
   }
+ close_fd:
   if (close(fd) == -1) {
     fprintf(stderr, "close(%d) failed!", fd);
     munmap(ma->data, ma->len);
     return false;
   }
-  return true;
+  return ret;
 }
 
 int
@@ -170,4 +174,14 @@ tcp_read(mmap_array_t *data, const char *host, uint16_t port, char *output)
 
   close(sock);
   return data->len > 0;
+}
+
+void
+strtolower(char *str)
+{
+  if (str == NULL) return;
+  char *s = str;
+  do {
+    if (isupper(*s)) *s = tolower(*s);
+  } while(*(++s)!='\0');
 }

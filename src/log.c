@@ -15,7 +15,7 @@ void
 tlog(log_level_t level, const char *fmt, ...)
 {
   if (level >= default_level) {
-    if (logfd < 0) {
+    if (logfd < 0 && log_file!=NULL) {
       logfd = open(log_file, O_WRONLY|O_CREAT|O_APPEND);
     }
 
@@ -38,7 +38,7 @@ tlog(log_level_t level, const char *fmt, ...)
     char line[len];
     sprintf(line, "%s %s\n", strtime, msg);
 
-    printf("%s", line);
+    //    printf("%s", line);
     if (logfd > -1) write(logfd, line, strlen(line));
   }
 }

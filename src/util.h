@@ -50,6 +50,9 @@ uint64_t current_time_micros(void);
 
 bool tcp_read(mmap_array_t *, const char *, uint16_t, char *);
 
+//string
+void strtolower(char *);
+
 #ifdef __cplusplus
 }
 #endif

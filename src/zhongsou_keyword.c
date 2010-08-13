@@ -184,6 +184,7 @@ read_synonyms(const char *file)
     }
     if (domain_keywords_domains != NULL) free(domain_keywords_domains);
     domain_keywords_domains = files;
+    mmap_close(&mt);
   }
   pthread_mutex_unlock(&slock);
 }
