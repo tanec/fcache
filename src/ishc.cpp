@@ -41,7 +41,7 @@ static struct cfg_s {
 }
 cfg = {
   4, false,
-  "127.0.0.1", 8012,
+  "0.0.0.0", 8012,
   "/ishc/mon", "/ishc/status"
 };
 
