@@ -18,11 +18,6 @@ include_directories(${CURL_INCLUDE_DIRS})
 link_directories(${CURL_LIBRARY_DIRS})
 message("libcurl: -I${CURL_INCLUDE_DIRS} -L${CURL_LIBRARY_DIRS} -l${CURL_LIBRARIES}")
 
-pkg_check_modules(CFG REQUIRED libconfig)
-include_directories(${CFG_INCLUDE_DIRS})
-link_directories(${CFG_LIBRARY_DIRS})
-message("libconfig: -I${CFG_INCLUDE_DIRS} -L${CFG_LIBRARY_DIRS} -l${CFG_LIBRARIES}")
-
 add_library(UTIL  util.c)
 add_library(SMALLOC smalloc.c)
 add_library(MD5 md5.c)
