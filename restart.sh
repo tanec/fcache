@@ -31,11 +31,6 @@ function start() {
   esac
 }
 
-if [ `id -u` == '0' ]; then
-    echo "must not run as root"
-    exit 1
-fi
-
 export LC_ALL=zh_CN.utf8
 pkill -9 $1 || true
 ps -ef | grep -v grep | grep -E "keeprun $D/$1" || start $1
