@@ -36,8 +36,17 @@ file_read_path(char *path)
     char *strpos;
     uint32_t strlen;
     stream_t s = {0, mt.len, mt.data};
+    size_t min = 2 * sizeof(uint32_t);
+    if (mt.len < min) {
+      mmap_close(&mt);
+      return NULL;
+    }
     uint32_t hlen = readu32(&s);
     uint32_t blen = readu32(&s);
+    if (mt.len != min+hlen+blen) {
+      mmap_close(&mt);
+      return NULL;
+    }
 
     /* |<-- page_t -->|<-- body data -->|<-- head strings -->| */
     /* about 32 bytes in head is not for strings */
