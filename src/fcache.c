@@ -23,6 +23,7 @@
 #include "log.h"
 #include "util.h"
 #include "thread.h"
+#include "http-api.h"
 
 #include "fcache.h"
 #include "settings.h"
@@ -84,7 +85,7 @@ send_list_push(req_ctx_t *ctx)
   }
 
   // notify
-  mmap_array_t resp = {0, NULL};
+  tbuf resp = {0, NULL};
   const char *host = cfg.bind_addr;
 
   if (strcmp(cfg.bind_addr, "0.0.0.0") == 0)
@@ -153,7 +154,7 @@ pass_to_upstream(req_ctx_t *ctx)
     uint64_t s;
     int      slot;
     bool     result;
-    mmap_array_t data = {0, NULL};
+    tbuf data = {0, NULL};
 
     s      = current_time_millis();
     slot   = process_upstream_start();
