@@ -11,4 +11,5 @@ main(int argc, char **argv)
     printf("=== read: %s ===\n", argv[i]);
     page_print(file_read_path(argv[i]));
   }
+  return 0;
 }

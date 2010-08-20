@@ -29,4 +29,5 @@ main(int argc, char **argv)
     printf("=======>expire: %s\n", argv[4]);
     udp_notify_expire(&req, page);
   }
+  return 0;
 }
