@@ -14,4 +14,5 @@ int main() {
   p(unsigned long long);
   p(float);
   p(double);
+  return 0;
 }
