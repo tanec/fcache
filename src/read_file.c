@@ -30,21 +30,21 @@ byte[] 文件内容
 page_t *
 file_read_path(char *path)
 {
-  mmap_array_t mt;
-
-  if (mmap_read(&mt, path)) {
+  tbuf mt = {0, NULL};
+  
+  if (tbuf_read(&mt, path)) {
     char *strpos;
     uint32_t strlen;
-    stream_t s = {0, mt.len, mt.data};
+    stream_t s = {0, mt.len, (uint8_t*)mt.data};
     size_t min = 2 * sizeof(uint32_t);
     if (mt.len < min) {
-      mmap_close(&mt);
+      tbuf_close(&mt);
       return NULL;
     }
     uint32_t hlen = readu32(&s);
     uint32_t blen = readu32(&s);
     if (mt.len != min+hlen+blen) {
-      mmap_close(&mt);
+      tbuf_close(&mt);
       return NULL;
     }
 
@@ -86,9 +86,10 @@ file_read_path(char *path)
     head->param = strpos;
     strpos += strlen+1;
 
-    mmap_close(&mt);
+    tbuf_close(&mt);
     return page;
   }
+  tbuf_close(&mt);
   return NULL;
 }
 
@@ -98,7 +99,7 @@ file_get(md5_digest_t *dir, md5_digest_t *file)
   char path[71 + strlen(cfg.base_dir)]; //2*len(md5)+len('/')s+'\0' = 2*32+6+1
 
   sprintf(path,
-          "%s/%02x%02x/%02x%02x/%02x%02x/%02x%02x/%02x%02x%02x%02x%02x%02x%02x%02x/%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\0",
+          "%s/%02x%02x/%02x%02x/%02x%02x/%02x%02x/%02x%02x%02x%02x%02x%02x%02x%02x/%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
 	  cfg.base_dir,
           dir->digest[0], dir->digest[1], dir->digest[2], dir->digest[3],
           dir->digest[4], dir->digest[5], dir->digest[6], dir->digest[7],
