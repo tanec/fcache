@@ -2,9 +2,10 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+#include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/mman.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/socket.h>
@@ -46,9 +47,28 @@ daemonize(int dochdir, int doclose)
   return sid;
 }
 
-/* mmap() read - write */
+static inline void *
+myrealloc(void *ptr, size_t size)
+{
+  if(ptr)
+    return realloc(ptr, size);
+  else
+    return malloc(size);
+}
+
+static inline size_t
+write_tbuf(tbuf *dest, void *src, size_t size)
+{
+  dest->data = myrealloc(dest->data, dest->len + size);
+  if (dest->data) {
+    memcpy(&(dest->data[dest->len]), src, size);
+    dest->len += size;
+  }
+  return size;
+}
+
 bool
-mmap_read(mmap_array_t *ma, const char *file)
+tbuf_read(tbuf *buf, const char *file)
 {
   int fd;
   struct stat sb;
@@ -56,7 +76,7 @@ mmap_read(mmap_array_t *ma, const char *file)
 
   fd = open(file, O_RDONLY);
   if (fd == -1) {
-    fprintf(stderr, "open(%s, O_RDONLY) failed!\n", file);
+    //fprintf(stderr, "open(%s, O_RDONLY) failed!\n", file);
     return false;
   }
   if (fstat(fd, &sb) == -1) {
@@ -67,26 +87,35 @@ mmap_read(mmap_array_t *ma, const char *file)
     ret = false;
     goto close_fd;
   }
-
-  ma->len = sb.st_size;
-  ma->data = mmap(0, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
-  if (ma->data == MAP_FAILED) {
-    fprintf(stderr, "mmap(%p, %d, %d, %d, %d, %d) failed!\n", 0, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
+  if (sb.st_size < 1) {
     ret = false;
+    goto close_fd;
   }
+
+  do {
+    ssize_t bytes = 0, sz = 8192;
+    char buffer[sz];
+    if ((bytes = read(fd, buffer, sz)) < 1) {
+      break;
+    }
+
+    write_tbuf(buf, buffer, bytes);
+  } while(1);
+
  close_fd:
   if (close(fd) == -1) {
     fprintf(stderr, "close(%d) failed!", fd);
-    munmap(ma->data, ma->len);
     return false;
   }
   return ret;
 }
 
-int
-mmap_close(mmap_array_t *ma)
+void
+tbuf_close(tbuf *buf)
 {
-  return munmap(ma->data, ma->len);
+  if (buf) {
+    if (buf->data) free(buf->data);
+  }
 }
 
 uint64_t
@@ -105,19 +134,10 @@ current_time_micros()
   return (uint64_t)tv.tv_sec*1000*1000+tv.tv_usec;
 }
 
-static inline void *
-myrealloc(void *ptr, size_t size)
-{
-  if(ptr)
-    return realloc(ptr, size);
-  else
-    return malloc(size);
-}
-
 static size_t
 write_memory(void *dest, void *src, size_t size)
 {
-  mmap_array_t *arr = (mmap_array_t *)dest;
+  tbuf *arr = (tbuf *)dest;
 
   arr->data = myrealloc(arr->data, arr->len + size + 1);
   if (arr->data) {
@@ -129,7 +149,7 @@ write_memory(void *dest, void *src, size_t size)
 }
 
 bool
-tcp_read(mmap_array_t *data, const char *host, uint16_t port, char *output)
+tcp_read(tbuf *data, const char *host, uint16_t port, char *output)
 {
   int sock;
   struct sockaddr_in server;
@@ -143,6 +163,13 @@ tcp_read(mmap_array_t *data, const char *host, uint16_t port, char *output)
   server.sin_family = AF_INET;               /* Internet/IP */
   server.sin_addr.s_addr = inet_addr(host);  /* IP address */
   server.sin_port = htons(port);             /* server port */
+
+  struct timeval nTimeOut;
+  nTimeOut.tv_sec = 5;
+  nTimeOut.tv_usec = 0;
+
+  setsockopt(sock,SOL_SOCKET ,SO_RCVTIMEO,(char *)&nTimeOut,sizeof(struct timeval));
+  setsockopt(sock,SOL_SOCKET ,SO_SNDTIMEO,(char *)&nTimeOut,sizeof(struct timeval));
 
   if (connect(sock,
               (struct sockaddr *) &server,
