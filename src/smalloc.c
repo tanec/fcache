@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "smalloc.h"
+#include "util.h"
 
 #define LENGTH_SIZE sizeof(size_t)
 
@@ -21,7 +22,7 @@ smalloc(size_t size)
   void *ptr = malloc(size+LENGTH_SIZE);
   if (ptr == NULL) return smalloc_die(size);
   *((size_t*)ptr) = size;
-  used_memory += size+LENGTH_SIZE;
+  SYNC_ADD(&used_memory, size+LENGTH_SIZE);
   return (char*)ptr+LENGTH_SIZE;
 }
 
@@ -39,8 +40,8 @@ srealloc(void *ptr, size_t size)
   if (!newptr) return smalloc_die(size);
 
   *((size_t*)newptr) = size;
-  used_memory -= oldsize;
-  used_memory += size;
+  SYNC_SUB(&used_memory, oldsize);
+  SYNC_ADD(&used_memory, size);
   return (char*)newptr+LENGTH_SIZE;
 }
 
@@ -52,7 +53,7 @@ sfree(void *ptr)
   if (ptr == NULL) return;
   realptr = (char*)ptr-LENGTH_SIZE;
   oldsize = *((size_t*)realptr);
-  used_memory -= oldsize+LENGTH_SIZE;
+  SYNC_SUB(&used_memory, oldsize+LENGTH_SIZE);
   free(realptr);
 }
 
