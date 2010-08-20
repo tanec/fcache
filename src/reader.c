@@ -2,14 +2,14 @@
 #include "reader.h"
 
 
-void *
+void
 page_print(page_t *page)
 {
   if (page == NULL) {
     printf("page = NULL\n");
     return;
   }
-  printf("<== page@%llx start:\n", page);
+  printf("<== page@%p start:\n", page);
   printf("  head.version=%d\n", page->head.version);
   printf("  head.valid=%d\n", page->head.valid);
   printf("  head.time_expire=%lld(%llx)\n", page->head.time_expire, page->head.time_expire);
@@ -35,5 +35,5 @@ page_print(page_t *page)
       if(i%32==0) { printf("\n"); continue; }
       if(i%2==0) printf(" ");
   }
-  printf("<== page@%llx end.\n", page);
+  printf("<== page@%p end.\n", page);
 }
