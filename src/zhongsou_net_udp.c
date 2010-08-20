@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <arpa/inet.h>
 
 #include "zhongsou_net_udp.h"
@@ -84,7 +85,8 @@ handle_expire_request(void *args)
 {
   char buf[BUFLEN];
   struct sockaddr_in si_other;
-  int i, slen=sizeof(si_other);
+  int i;
+  socklen_t slen=sizeof(si_other);
   ssize_t len;
 
   tlog(DEBUG, "udp server @%d start", cfg.udp_server.port);
