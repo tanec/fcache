@@ -29,3 +29,9 @@ add_executable (maptest maptest.c)
 target_link_libraries(maptest ${GLIB_LIBRARIES} ${GTHREAD_LIBRARIES} SKIPLIST MD5 MAP SMALLOC)
 
 add_executable (size sizeof.c)
+
+add_executable (gptest gthreadpool.c)
+target_link_libraries(gptest ${EVENT_LIB} SMALLOC UTIL ${GLIB_LIBRARIES} ${GTHREAD_LIBRARIES})
+
+add_executable (smtest smalloc.c)
+target_link_libraries(smtest SMALLOC UTIL)
