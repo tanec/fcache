@@ -63,7 +63,7 @@ zs_http_find_igid_by_cookie(struct evhttp_request *req)
 }
 
 bool
-zs_http_pass_req(mmap_array_t *resp, struct evhttp_request *c, const char *host, uint16_t port, const char *url)
+zs_http_pass_req(tbuf *resp, struct evhttp_request *c, const char *host, uint16_t port, const char *url)
 {
 #define BUFLEN 8192
   char buf[BUFLEN];

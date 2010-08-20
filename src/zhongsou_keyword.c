@@ -24,7 +24,7 @@ cmp_str_map_node(str_map_node_t *n1, str_map_node_t *n2)
 }
 
 size_t
-count_lines(mmap_array_t *mt)
+count_lines(tbuf *mt)
 {
   size_t sz = 0;
   off_t i;
@@ -40,8 +40,8 @@ str_map_t *
 read_strmap(const char *file)
 {tlog(INFO, "read_strmap(%s)", file);
   str_map_t *ret = NULL;
-  mmap_array_t mt;
-  if (mmap_read(&mt, file)) {
+  tbuf mt = {0, NULL};
+  if (tbuf_read(&mt, file)) {
     size_t len = count_lines(&mt), i, n = 0;
     size_t pln = sizeof(size_t)
                + sizeof(str_map_node_t *)
@@ -84,9 +84,8 @@ read_strmap(const char *file)
     //sort
     qsort(ret->base, ret->len, sizeof(str_map_node_t),
           (int(*)(const void*,const void*))cmp_str_map_node);
-
-    mmap_close(&mt);
   }
+  tbuf_close(&mt);
   return ret;
 }
 
@@ -134,12 +133,12 @@ read_domain_synonyms(char *domain, char *file)
 void
 read_synonyms(const char *file)
 {tlog(DEBUG, "read_synonyms(%s)", file);
-  mmap_array_t mt;
+  tbuf mt = {0, NULL};
   char *files, *f1=NULL, *f2=NULL;
   int i;
 
   if (pthread_mutex_trylock(&slock) != 0) return;
-  if (mmap_read(&mt, file)) {
+  if (tbuf_read(&mt, file)) {
     // clear old domain specific synonyms
     for(i=0; i<MAX_DOMAIN; i++) {
       if(domain_keywords[i].domain != NULL) {
@@ -184,8 +183,8 @@ read_synonyms(const char *file)
     }
     if (domain_keywords_domains != NULL) free(domain_keywords_domains);
     domain_keywords_domains = files;
-    mmap_close(&mt);
   }
+  tbuf_close(&mt);
   pthread_mutex_unlock(&slock);
 }
 
