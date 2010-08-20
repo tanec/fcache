@@ -4,6 +4,7 @@
 #include <time.h>
 #include <stdio.h>
 
+#include "smalloc.h"
 #include "process.h"
 #include "reader.h"
 #include "read_mem.h"
@@ -317,37 +318,20 @@ process_upstream_end(int slot, uint64_t start, bool success)
   }
 }
 
-page_t *
+void
 process_cache(request_t *req, page_t *page)
 {// send done
-  if (page == NULL) return NULL;
+  if (page == NULL) return;
 
   bool expire = is_expire(page);
+  if (expire) {
+    udp_notify_expire(req, page);
+  }
+
   if (page->from == FILESYSTEM) {
-    mem_set(req->dig_file, page); // save in memory if expired?
-    mem_lru();
-    if (expire) {
-      udp_notify_expire(req, page); //udp: notify
-    }
+    mem_set(req->dig_file, page);
   } else if (page->from == MEMORY) {
-    if (expire) {
-      // page in memory is expired
-      mem_release(page);
-      page_t *p1 = file_get(md5_dir(req), md5_file(req));
-      if (p1 == NULL) { // not in fs: delete
-        mem_del(req->dig_file);
-      } else if (is_expire(p1)) { // expire in fs
-        udp_notify_expire(req, p1); // udp: notify
-        sfree(p1);
-      } else { // valid on fs
-        mem_set(req->dig_file, p1);
-        mem_lru(); // necessary?
-      }
-    } else {
-      // page in memory is not expired
-      mem_access(page);
-      mem_release(page);
-    }
+    mem_release(page);
   }
 }
 
@@ -390,7 +374,9 @@ process_stat_html(char *result)
          th, td {border: 1px dotted gray;}\n\
           th {}\n\
          </style></head><body>");
-  sprintf(buf,"page use %d M<br/>", smalloc_used_memory()/1024/1024);
+  sprintf(buf,"page use %lu bytes &nbsp; -- &nbsp;", smalloc_used_memory());
+  strcat(result, buf);
+
   strcat(result, buf);
   c = current_stat_slot();
 
