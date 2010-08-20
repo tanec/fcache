@@ -447,7 +447,7 @@ sl_print(skiplist_t *sl, int verbose)
     int i = 0;
     while (item) {
       int is_marked = HAS_MARK(item->next[0]), level;
-      printf("%s%p:0x%llx ", is_marked ? "*" : "", item, item->key);
+      printf("%s%p:0x%p ", is_marked ? "*" : "", item, item->key);
       if (item != sl->head) {
         printf("[%d]", item->num_levels);
       } else {
