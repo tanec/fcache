@@ -30,8 +30,14 @@ target_link_libraries(maptest ${GLIB_LIBRARIES} ${GTHREAD_LIBRARIES} SKIPLIST MD
 
 add_executable (size sizeof.c)
 
+add_executable (mctest CMiniCacheTest.c)
+target_link_libraries(mctest ${GLIB_LIBRARIES} ${GTHREAD_LIBRARIES} CMINICACHE MD5)
+
 add_executable (gptest gthreadpool.c)
 target_link_libraries(gptest ${EVENT_LIB} SMALLOC UTIL ${GLIB_LIBRARIES} ${GTHREAD_LIBRARIES})
 
 add_executable (smtest smalloc.c)
 target_link_libraries(smtest SMALLOC UTIL)
+
+add_executable (ug ug.c)
+target_link_libraries(ug UTIL)
