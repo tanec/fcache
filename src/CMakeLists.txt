@@ -1,6 +1,9 @@
 find_library(PTMALLOC_LIB ptmalloc3)
 message("found libptmalloc: ${PTMALLOC_LIB}")
 
+find_library(ICONV_LIB iconv)
+message("found libiconv: ${ICONV_LIB}")
+
 find_path(EVENT_INC event.h)
 include_directories(${EVENT_INC})
 find_library(EVENT_LIB event)
@@ -21,6 +24,11 @@ include_directories(${CURL_INCLUDE_DIRS})
 link_directories(${CURL_LIBRARY_DIRS})
 message("libcurl: -I${CURL_INCLUDE_DIRS} -L${CURL_LIBRARY_DIRS} -l${CURL_LIBRARIES}")
 
+pkg_check_modules(CFG REQUIRED libconfig)
+include_directories(${CFG_INCLUDE_DIRS})
+link_directories(${CFG_LIBRARY_DIRS})
+message("libconfig: -I${CFG_INCLUDE_DIRS} -L${CFG_LIBRARY_DIRS} -l${CFG_LIBRARIES}")
+
 add_library(UTIL  util.c)
 add_library(SMALLOC smalloc.c)
 add_library(MD5 md5.c)
@@ -38,12 +46,12 @@ target_link_libraries(HTTP ${CURL_LIBRARIES})
 add_library(MAP tmap.c)
 add_library(SKIPLIST skiplist.c)
 target_link_libraries(SKIPLIST MAP)
-
+add_library(CMINICACHE CMiniCache.c)
 ########################################
 add_library(READER reader.c)
 
 add_library(READMEM read_mem.c)
-target_link_libraries(READMEM  SKIPLIST)
+target_link_libraries(READMEM  CMINICACHE)
 
 add_library(BEREAD be_read.c)
 add_library(READFILE read_file.c)
@@ -52,11 +60,13 @@ target_link_libraries(READFILE  BEREAD READER UTIL SMALLOC SETTING PROCESS)
 
 add_library(STAT statistics.c)
 add_library(ZSHTTP zhongsou_net_http.c)
-target_link_libraries(ZSHTTP LOG UTIL)
+target_link_libraries(ZSHTTP LOG UTIL MD5)
 add_library(AUTH zhongsou_net_auth.c)
 target_link_libraries(AUTH HTTP)
 add_library(UDP  zhongsou_net_udp.c)
-target_link_libraries(UDP THREAD)
+target_link_libraries(UDP THREAD MD5 PROCESS)
+add_library(MON  zhongsou_monitor.c)
+target_link_libraries(MON THREAD)
 
 add_library(PROCESS process.c)
 target_link_libraries(PROCESS MD5 READMEM READFILE STAT AUTH UDP)
@@ -64,7 +74,7 @@ target_link_libraries(PROCESS MD5 READMEM READFILE STAT AUTH UDP)
 add_library(ZSKW zhongsou_keyword.c)
 
 add_executable (fcache fcache.c)
-target_link_libraries(fcache ${PTMALLOC_LIB} ${EVENT_LIB} SETTING LOG UTIL THREAD PROCESS ZSKW ${GLIB_LIBRARIES} ${GTHREAD_LIBRARIES} ZSHTTP)
+target_link_libraries(fcache ${PTMALLOC_LIB} ${EVENT_LIB} SETTING LOG UTIL THREAD PROCESS ZSKW ${GLIB_LIBRARIES} ${GTHREAD_LIBRARIES} ZSHTTP MON)
 
 add_executable (ishc ishc.cpp ProBlockChange.cpp ishc-imp.cpp)
 target_link_libraries(ishc ${EVENT_LIB} ${GLIB_LIBRARIES} ${GTHREAD_LIBRARIES} LOG UTIL)

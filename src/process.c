@@ -24,6 +24,7 @@ typedef struct {
   stat_item_t fs;
   stat_item_t auth;
   stat_item_t net;
+  uint64_t udp_send, udp_recv, udp_hit;
 } stat_t;
 
 static int curr=-1;
@@ -40,6 +41,9 @@ current_stat_slot()
     stat_init(&(statics[curr].fs));
     stat_init(&(statics[curr].auth));
     stat_init(&(statics[curr].net));
+    statics[curr].udp_send = 0;
+    statics[curr].udp_recv = 0;
+    statics[curr].udp_hit  = 0;
   }
   return curr;
 }
@@ -132,14 +136,18 @@ process_expire(md5_digest_t *dig)
        dig->digest[4], dig->digest[5], dig->digest[6], dig->digest[7],
        dig->digest[8], dig->digest[9], dig->digest[10], dig->digest[11],
        dig->digest[12], dig->digest[13], dig->digest[14], dig->digest[15]);
-
+  int slot = current_stat_slot();
+  statics[slot].udp_recv ++;
   page_t *page = mem_get(dig);
   if (page != NULL) {
+    statics[slot].udp_hit++;
+    uint64_t level = page->level;
     mem_release(page);
-    if (page->level < 0) //sticky
-      page->head.valid = 0;
-    else
-      mem_del(dig);
+    mem_del(dig);
+    if (level < 0) { //sticky
+      page = NULL;
+
+    }
   }
 }
 
@@ -254,6 +262,8 @@ process_get(request_t *req)
     return page;
   }
 
+  if (!cfg.base_dir_ok) return NULL;
+
   page = process_fs(req, curr_stat);
   if (page != NULL) {
     page->from = FILESYSTEM;
@@ -285,8 +295,7 @@ process_auth(const char *igid, page_t *page)
   stat_item_t *item = &statics[current_stat_slot()].auth;
   item->total_num++;
 
-  if (!auth_http(igid, page->head.keyword, page->head.auth_type, page->head.param))
-    ret = false;
+  ret = auth_http(igid, page->head.keyword, page->head.auth_type, page->head.param);
 
   if (ret != false) {
     stat_add(&(item->success), current_time_millis() - s);
@@ -326,6 +335,8 @@ process_cache(request_t *req, page_t *page)
   bool expire = is_expire(page);
   if (expire) {
     udp_notify_expire(req, page);
+    int slot = current_stat_slot();
+    statics[slot].udp_send ++;
   }
 
   if (page->from == FILESYSTEM) {
@@ -354,7 +365,7 @@ process_stat_item_html(char *html, stat_item_t *item)
   strcat(html, line);
   ps_itoa(line, "success=(num=%llu, time=%llu, max=%llu)\n", item->success.num,  item->success.time,  item->success.max_time);
   strcat(html, line);
-  ps_itoa(line, " failed=(num=%llu, time=%llu, max=%llu)\n", item->notfound.num, item->notfound.time, item->notfound.max_time);
+  ps_itoa(line, " failed=(num=%llu, time=%llu, max=%llu)",   item->notfound.num, item->notfound.time, item->notfound.max_time);
   strcat(html, line);
   strcat(html, "</pre></td>");
 }
@@ -369,14 +380,14 @@ process_stat_html(char *result)
          "<html><head>\
          <title>fcache in-memory statistics</title>\
          <style>\n\
-         table  {border: 3px solid  #333;}\n\
+         table  {border: 3px solid  #333; width: 100%;}\n\
          tr+tr  {border-top: 2px dotted #333;}\n\
          th, td {border: 1px dotted gray;}\n\
-          th {}\n\
+         th {text-align: left;} \n\
          </style></head><body>");
   sprintf(buf,"page use %lu bytes &nbsp; -- &nbsp;", smalloc_used_memory());
   strcat(result, buf);
-
+  mem_export(buf, 511);
   strcat(result, buf);
   c = current_stat_slot();
 
@@ -386,6 +397,7 @@ process_stat_html(char *result)
          <th>file system(ms)</th>\
          <th>authorication(ms)</th>\
          <th>upstream(ms)</th>\
+         <th>udp</th>\
          </tr>");
   for (i=0; i<STAT_HOURS; i++) {
     pos = (STAT_HOURS+c-i)%STAT_HOURS;
@@ -397,8 +409,24 @@ process_stat_html(char *result)
     process_stat_item_html(result, &st->fs);
     process_stat_item_html(result, &st->auth);
     process_stat_item_html(result, &st->net);
+    sprintf(buf, "<td><pre>send=%llu\nrecv=%llu/%llu</pre></td>",
+	    st->udp_send, st->udp_recv, st->udp_hit);
+    strcat(result, buf);
     strcat(result, "</tr>");
   }
-
+  strcat(result, "</table><br/><table><tr><th>type</th><th>url</th><th>host</th><th>port</th><th>status</th></tr>");
+  snprintf(buf, 511, "<tr><td>%s</td><td>%s</td><td></td><td></td><td>%s</td></tr>",
+	   "mfs", cfg.base_dir, cfg.base_dir_ok?"ok":"down");
+  strcat(result, buf);
+  server_group_t *grps[] = {&cfg.http, &cfg.udp_notify};
+  int ii, j, n=sizeof(grps)/sizeof(server_group_t *);
+  for (ii=0; ii<n; ii++) {
+    server_group_t *g = grps[ii];
+    for (j=0; j<g->num; j++) {
+      snprintf(buf, 511, "<tr><td>%s</td><td>%s</td><td>%s</td><td>%d</td><td>%s</td></tr>",
+	       g->servers[j].type, g->servers[j].url, g->servers[j].host, g->servers[j].port, g->servers[j].up?"ok":"down");
+      strcat(result, buf);
+    }
+  }
   strcat(result, "</table></body></html>");
 }

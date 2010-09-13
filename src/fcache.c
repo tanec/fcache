@@ -31,6 +31,7 @@
 #include "read_file.h"
 #include "zhongsou_keyword.h"
 #include "zhongsou_net_http.h"
+#include "zhongsou_monitor.h"
 
 static void
 exit_on_sig(const int sig)
@@ -124,12 +125,29 @@ send_page(req_ctx_t *ctx)
   memcpy(ct+len1, enc, len2);
   ct[len1+len2]='\0';
 
+  bool acceptgzip = true;
+  {
+    const char *ae = evhttp_find_header(ctx->client_req->input_headers, "Accept-Encoding");
+    if (ae==NULL || strstr(ae, "gzip")==NULL) {
+      acceptgzip = false;
+    }
+  }
+
   evhttp_add_header(ctx->client_req->output_headers, "Content-Type", ct);
-  evhttp_add_header(ctx->client_req->output_headers, "Content-Encoding", "gzip");
+  if (acceptgzip)
+    evhttp_add_header(ctx->client_req->output_headers, "Content-Encoding", "gzip");
 
   ctx->resp_code   = HTTP_OK;
   ctx->resp_reason = "OK";
-  evbuffer_add(ctx->resp_buf, ctx->page->body, ctx->page->body_len);
+  if (acceptgzip) {
+    evbuffer_add(ctx->resp_buf, ctx->page->body, ctx->page->body_len);
+  } else {
+    // uncompress
+    tbuf out = {0, NULL};
+    ext_gunzip(&out, ctx->page->body, ctx->page->body_len);
+    evbuffer_add(ctx->resp_buf, out.data, out.len);
+    tbuf_close(&out);
+  }
   send_list_push(ctx);
 }
 
@@ -155,10 +173,12 @@ pass_to_upstream(req_ctx_t *ctx)
     int      slot;
     bool     result;
     tbuf data = {0, NULL};
+    char path[128];
 
     s      = current_time_millis();
     slot   = process_upstream_start();
-    result = zs_http_pass_req(&data, ctx->client_req, svr->host, svr->port, ctx->req.url_orig);
+    file_path(path, md5_dir(&ctx->req), md5_file(&ctx->req));
+    result = zs_http_pass_req(&data, ctx->client_req, svr->host, svr->port, ctx->req.url_orig, path);
     process_upstream_end(slot, s, result);
 
     if (result) {
@@ -214,6 +234,11 @@ pass_to_upstream(req_ctx_t *ctx)
 
       if (data.data!=NULL) free(data.data);
     }
+  } else {
+    // no upstream server
+    ctx->resp_code   = HTTP_SERVUNAVAIL;
+    ctx->resp_reason = "serv unavail";
+    evbuffer_add_printf(ctx->resp_buf, "fcache cannot find a usable np server!");
   }
   send_list_push(ctx);
 }
@@ -256,7 +281,8 @@ fast_process(gpointer data, gpointer user_data)
     strtolower((char *)ctx->req.host);
   }
   { // keyword: extract from uri, then transform
-    s = zs_http_find_keyword_by_uri(c->uri);
+    char buf[8192]={0};
+    s = zs_http_find_keyword_by_uri(c->uri, buf);
     tlog(DEBUG, "keyword from uri: %s -> %s", c->uri, s);
 
     if (s != NULL) {
@@ -266,7 +292,6 @@ fast_process(gpointer data, gpointer user_data)
       } else {
         ctx->req.keyword = request_store(&ctx->req, 1, s);
       }
-      free((void *)s);
     }
 
     if (is_str_empty(ctx->req.keyword)) ctx->req.keyword = "/";
@@ -311,13 +336,18 @@ fast_process(gpointer data, gpointer user_data)
     if (ctx->page != NULL) ctx->page->head.valid = 0;
     process_discard(ctx->page);
     ctx->page = NULL;
-  } else if(ctx->page!=NULL &&
-            (igid=find_igid(ctx))!=NULL &&
-            ctx->page->head.ig!=NULL &&
-            strcmp(igid, ctx->page->head.ig)==0) {
-    //owner: pass to upstream
-    process_discard(ctx->page);
-    ctx->page = NULL;
+  } else if(ctx->page!=NULL) {
+    if(current_time_millis() > ctx->page->head.time_dead) {
+      tlog(ERROR, "static page dead: %s", ctx->page->head.param);
+      process_discard(ctx->page);
+      ctx->page = NULL;
+    } else if((igid=find_igid(ctx))!=NULL &&
+	      ctx->page->head.ig!=NULL &&
+	      strcmp(igid, ctx->page->head.ig)==0) {
+      //owner: pass to upstream
+      process_discard(ctx->page);
+      ctx->page = NULL;
+    }
   }
 
   if (ctx->page!=NULL && ctx->page->head.auth_type == AUTH_NO) {
@@ -357,9 +387,16 @@ slow_process(gpointer data, gpointer user_data)
     if (ctx->page != NULL) {
       send_page(ctx);
     } else {
-      // not authorized: pass to upstream
+      // not authorized: redirect to 403 page
+      //pass_to_upstream(ctx);
+      char buf[4096];
       tlog(DEBUG, "pass(no permission): %s", ctx->req.url);
-      pass_to_upstream(ctx);
+      if (is_multi_keyword_domain(ctx->req.host)) {
+	sprintf(buf, "http://%s/%s%s", ctx->req.host, ctx->req.keyword, cfg.page403);
+      } else {
+	sprintf(buf, "http://%s/%s", ctx->req.host, cfg.page403);
+      }
+      send_redirect(ctx, buf);
     }
   }
 }
@@ -389,6 +426,7 @@ init_fcache()
     perror("can not initialize thread pool!");
     exit(1);
   }
+  poll_monitor_result();
 }
 
 void
