@@ -9,6 +9,7 @@ typedef struct {
   uint8_t  valid;        // 是否有效
   uint64_t time_expire;  // 过期时间毫秒
   uint64_t time_create;  // 生成时间毫秒
+  uint64_t time_dead;    // 逾期时间毫秒，超过此时间不返回静态页
   uint64_t page_no;      // 页号
   uint8_t  type;         // 站类型  0 私有 1共享 >1 会员
   //    uint32_t keyword_len;  // 关键词长度
