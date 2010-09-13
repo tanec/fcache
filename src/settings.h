@@ -3,6 +3,7 @@
 
 #include <sys/types.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef enum {
   tcp,
@@ -11,9 +12,11 @@ typedef enum {
 } conn_t;
 
 typedef struct {
+  const char *type;
   const char *url;
   const char *host;
   int port;
+  bool up;
 } server_t;
 
 typedef struct {
@@ -33,14 +36,17 @@ typedef struct {
   const char *status_path;
   const char *monitor_path;
   const char *read_kw_path;
+  const char *page403;
 
   const char *pid_file;
   int num_threads;
+  uint64_t maxpage;
   uint64_t maxmem;
   uint64_t min_reserve; // to start lru
   uint64_t max_reserve; // to stop  lru
   int maxconns;
 
+  bool base_dir_ok;
   //read from file
   const char *base_dir;
   const char *page_encoding;
@@ -48,6 +54,8 @@ typedef struct {
   const char *synonyms_file;
   const char *sticky_url_file;
 
+  //get check result
+  server_t monitor_server;
   //udp notify other server
   server_group_t udp_notify;
   //udp notify me
@@ -68,6 +76,7 @@ extern setting_t cfg;
 void init_cfg(void);
 void read_cfg(char *);
 
+server_t * first_server_in_group(server_group_t *);
 server_t * next_server_in_group(server_group_t *);
 
 #endif // CONFIG_H
