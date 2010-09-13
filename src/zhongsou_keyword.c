@@ -270,3 +270,15 @@ search(str_map_t *map, const char *key, size_t s, size_t e)
     }
   }
 }
+
+bool
+is_multi_keyword_domain(const char *domain)
+{
+  int i;
+  for (i=0; i<cfg.multi_keyword_domains_len; i++) {
+    if (strcmp(domain, cfg.multi_keyword_domains[i])==0) {
+      return true;
+    }
+  }
+  return false;
+}

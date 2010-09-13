@@ -2,6 +2,7 @@
 #define ZHONGSOU_KEYWORD_H
 
 #include <sys/types.h>
+#include <stdbool.h>
 
 typedef struct {
   char *key;
@@ -17,6 +18,7 @@ void read_lock_init(void);
 void read_domain(const char *);
 void read_synonyms(const char *);
 
+bool is_multi_keyword_domain(const char *);
 const char * domain2kw(const char *);
 const char * synonyms2kw (const char *, const char *);
 const char * find_keyword(const char *, const char *);
