@@ -18,6 +18,7 @@ function getcfg() {
   case `myip` in
   202.108.1.121) echo '.165' ;;
   202.108.1.122) echo '.175.test'  ;;
+  114.112.*)     echo '.114' ;;
   *) echo '' ;;
   esac
 }
@@ -32,5 +33,5 @@ function start() {
 }
 
 export LC_ALL=zh_CN.utf8
-pkill -9 $1 || true
+pkill -9 -x $1 || true
 ps -ef | grep -v grep | grep -E "keeprun $D/$1" || start $1
