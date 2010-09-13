@@ -22,7 +22,7 @@ tlog(log_level_t level, const char *fmt, ...)
     time_t rawtime;
     struct tm * timeinfo;
     char strtime[80];
-#define LINENUM 2048
+#define LINENUM 8192
     char msg[LINENUM] = {0};
 
     time(&rawtime);
