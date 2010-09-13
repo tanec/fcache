@@ -12,7 +12,7 @@
 头格式       编码gbk
 Int 头大小
 Int 内容大小
-byte 静态页版本格式
+byte 静态页版本格式 0 or 1, 1:deadtime
 byte 是否有效
 long 过期时间毫秒
 long 生成时间毫秒
@@ -58,33 +58,66 @@ file_read_path(char *path)
     memcpy(page->body, mt.data+2*sizeof(uint32_t)+hlen, page->body_len);
     strpos = (char*)page->body + blen;
 
-    page_head_t *head = (page_head_t *)page;
+    page_head_t *head = &page->head;
     head->version = readu8(&s);
-    head->valid = readu8(&s);
-    head->time_expire = readu64(&s);
-    head->time_create = readu64(&s);
-    head->page_no = readu64(&s);
-    head->type = readu8(&s);
+    switch(head->version) {
+    case 0:
+      head->valid = readu8(&s);
+      head->time_expire = readu64(&s);
+      head->time_create = readu64(&s);
+      head->time_dead   = head->time_expire+(uint64_t)24*3600*1000;
+      head->page_no = readu64(&s);
+      head->type = readu8(&s);
 
-    strlen = readu32(&s);
-    readarr(&s, strpos, strlen);
-    *(strpos+strlen) = 0;
-    head->keyword = strpos;
-    strpos += strlen+1;
+      strlen = readu32(&s);
+      readarr(&s, strpos, strlen);
+      *(strpos+strlen) = 0;
+      head->keyword = strpos;
+      strpos += strlen+1;
 
-    strlen = readu32(&s);
-    readarr(&s, strpos, strlen);
-    *(strpos+strlen) = 0;
-    head->ig = strpos;
-    strpos += strlen+1;
+      strlen = readu32(&s);
+      readarr(&s, strpos, strlen);
+      *(strpos+strlen) = 0;
+      head->ig = strpos;
+      strpos += strlen+1;
 
-    head->auth_type = readu32(&s);
+      head->auth_type = readu32(&s);
 
-    strlen = readu32(&s);
-    readarr(&s, strpos, strlen);
-    *(strpos+strlen) = 0;
-    head->param = strpos;
-    strpos += strlen+1;
+      strlen = readu32(&s);
+      readarr(&s, strpos, strlen);
+      *(strpos+strlen) = 0;
+      head->param = strpos;
+      strpos += strlen+1;
+      break;
+    case 1:
+      head->valid = readu8(&s);
+      head->time_expire = readu64(&s);
+      head->time_create = readu64(&s);
+      head->time_dead   = readu64(&s);
+      head->page_no = readu64(&s);
+      head->type = readu8(&s);
+
+      strlen = readu32(&s);
+      readarr(&s, strpos, strlen);
+      *(strpos+strlen) = 0;
+      head->keyword = strpos;
+      strpos += strlen+1;
+
+      strlen = readu32(&s);
+      readarr(&s, strpos, strlen);
+      *(strpos+strlen) = 0;
+      head->ig = strpos;
+      strpos += strlen+1;
+
+      head->auth_type = readu32(&s);
+
+      strlen = readu32(&s);
+      readarr(&s, strpos, strlen);
+      *(strpos+strlen) = 0;
+      head->param = strpos;
+      strpos += strlen+1;
+      break;
+    }
 
     tbuf_close(&mt);
     return page;
@@ -93,11 +126,9 @@ file_read_path(char *path)
   return NULL;
 }
 
-page_t *
-file_get(md5_digest_t *dir, md5_digest_t *file)
+void
+file_path(char *path, md5_digest_t *dir, md5_digest_t *file)
 {
-  char path[71 + strlen(cfg.base_dir)]; //2*len(md5)+len('/')s+'\0' = 2*32+6+1
-
   sprintf(path,
           "%s/%02x%02x/%02x%02x/%02x%02x/%02x%02x/%02x%02x%02x%02x%02x%02x%02x%02x/%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
 	  cfg.base_dir,
@@ -109,7 +140,12 @@ file_get(md5_digest_t *dir, md5_digest_t *file)
           file->digest[4], file->digest[5], file->digest[6], file->digest[7],
           file->digest[8], file->digest[9], file->digest[10], file->digest[11],
           file->digest[12], file->digest[13], file->digest[14], file->digest[15]);
-
+}
+page_t *
+file_get(md5_digest_t *dir, md5_digest_t *file)
+{
+  char path[71 + strlen(cfg.base_dir)]; //2*len(md5)+len('/')s+'\0' = 2*32+6+1
+  file_path(path, dir, file);
   tlog(DEBUG, "file_read_path(%s)", path);
   return file_read_path(path);
 }
