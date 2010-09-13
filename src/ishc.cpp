@@ -12,6 +12,7 @@
 #include <netinet/tcp.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <iconv.h>
 
 #include <event.h>
 #include <evhttp.h>

@@ -318,9 +318,73 @@ int fScanStr(char *poRes,int iResLen,char *piScr, const char *piMark) {
   poRes[j] = '\0';
   return 0;
 }
+
+// 0x8140 <= *p*(p+1) < 0xFEFE
+static inline bool
+isgbk(unsigned char *c)
+{
+  return (0x81 <= *c && *c < 0xFF && 0x40 <= *(c+1) && *(c+1) < 0xFF);
+}
+
+const char *encs[] = {"UTF-8", "BIG5"};
+const char *enct   = "GBK";
+static inline bool
+convert(char *dest, size_t dest_len, const char *src)
+{
+  bool ret = false, needcvt = false;
+  int i, n_encs;
+  size_t inlen, outlen;
+  char *s = NULL, *os=(char *)src, *d=dest;
+
+  while(*os) {
+    if(!isprint(*os)) {
+      if (isgbk((unsigned char *)os)) {
+	os += 2;
+	continue;
+      } else {
+	needcvt=true;
+	break;
+      }
+    }
+    os++;
+  }
+  if (!needcvt) return false;
+
+  n_encs = sizeof(encs) / sizeof(char *);
+  for (i=0; i<n_encs; i++) {
+    if(!ret) {
+      iconv_t cd = iconv_open(enct, encs[i]);
+      if (cd == (iconv_t) -1) continue;
+
+      os=strdup(src);
+      s =os;
+      if (s!=NULL) {
+	inlen  = strlen(src);
+	outlen = dest_len;
+	memset(dest, 0, dest_len);
+        d = dest;
+
+	while (inlen > 0) {
+	  size_t convrst = iconv(cd, &s, &inlen, &d, &outlen);
+	  if(convrst == (size_t) -1) break;
+	}
+	if (inlen == 0) ret = true;
+	free(os);
+      }
+      iconv_close(cd);
+    }
+  }
+  return ret;
+}
+
 //填充url参数
-int SetUrlParameters(URLPARAMETER * &para,char *pReg) {
-  UrlDecode(pReg);
+int SetUrlParameters(URLPARAMETER * &para,char *ppReg) {
+  UrlDecode(ppReg);
+  char *pReg, dest[4096];
+  pReg = dest;
+  if (!convert(pReg, 4095, ppReg)) {
+    pReg = ppReg;
+  }
 
   char parU[256]={0},strTmp[770]={0};
 
@@ -563,7 +627,7 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
       SendChildDataLength += tempUrlLen;
       *(int*)(sendChildDataBuf + SendChildDataLength) = (int)0;//属性长度
       SendChildDataLength += sizeof(int);
-      delete tempUrl;
+      delete[] tempUrl;
 
       *(UINT64*)(sendChildDataBuf + SendChildDataLength) = fId;//formatid
       SendChildDataLength += sizeof(UINT64);
@@ -719,7 +783,7 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
       return -5008;
     }
 
-    pBuf[nAllLen + verifyDataLen]=0;
+    pBuf[nAllLen + verifyDataLen - 1]=0;
 
     /**debug info**/
     if(DEBUGFLAG) {
@@ -954,11 +1018,13 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
   ret = SetUrlParameters(para, fullurl);
   if(ret < 0) {
     evbuffer_add_printf(buf,"<!--读取参数失败-->");
+    delete para;
     return OK;
   }
   //imsp框架
   if(para->s == 1 && para->ds == 1) {
     I_MSP_PrintfHtmlPage(buf, para->u);
+    delete para;
     return OK;
   }
 
@@ -978,6 +1044,7 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
   if(pSocket<0) {
     sprintf(strTmp,"此时网络繁忙,请重试!!!\n");
     I_MSP_PrintfErrorHtmlPage(buf,strTmp,para->u);
+    delete para;
     return OK;
   }
 
@@ -1002,6 +1069,7 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
           if(pSocket<0) {
             sprintf(strTmp,"re1-此时网络繁忙，请重试!!!\n");
             I_MSP_PrintfErrorHtmlPage(buf,strTmp,para->u);
+	    delete para;
             return OK;
           }
           goto GETHTML;
@@ -1090,6 +1158,7 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
         if(pSocket<0) {
           sprintf(strTmp,"re2-不能连接所有服务器，请重试!!!\n");
           I_MSP_PrintfErrorHtmlPage(buf,strTmp,para->u);
+	  delete para;
           return OK;
         }
         goto GETHTML;
@@ -1140,7 +1209,7 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
             char *merOutBuf = new char[temLen];
             memcpy(merOutBuf,pBuf+dataLenPos,errorCode);
             memcpy(merOutBuf+errorCode,outBuf,indiLen);
-            *(merOutBuf+temLen) = 0;
+            *(merOutBuf+temLen-1) = 0;
 
             /**debug info**/
             if(DEBUGFLAG) {
@@ -1201,5 +1270,6 @@ int i_shc_handler(evbuffer *buf, char *fullurl) {
   }
 
   close(pSocket);
+  delete para;
   return OK;
 }
