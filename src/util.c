@@ -165,7 +165,7 @@ tcp_read(tbuf *data, const char *host, uint16_t port, char *output)
   server.sin_port = htons(port);             /* server port */
 
   struct timeval nTimeOut;
-  nTimeOut.tv_sec = 5;
+  nTimeOut.tv_sec = 20;
   nTimeOut.tv_usec = 0;
 
   setsockopt(sock,SOL_SOCKET ,SO_RCVTIMEO,(char *)&nTimeOut,sizeof(struct timeval));
@@ -211,4 +211,53 @@ strtolower(char *str)
   do {
     if (isupper(*s)) *s = tolower(*s);
   } while(*(++s)!='\0');
+}
+
+bool
+ext_gunzip(tbuf *dest, const void* src, size_t count) {
+    pid_t pid;
+    int wp[2], rp[2]; //0:read, 1:write
+    ssize_t rlen;
+#define BLEN 8192
+    char buf[BLEN];
+    
+
+    if (pipe(wp) == -1) { return false; }
+    if (pipe(rp) == -1) { close(wp[0]); close(wp[1]); return false; }
+ 
+    pid = fork();
+    if (pid < 0) {
+      close(rp[0]); close(rp[1]);
+      close(wp[0]); close(wp[1]);
+      return false;
+    } else if (pid==0) {
+      //child
+      close(wp[1]);
+      close(rp[0]);
+      dup2(wp[0], STDIN_FILENO);
+      dup2(rp[1], STDOUT_FILENO);
+      close(wp[0]);
+      close(rp[1]);
+      if (execlp("/bin/gzip", "gzip", "-cdf", (char *)NULL) == -1) {
+	perror("exec gzip");
+      }
+      exit(0);
+    }else {
+      //parent
+      close(wp[0]);
+      close(rp[1]);
+      //write to stdin
+      
+      write(wp[1], src, count);
+      close(wp[1]);
+      //read from stdout
+      do {
+	rlen=read(rp[0], buf, BLEN);
+	write_memory(dest, buf, rlen);
+      } while(rlen > 0);
+      close(rp[0]);
+      return true;
+    }
+    return false;
+#undef BLEN
 }

@@ -53,6 +53,8 @@ bool tcp_read(tbuf *, const char *, uint16_t, char *);
 //string
 void strtolower(char *);
 
+bool ext_gunzip(tbuf *, const void*, size_t);
+
 #ifdef __cplusplus
 }
 #endif
