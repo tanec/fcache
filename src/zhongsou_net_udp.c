@@ -7,6 +7,8 @@
 #include "settings.h"
 #include "thread.h"
 #include "log.h"
+#include "process.h"
+#include "md5.h"
 
 /*
 UDP 协议
@@ -25,14 +27,18 @@ void
 udp_notify_expire(request_t *req, page_t *page)
 {
   const char *url=req->url, *param=page->head.param;
-  size_t buf_len = 64+strlen(url)+strlen(param), real_len, be_len;
-  char buf[buf_len], sendbuf[8+buf_len], *p;
+  size_t buf_len = 128+strlen(url)+strlen(param), real_len, be_len;
+  char buf[buf_len], sendbuf[8+buf_len], *p, path[128]={0};
 
   struct sockaddr_in si_other;
   int i, s, slen=sizeof(si_other);
+  server_t *last_svr = NULL;
+  file_path(path, md5_dir(req), md5_file(req));
 
   for (i=0; i<cfg.udp_notify.num; i++) {
-    server_t *svr = next_server_in_group(&cfg.udp_notify);
+    server_t *svr = first_server_in_group(&cfg.udp_notify);
+    if (svr==NULL) continue;
+    if (svr==last_svr) break;
     if ((s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1) continue;
     memset((char *) &si_other, 0, slen);
     si_other.sin_family = AF_INET;
@@ -45,8 +51,9 @@ udp_notify_expire(request_t *req, page_t *page)
     // prepare data
     memset(buf, 0, buf_len);
     snprintf(buf, buf_len,
-             "{Type:1,URL:{OrignalURL:\"%s\",ApacheURL:%s}}",
-             url, param);
+             "{Type:1,URL:{OrignalURL:\"%s$%s\",ApacheURL:%s}}",
+             path, url, param);
+    tlog(DEBUG, "send %s:%d - %s", svr->host, svr->port, buf);
     real_len = strlen(buf);
     sendbuf[0] = 2;
     sendbuf[1] = 0;
@@ -74,6 +81,7 @@ udp_notify_expire(request_t *req, page_t *page)
       pos += n;
     } while(pos < real_len);
     close(s);
+    last_svr = svr;
   }
 }
 
