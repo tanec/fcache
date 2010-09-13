@@ -9,28 +9,27 @@
   must free it
  */
 char *
-zs_http_find_keyword_by_uri(const char *orig_uri)
+zs_http_find_keyword_by_uri(const char *orig_uri, char *out)
 {
-  static char *kw = "keyword=";
-  char *uri, *s, *ret=NULL;
-  uri = strdup(orig_uri); // make a copy
-  if (uri == NULL) {
+  char *s, c;
+  int i;
+
+  if (orig_uri == NULL || out == NULL || strcmp(orig_uri, "/fff")==0) {
     return NULL;
-  } else if (strchr(s=uri, '?') != NULL) { // try /path?keyword=xxx
-    strsep(&s, "?");
-    s = strstr(s, kw);
-    if (s != NULL && strchr(s, '&') != NULL) s=strsep(&s, "&");
-    if (s != NULL) ret = strdup(s+strlen(kw));
   }
-  if (ret == NULL) { // try /keyword/xxx && /keyword?aaa
-    s = uri;
-    if (*s=='/') s++;
-    if (*s!='\0' && strchr(s, '/')!=NULL) s=strsep(&s, "/");
-    if (*s!='\0' && strchr(s, '?')!=NULL) s=strsep(&s, "?");
-    if (s!=NULL) ret=strdup(s);
+  // try /keyword/xxx && /keyword?aaa
+  s = (char *)orig_uri;
+  if (*s=='/') s++;
+  for(i=0;i<8192;i++) {
+    c = *(s+i);
+    if(c!='\0' && c!='/' && c!='?') {
+      out[i] = c;
+      out[i+1] = '\0';
+    } else {
+      break;
+    }
   }
-  free(uri);
-  return ret;
+  return out;
 }
 
 static char *ks = "un_web=";
@@ -63,27 +62,33 @@ zs_http_find_igid_by_cookie(struct evhttp_request *req)
 }
 
 bool
-zs_http_pass_req(tbuf *resp, struct evhttp_request *c, const char *host, uint16_t port, const char *url)
+zs_http_pass_req(tbuf *resp, struct evhttp_request *c, const char *host, uint16_t port, const char *url, const char *path)
 {
-#define BUFLEN 8192
-  char buf[BUFLEN];
+#define BUFLEN 16384
+  char buf[BUFLEN+1];
+  int len = 15, len1=0; //strlen("GET  HTTP/1.1\r\n")->15
 
-  memset(buf, 0, BUFLEN);
+  memset(buf, 0, BUFLEN+1);
   // copy params
-  strcat(buf, "GET ");
-  strcat(buf, c->uri);
+  strcat(buf, "GET ");                       len1=strlen(c->uri);  if(len+len1>BUFLEN) return false;
+  strcat(buf, c->uri);            len+=len1;
   strcat(buf, " HTTP/1.1\r\n");
   struct evkeyval *h;
-  TAILQ_FOREACH(h, c->input_headers, next) {
-    strcat(buf, h->key);
-    strcat(buf, ": ");
-    strcat(buf, h->value);
+  TAILQ_FOREACH(h, c->input_headers, next) { len1=4+strlen(h->key);if(len+len1>BUFLEN) return false;
+    strcat(buf, h->key);          len+=len1;
+    strcat(buf, ": ");                       len1=strlen(h->value);if(len+len1>BUFLEN) return false;
+    strcat(buf, h->value);        len+=len1;
     strcat(buf, "\r\n");
-  }
-  strcat(buf, "Orignal-URL: ");
-  strcat(buf, url);
+  }                                          len1=17;              if(len+len1>BUFLEN) return false;
+  strcat(buf, "Orignal-URL: ");   len+=len1;
+  if(path) {                                 len1=1+strlen(path);  if(len+len1>BUFLEN) return false;
+    strcat(buf, path);            len+=len1;
+    strcat(buf, "$");
+  }                                          len1=4+strlen(url);   if(len+len1>BUFLEN) return false;
+  strcat(buf, url);//             len+=len1; // last one: not needed
   strcat(buf, "\r\n\r\n");
-  tlog(DEBUG, "==>request header:{\n%s\n}\n", buf);
+  tlog(DEBUG, "==>%s:%d request header:{\n%s\n}\n", host, port, buf);
 
   return tcp_read(resp, host, port, buf);
+#undef BUFLEN
 }
