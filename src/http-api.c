@@ -120,3 +120,24 @@ http_unescape(const char *in, char *out)
   }
   return false;
 }
+
+bool
+http_escape(const char *in, char *out)
+{
+  char *res = NULL;
+  CURL *curl;
+  bool ret = false;
+
+  curl = curl_easy_init();
+  if (curl != NULL) {
+    res = curl_easy_escape(curl, in, 0);
+    if (res != NULL) {
+      memcpy(out, res, strlen(res)+1);
+      ret = true;
+      curl_free(res);
+    }
+    curl_easy_cleanup(curl);
+    return ret;
+  }
+  return false;
+}
