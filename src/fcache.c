@@ -392,9 +392,11 @@ slow_process(gpointer data, gpointer user_data)
       char buf[4096];
       tlog(DEBUG, "pass(no permission): %s", ctx->req.url);
       if (is_multi_keyword_domain(ctx->req.host)) {
-	sprintf(buf, "http://%s/%s%s", ctx->req.host, ctx->req.keyword, cfg.page403);
+	char kw[strlen(ctx->req.keyword)*5+1];
+	http_escape(ctx->req.keyword, kw);
+	sprintf(buf, "http://%s/%s%s", ctx->req.host, kw, cfg.page403);
       } else {
-	sprintf(buf, "http://%s/%s", ctx->req.host, cfg.page403);
+	sprintf(buf, "http://%s%s", ctx->req.host, cfg.page403);
       }
       send_redirect(ctx, buf);
     }
