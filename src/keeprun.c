@@ -45,7 +45,7 @@ main(int argc, char **argv)
 
   for(i=1; i<argc; i++) args[i-1] = argv[i];
   args[argc-1] = NULL;
-  daemonize(1, 0);
+  daemonize(1, 1);
 
   if ((t_exec(args, 0)) < 0) {
     fprintf(stderr, "first invoke failed.\n");
