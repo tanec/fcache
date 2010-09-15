@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/wait.h>
 
 #include "util.h"
 #include "md5.h"
@@ -256,6 +257,8 @@ ext_gunzip(tbuf *dest, const void* src, size_t count) {
 	write_memory(dest, buf, rlen);
       } while(rlen > 0);
       close(rp[0]);
+      int status;
+      waitpid(pid, &status, 0);
       return true;
     }
     return false;
