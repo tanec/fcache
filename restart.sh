@@ -32,6 +32,10 @@ function start() {
   esac
 }
 
+ulimit -c unlimited
+mkdir -p $D/../core
+cd  $D/../core
+
 export LC_ALL=zh_CN.utf8
 pkill -9 -x $1 || true
 ps -ef | grep -v grep | grep -E "keeprun $D/$1" || start $1
