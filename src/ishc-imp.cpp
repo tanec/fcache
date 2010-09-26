@@ -7,6 +7,7 @@
 #include <event.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <iconv.h>
 
 #include "ProBlockChange.h"
 using namespace std;
@@ -818,6 +819,7 @@ int GetMakeHtmlPage(const int pSocket,URLPARAMETER *para,char *&pBuf, char *err)
     char *pos;
     char ch;
     pos = strstr(bBuf,"_");
+    if (pos == NULL) return -6001;
     ch = *pos;
     *pos = 0;
     UINT64 fId = strtoull(bBuf,NULL,10);
