@@ -47,6 +47,7 @@ init_cfg(void)
 
   cfg.num_threads = 16;
   cfg.maxpage = 400000;
+  cfg.maxpagesave = 200000;
   cfg.maxmem = (uint64_t)2*1024*1024*1024;
   cfg.min_reserve = (uint64_t)800*1024*1024;
   cfg.max_reserve = cfg.maxmem;
@@ -62,6 +63,8 @@ init_cfg(void)
   //notify me
   cfg.udp_server.host = "127.0.0.1";
   cfg.udp_server.port = 2046;
+  cfg.save_server.host = "127.0.0.1";
+  cfg.save_server.port = 2047;
   //auth
   init_server_group(&cfg.auth);
   //http
@@ -128,6 +131,7 @@ read_cfg(char *file)
     r=config_lookup_string(&c, "run.pidfile",    &cfg.pid_file);      tlog(DEBUG, "%d, cfg.pid_file=%s",      r,cfg.pid_file);
     r=config_lookup_int   (&c, "thread.num",     &cfg.num_threads);   tlog(DEBUG, "%d, cfg.num_threads=%d",   r,cfg.num_threads);
     r=config_lookup_int   (&c, "mem.maxpage",    &n);if(r) cfg.maxpage=n;tlog(DEBUG, "%d, cfg.maxpage=%llu",     r,cfg.maxpage);
+    r=config_lookup_int   (&c, "mem.maxpagesave",&n);if(r) cfg.maxpagesave=n;tlog(DEBUG, "%d, cfg.maxpagesave=%llu",     r,cfg.maxpagesave);
     r=config_lookup_int   (&c, "mem.max",        &n);if(r) cfg.maxmem     =(uint64_t)n*1024*1024; tlog(DEBUG, "%d, cfg.maxmem=%llu",      r,cfg.maxmem);
     r=config_lookup_int   (&c, "mem.min_reserve",&n);if(r) cfg.min_reserve=(uint64_t)n*1024*1024; tlog(DEBUG, "%d, cfg.min_reserve=%llu", r,cfg.min_reserve);
     r=config_lookup_int   (&c, "mem.max_reserve",&n);if(r) cfg.max_reserve=(uint64_t)n*1024*1024; tlog(DEBUG, "%d, cfg.max_reserve=%llu", r,cfg.max_reserve);
@@ -139,6 +143,8 @@ read_cfg(char *file)
     r=config_lookup_string(&c, "mon_server.url", &cfg.monitor_server.url);tlog(DEBUG,"%d, cfg.monitor_server.url=%s",r,cfg.monitor_server.url);
     r=config_lookup_string(&c, "udp_server.host",&cfg.udp_server.host);tlog(DEBUG,"%d, cfg.udp_server.host=%s", r,cfg.udp_server.host);
     r=config_lookup_int   (&c, "udp_server.port",&cfg.udp_server.port);tlog(DEBUG,"%d, cfg.udp_server.port=%d", r,cfg.udp_server.port);
+    r=config_lookup_string(&c, "save_server.host",&cfg.save_server.host);tlog(DEBUG,"%d, cfg.save_server.host=%s", r,cfg.save_server.host);
+    r=config_lookup_int   (&c, "save_server.port",&cfg.save_server.port);tlog(DEBUG,"%d, cfg.save_server.port=%d", r,cfg.save_server.port);
 
     read_server_group(&c, "servers.notify", &cfg.udp_notify);
     read_server_group(&c, "servers.auth",   &cfg.auth);

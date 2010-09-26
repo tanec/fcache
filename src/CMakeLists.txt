@@ -1,9 +1,3 @@
-find_library(PTMALLOC_LIB ptmalloc3)
-message("found libptmalloc: ${PTMALLOC_LIB}")
-
-find_library(ICONV_LIB iconv)
-message("found libiconv: ${ICONV_LIB}")
-
 find_path(EVENT_INC event.h)
 include_directories(${EVENT_INC})
 find_library(EVENT_LIB event)
@@ -67,6 +61,7 @@ add_library(UDP  zhongsou_net_udp.c)
 target_link_libraries(UDP THREAD MD5 PROCESS)
 add_library(MON  zhongsou_monitor.c)
 target_link_libraries(MON THREAD)
+add_library(PS   zhongsou_page_save.c)
 
 add_library(PROCESS process.c)
 target_link_libraries(PROCESS MD5 READMEM READFILE STAT AUTH UDP)
@@ -74,7 +69,7 @@ target_link_libraries(PROCESS MD5 READMEM READFILE STAT AUTH UDP)
 add_library(ZSKW zhongsou_keyword.c)
 
 add_executable (fcache fcache.c)
-target_link_libraries(fcache ${PTMALLOC_LIB} ${EVENT_LIB} SETTING LOG UTIL THREAD PROCESS ZSKW ${GLIB_LIBRARIES} ${GTHREAD_LIBRARIES} ZSHTTP MON)
+target_link_libraries(fcache ${EVENT_LIB} SETTING LOG UTIL THREAD PROCESS ZSKW ${GLIB_LIBRARIES} ${GTHREAD_LIBRARIES} ZSHTTP MON PS)
 
 add_executable (ishc ishc.cpp ProBlockChange.cpp ishc-imp.cpp)
 target_link_libraries(ishc ${EVENT_LIB} ${GLIB_LIBRARIES} ${GTHREAD_LIBRARIES} LOG UTIL)

@@ -32,6 +32,7 @@
 #include "zhongsou_keyword.h"
 #include "zhongsou_net_http.h"
 #include "zhongsou_monitor.h"
+#include "zhongsou_page_save.h"
 
 static void
 exit_on_sig(const int sig)
@@ -337,6 +338,7 @@ fast_process(gpointer data, gpointer user_data)
     process_discard(ctx->page);
     ctx->page = NULL;
   } else if(ctx->page!=NULL) {
+    uint64_t time_save;
     if(current_time_millis() > ctx->page->head.time_dead) {
       tlog(ERROR, "static page dead: %s", ctx->page->head.param);
       process_discard(ctx->page);
@@ -345,6 +347,11 @@ fast_process(gpointer data, gpointer user_data)
 	      ctx->page->head.ig!=NULL &&
 	      strcmp(igid, ctx->page->head.ig)==0) {
       //owner: pass to upstream
+      process_discard(ctx->page);
+      ctx->page = NULL;
+    } else if ((  time_save=page_save_time(ctx->page->head.page_no))!=UNKNOWN_SAVE_TIME
+	       && time_save>ctx->page->head.time_create) {
+      tlog(DEBUG, "static page gen(%llu) before save(%llu): %s", ctx->page->head.time_create, time_save, ctx->page->head.param);
       process_discard(ctx->page);
       ctx->page = NULL;
     }
@@ -602,6 +609,7 @@ main(int argc, char**argv)
     exit(EXIT_FAILURE);
   }
   process_init();
+  wait_page_save_message();
   init_fcache();
   // keywords
   read_lock_init();

@@ -41,6 +41,7 @@ typedef struct {
   const char *pid_file;
   int num_threads;
   uint64_t maxpage;
+  uint64_t maxpagesave;
   uint64_t maxmem;
   uint64_t min_reserve; // to start lru
   uint64_t max_reserve; // to stop  lru
@@ -60,6 +61,7 @@ typedef struct {
   server_group_t udp_notify;
   //udp notify me
   server_t udp_server;
+  server_t save_server;
 
   //http auth
   server_group_t auth;
