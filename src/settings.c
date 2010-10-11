@@ -42,6 +42,7 @@ init_cfg(void)
   cfg.status_path = "/fcache/status";
   cfg.monitor_path = "/fcache/mon";
   cfg.read_kw_path = "/fcache/readkw";
+  cfg.page_save_path = "/fcache/save";
   cfg.page403      = "/403.html";
   cfg.pid_file = "/var/run/fcache.pid";
 
@@ -203,3 +204,14 @@ next_server_in_group(server_group_t *group)
   }
   return NULL;
 }
+
+bool
+is_server_available(server_group_t *group)
+{
+  int i;
+  if (group != NULL)
+    if (group->servers[i].up)
+      return true;
+  return false;
+}
+

@@ -12,6 +12,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/wait.h>
+#include <zlib.h>
 
 #include "util.h"
 #include "md5.h"
@@ -66,6 +67,12 @@ write_tbuf(tbuf *dest, void *src, size_t size)
     dest->len += size;
   }
   return size;
+}
+
+static inline size_t
+tbuf_append(tbuf *dest, char *msg)
+{
+  return write_tbuf(dest, msg, strlen(msg));
 }
 
 bool
@@ -250,6 +257,7 @@ ext_gunzip(tbuf *dest, const void* src, size_t count) {
       //write to stdin
       
       write(wp[1], src, count);
+      fsync(wp[1]);
       close(wp[1]);
       //read from stdout
       do {
@@ -264,3 +272,81 @@ ext_gunzip(tbuf *dest, const void* src, size_t count) {
     return false;
 #undef BLEN
 }
+
+/* report a zlib or i/o error */
+static inline void
+zerr(int ret, tbuf *dest)
+{
+  tbuf_append(dest, "zlib gunzip: ");
+  switch (ret) {
+  case Z_ERRNO:
+    tbuf_append(dest, "IO error"); break;
+  case Z_STREAM_ERROR:
+    tbuf_append(dest, "invalid compression level"); break;
+  case Z_DATA_ERROR:
+    tbuf_append(dest, "invalid or incomplete deflate data"); break;
+  case Z_MEM_ERROR:
+    tbuf_append(dest, "out of memory"); break;
+  case Z_VERSION_ERROR:
+    tbuf_append(dest, "zlib version mismatch!");
+  }
+}
+
+
+#define CHUNK 163840
+bool
+zlib_gunzip(tbuf *dest, const void* src, size_t count) {
+  int ret;
+  unsigned have;
+  z_stream strm;
+  unsigned char out[CHUNK];
+
+  if (count < 1) return false;
+  /* allocate inflate state */
+  strm.zalloc = Z_NULL;
+  strm.zfree = Z_NULL;
+  strm.opaque = Z_NULL;
+  strm.avail_in = 0;
+  strm.next_in = Z_NULL;
+  ret = inflateInit2(&strm, MAX_WBITS+32);
+  if (ret != Z_OK) {
+    zerr(ret, dest);
+    return false;
+  }
+
+  /* decompress until deflate stream ends or end of file */
+  strm.avail_in = count;
+  strm.next_in = (Bytef *)src;
+
+  /* run inflate() on input until output buffer not full */
+  do {
+    strm.avail_out = CHUNK;
+    strm.next_out = out;
+    ret = inflate(&strm, Z_NO_FLUSH);
+
+    switch (ret) {
+    case Z_NEED_DICT: ret = Z_DATA_ERROR;
+    case Z_DATA_ERROR:
+    case Z_MEM_ERROR:
+      (void)inflateEnd(&strm);
+      zerr(ret, dest);
+      return false;
+    }
+    have = CHUNK - strm.avail_out;
+    if (write_tbuf(dest, out, have) != have) {
+      (void)inflateEnd(&strm);
+      zerr(Z_ERRNO, dest);
+      return false;
+    }
+  } while (strm.avail_out == 0);
+
+  /* clean up and return */
+  (void)inflateEnd(&strm);
+  if (ret == Z_STREAM_END) {
+    return true;
+  } else {
+    zerr(Z_DATA_ERROR, dest);
+    return false;
+  }
+}
+#undef  CHUNK

@@ -54,6 +54,7 @@ bool tcp_read(tbuf *, const char *, uint16_t, char *);
 void strtolower(char *);
 
 bool ext_gunzip(tbuf *, const void*, size_t);
+bool zlib_gunzip(tbuf *, const void*, size_t);
 
 #ifdef __cplusplus
 }

@@ -144,8 +144,13 @@ send_page(req_ctx_t *ctx)
     evbuffer_add(ctx->resp_buf, ctx->page->body, ctx->page->body_len);
   } else {
     // uncompress
+    tlog(INFO, "gunzip for %s, URL: %s%s, UA: %s",
+	 evhttp_find_header(ctx->client_req->input_headers, "X-Forwarded-For"),
+	 evhttp_find_header(ctx->client_req->input_headers, "Host"),
+	 ctx->client_req->uri,
+	 evhttp_find_header(ctx->client_req->input_headers, "User-Agent"));
     tbuf out = {0, NULL};
-    ext_gunzip(&out, ctx->page->body, ctx->page->body_len);
+    zlib_gunzip(&out, ctx->page->body, ctx->page->body_len);
     evbuffer_add(ctx->resp_buf, out.data, out.len);
     tbuf_close(&out);
   }
@@ -339,7 +344,7 @@ fast_process(gpointer data, gpointer user_data)
     ctx->page = NULL;
   } else if(ctx->page!=NULL) {
     uint64_t time_save;
-    if(current_time_millis() > ctx->page->head.time_dead) {
+    if(current_time_millis() > ctx->page->head.time_dead && is_server_available(&cfg.http)) {
       tlog(ERROR, "static page dead: %s", ctx->page->head.param);
       process_discard(ctx->page);
       ctx->page = NULL;
@@ -520,6 +525,27 @@ read_kw_handler(struct evhttp_request *req, void *arg)
   evhttp_send_error(req, HTTP_NOCONTENT, "No Content");
 }
 
+void
+page_save_handler(struct evhttp_request *req, void *arg)
+{
+  struct evbuffer *buf;
+  if ((buf = evbuffer_new()) == NULL) {
+    printf("failed to create response buffer");
+  } else {
+    uint64_t page_id=0, save_time=UNKNOWN_SAVE_TIME;
+    char *pids = strstr(req->uri, "pid=");
+    if (pids!=NULL && pids+4!='\0') {
+      pids+=4; // strlen("pid="):4
+      page_id = atoll(pids);
+      save_time = page_save_time(page_id);
+    }
+
+    evbuffer_add_printf(buf, "uri=%s, page=%lld, save_time=%lld\n", req->uri, page_id, save_time);
+    evhttp_send_reply(req, HTTP_OK, "OK", buf);
+    evbuffer_free(buf);
+  }
+}
+
 int
 main(int argc, char**argv)
 {
@@ -634,6 +660,9 @@ main(int argc, char**argv)
     evhttp_set_cb(httpd, cfg.status_path,  status_handler,  NULL);
   if (cfg.read_kw_path != NULL)
     evhttp_set_cb(httpd, cfg.read_kw_path,  read_kw_handler,  NULL);
+  if (cfg.page_save_path != NULL)
+    evhttp_set_cb(httpd, cfg.page_save_path,page_save_handler,NULL);
+
   evhttp_set_cb(httpd, send_start_path,  send_handler,  NULL);
 
   /* Set a callback for all other requests. */

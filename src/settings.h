@@ -36,6 +36,7 @@ typedef struct {
   const char *status_path;
   const char *monitor_path;
   const char *read_kw_path;
+  const char *page_save_path;
   const char *page403;
 
   const char *pid_file;
@@ -80,5 +81,6 @@ void read_cfg(char *);
 
 server_t * first_server_in_group(server_group_t *);
 server_t * next_server_in_group(server_group_t *);
+bool       is_server_available(server_group_t *);
 
 #endif // CONFIG_H

@@ -24,6 +24,8 @@ link_directories(${CFG_LIBRARY_DIRS})
 message("libconfig: -I${CFG_INCLUDE_DIRS} -L${CFG_LIBRARY_DIRS} -l${CFG_LIBRARIES}")
 
 add_library(UTIL  util.c)
+target_link_libraries(UTIL z)
+
 add_library(SMALLOC smalloc.c)
 add_library(MD5 md5.c)
 add_library(LOG log.c)
@@ -72,7 +74,7 @@ add_executable (fcache fcache.c)
 target_link_libraries(fcache ${EVENT_LIB} SETTING LOG UTIL THREAD PROCESS ZSKW ${GLIB_LIBRARIES} ${GTHREAD_LIBRARIES} ZSHTTP MON PS)
 
 add_executable (ishc ishc.cpp ProBlockChange.cpp ishc-imp.cpp)
-target_link_libraries(ishc ${EVENT_LIB} ${GLIB_LIBRARIES} ${GTHREAD_LIBRARIES} LOG UTIL)
+target_link_libraries(ishc ${EVENT_LIB} LOG)
 
 add_executable (keeprun keeprun.c)
 target_link_libraries(keeprun UTIL)

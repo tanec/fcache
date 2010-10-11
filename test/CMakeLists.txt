@@ -41,3 +41,6 @@ target_link_libraries(smtest SMALLOC UTIL)
 
 add_executable (ug ug.c)
 target_link_libraries(ug UTIL)
+
+add_executable (zip zip.c)
+target_link_libraries(zip UTIL)
