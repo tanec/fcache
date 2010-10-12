@@ -209,9 +209,10 @@ bool
 is_server_available(server_group_t *group)
 {
   int i;
-  if (group != NULL)
-    if (group->servers[i].up)
-      return true;
+  if (group != NULL && group->num>0)
+    for(i=0; i<group->num; i++)
+      if (group->servers[i].up)
+	return true;
   return false;
 }
 
