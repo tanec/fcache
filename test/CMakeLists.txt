@@ -25,9 +25,6 @@ target_link_libraries(httpd ${EVENT_LIB})
 add_executable (httppass http_bypass.c)
 target_link_libraries(httppass ZSHTTP ${EVENT_LIB})
 
-add_executable (maptest maptest.c)
-target_link_libraries(maptest ${GLIB_LIBRARIES} ${GTHREAD_LIBRARIES} SKIPLIST MD5 MAP SMALLOC)
-
 add_executable (size sizeof.c)
 
 add_executable (mctest CMiniCacheTest.c)

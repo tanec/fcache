@@ -40,8 +40,6 @@ add_library(HTTP http-api.c)
 target_link_libraries(HTTP ${CURL_LIBRARIES})
 
 add_library(MAP tmap.c)
-add_library(SKIPLIST skiplist.c)
-target_link_libraries(SKIPLIST MAP)
 add_library(CMINICACHE CMiniCache.c)
 ########################################
 add_library(READER reader.c)
