@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include "md5.h"
 
+extern size_t total_pages;
+
 typedef struct {
   uint8_t  version;      // 静态页版本格式
   uint8_t  valid;        // 是否有效
@@ -25,11 +27,6 @@ typedef struct {
 } page_head_t;
 
 typedef enum {
-  MEMORY,
-  FILESYSTEM
-} page_from_t;
-
-typedef enum {
   AUTH_NO     = 0,
   AUTH_PAGE   = 1,
   AUTH_PHP    = 2,
@@ -38,10 +35,8 @@ typedef enum {
 
 typedef struct {
   page_head_t head;
-  uint32_t ref;
-  page_from_t from;
-  uint64_t level; // lru
-  uint32_t body_len;
+  size_t page_len;
+  size_t body_len;
   void *body; // 文件内容;
 } page_t;
 

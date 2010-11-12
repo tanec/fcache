@@ -14,8 +14,8 @@ void
 mem_release(page_t *page)
 {
   if (page != NULL) {
-    if (SYNC_SUB(&page->ref, 1) < 1)
-      sfree(page);
+    sfree(page);
+    SYNC_SUB(&total_pages, 1);
   }
 }
 
@@ -25,14 +25,6 @@ cmfree(void *ptr)
   mem_release(ptr);
   return 0;
 }
-static void
-cmref(void *ptr)
-{
-  if (ptr) {
-    SYNC_ADD(&(((page_t *)ptr)->ref), 1);
-  }
-}
-
 
 void
 mem_init()
@@ -41,7 +33,7 @@ mem_init()
   size_t maxDataSize = cfg.maxmem - 8*1024*1024;
   size_t maxDataNum  = cfg.maxpage;
   size_t oneAllocNum = 8000;
-  cache = CMiniCache_alloc(hashSize, maxDataSize, maxDataNum, oneAllocNum, cmfree, cmref);
+  cache = CMiniCache_alloc(hashSize, maxDataSize, maxDataNum, oneAllocNum, cmfree);
   if (cache == NULL) {
     perror("CMiniCache_alloc failed");
     exit(EXIT_FAILURE);
@@ -62,24 +54,13 @@ mem_set(md5_digest_t *md5, page_t *page)
 {
   if (page == NULL) return;
 
-  AddData(cache, md5, page, page->body_len+sizeof(page_head_t));
+  AddData(cache, md5, page, page->page_len);
 }
 
 void
 mem_del(map_key_t key)
 {
   DelData(cache, key);
-}
-
-void
-mem_access(page_t *page)
-{}
-
-void
-mem_lru(void)
-{
-  if (smalloc_used_memory()+cfg.min_reserve < cfg.maxmem) {
-  }
 }
 
 void

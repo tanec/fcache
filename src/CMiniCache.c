@@ -41,7 +41,6 @@ struct CMiniCache {
   int m_lLastErrorCode;        //最后一次错误代码
 
   int m_lRunFlag;              //自淘汰循环标志
-  void (*m_pDataRefFun)(void*);
   int (*m_pDataFreeFun)(void*);//数据域释放函数
   pthread_mutex_t lock;     //多线程下使用临界
 };
@@ -108,8 +107,7 @@ FreeSource(CMiniCache *cache)
 **************************************************************************/
 CMiniCache *
 CMiniCache_alloc(size_t lHashSize, size_t lMaxDataSize, size_t lMaxDataNum, size_t lOneAllocNum,
-		 int  (*pDataFreeFun)(void*),
-		 void (*pDataRefFun)(void*))
+		 int  (*pDataFreeFun)(void*))
 {
   CMiniCache *cache = NULL;
   if(lHashSize <= 0 || lMaxDataNum <= 0 || lOneAllocNum <= 0) return NULL;
@@ -122,7 +120,6 @@ CMiniCache_alloc(size_t lHashSize, size_t lMaxDataSize, size_t lMaxDataNum, size
   cache->m_lMaxDataNum  = lMaxDataNum;
   cache->m_lOneAllocNum = lOneAllocNum;
   cache->m_pDataFreeFun = pDataFreeFun;
-  cache->m_pDataRefFun  = pDataRefFun;
   cache->m_lAlloc = cache->m_lMaxDataNum/cache->m_lOneAllocNum;
 
   cache->m_ppNode = calloc(cache->m_lAlloc, sizeof(CMiniCacheNode *));
@@ -275,8 +272,8 @@ __AddNode(CMiniCache *cache, CMiniCacheNode* pNode, bool readd)
   if(!cache->m_pHead)
     cache->m_pHead = pNode;
   if (!readd) {
-    cache->lDataSize += pNode->lDataSize;
-    cache->lDataNum  += 1;
+    SYNC_ADD(&cache->lDataSize, pNode->lDataSize);
+    SYNC_ADD(&cache->lDataNum, 1);
   }
   return 0;
 }
@@ -307,8 +304,6 @@ AddNode(CMiniCache *cache, CMiniCacheNode *pNode)
     DelNode(cache, pOldNode, 1);
   }
   __AddNode(cache, pNode, false);
-  if (cache->m_pDataFreeFun)
-    cache->m_pDataRefFun(pNode->vpData);
 
   pthread_mutex_unlock(&cache->lock);
 
@@ -347,8 +342,6 @@ GetData(CMiniCache *cache, map_key_t tKey,
     *lDataSize = pOldNode->lDataSize;
     DelNode(cache, pOldNode, 0);
     __AddNode(cache, pOldNode, true);
-    if (cache->m_pDataRefFun)
-      cache->m_pDataRefFun(*vpData);
     ret = 0;
   }
 
@@ -582,8 +575,8 @@ DelNode(CMiniCache *cache, CMiniCacheNode *pNode, long lFlag)
     if(cache->m_pDataFreeFun && pNode->vpData) {
       while(cache->m_pDataFreeFun(pNode->vpData)) usleep(100);
       pNode->vpData = NULL;
-      cache->lDataSize -= pNode->lDataSize;
-      cache->lDataNum  -= 1;
+      SYNC_SUB(&cache->lDataSize, pNode->lDataSize);
+      SYNC_SUB(&cache->lDataNum, 1);
     }
     pNode->pDown = cache->m_pIdleNode;
     cache->m_pIdleNode = pNode;

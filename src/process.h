@@ -33,7 +33,6 @@ md5_digest_t * md5_file(request_t *);
 
 void process_init();
 page_t * process_get(request_t *);
-void process_discard(page_t *page);
 bool process_auth(const char *, page_t *);
 void process_cache(request_t *, page_t *);
 

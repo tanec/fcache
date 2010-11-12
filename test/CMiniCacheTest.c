@@ -109,7 +109,7 @@ int main(int argc, char **argv)
     dn = atoi(argv[2]);
 
     if (tn > 0) {
-      cache = CMiniCache_alloc(400000, 500000, 400000, 5000, dfree, NULL);
+      cache = CMiniCache_alloc(400000, 500000, 400000, 5000, dfree);
 
       g_thread_init(NULL);
       GThreadPool *tp = g_thread_pool_new(

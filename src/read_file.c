@@ -8,6 +8,7 @@
 #include "settings.h"
 #include "log.h"
 
+extern size_t total_pages = 0;
 /*
 头格式       编码gbk
 Int 头大小
@@ -50,9 +51,9 @@ file_read_path(char *path)
 
     /* |<-- page_t -->|<-- body data -->|<-- head strings -->| */
     /* about 32 bytes in head is not for strings */
-    page_t *page = (page_t*)smalloc(sizeof(page_t)+blen+hlen-32);
-    page->ref   = 0;
-    page->level = 0;
+    size_t plen = sizeof(page_t)+blen+hlen-32;
+    page_t *page = (page_t*)smalloc(plen);
+    page->page_len = plen;
     page->body_len = blen;
     page->body = (char*)page+sizeof(page_t);
     memcpy(page->body, mt.data+2*sizeof(uint32_t)+hlen, page->body_len);
@@ -120,6 +121,7 @@ file_read_path(char *path)
     }
 
     tbuf_close(&mt);
+    SYNC_ADD(&total_pages, 1);
     return page;
   }
   tbuf_close(&mt);

@@ -8,7 +8,7 @@
 typedef struct CMiniCacheNode CMiniCacheNode;
 typedef struct CMiniCache     CMiniCache;
 
-CMiniCache *CMiniCache_alloc(size_t lHashSize, size_t lMaxDataSize, size_t lMaxDataNum, size_t lOneAllocNum, int (*pDataFreeFun)(void*), void (*pDataRefFun)(void *));
+CMiniCache *CMiniCache_alloc(size_t lHashSize, size_t lMaxDataSize, size_t lMaxDataNum, size_t lOneAllocNum, int (*pDataFreeFun)(void*));
 void CMiniCache_free(CMiniCache *cache);
 
 int GetData(CMiniCache *cache, map_key_t tKey, void** vpData,size_t* lDataSize);

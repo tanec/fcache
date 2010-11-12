@@ -340,24 +340,27 @@ fast_process(gpointer data, gpointer user_data)
   ctx->page=process_get(&ctx->req);
   if (ctx->req.force_refresh) {
     if (ctx->page != NULL) ctx->page->head.valid = 0;
-    process_discard(ctx->page);
+    mem_release(ctx->page);
     ctx->page = NULL;
   } else if(ctx->page!=NULL) {
     uint64_t time_save;
-    if(current_time_millis() > ctx->page->head.time_dead && is_server_available(&cfg.http)) {
+    bool mfs_np_ok = cfg.base_dir_ok;
+    if (mfs_np_ok) mfs_np_ok = is_server_available(&cfg.http);
+    if(mfs_np_ok && current_time_millis() > ctx->page->head.time_dead) {
       tlog(ERROR, "static page dead: %s", ctx->page->head.param);
-      process_discard(ctx->page);
+      mem_release(ctx->page);
       ctx->page = NULL;
     } else if((igid=find_igid(ctx))!=NULL &&
 	      ctx->page->head.ig!=NULL &&
 	      strcmp(igid, ctx->page->head.ig)==0) {
       //owner: pass to upstream
-      process_discard(ctx->page);
+      mem_release(ctx->page);
       ctx->page = NULL;
-    } else if ((  time_save=page_save_time(ctx->page->head.page_no))!=UNKNOWN_SAVE_TIME
+    } else if (mfs_np_ok
+	       &&(time_save=page_save_time(ctx->page->head.page_no))!=UNKNOWN_SAVE_TIME
 	       && time_save>ctx->page->head.time_create) {
       tlog(DEBUG, "static page gen(%llu) before save(%llu): %s", ctx->page->head.time_create, time_save, ctx->page->head.param);
-      process_discard(ctx->page);
+      mem_release(ctx->page);
       ctx->page = NULL;
     }
   }
@@ -386,11 +389,11 @@ slow_process(gpointer data, gpointer user_data)
       igid = find_igid(ctx);
       if (igid == NULL) { //need auth, but no igid
         tlog(DEBUG, "igid not in cookie, but need auth");
-        process_discard(ctx->page);
+        mem_release(ctx->page);
         ctx->page = NULL;
       } else {
         if (!process_auth(igid, ctx->page)) {
-          process_discard(ctx->page);
+          mem_release(ctx->page);
           ctx->page = NULL;
         }
       }

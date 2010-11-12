@@ -10,9 +10,6 @@ void      mem_release(page_t *);
 void mem_set(md5_digest_t *, page_t *);
 void mem_del(map_key_t);
 
-void mem_access(page_t *);
-void mem_lru(void);
-
 void mem_export(char *dest, size_t len);
 
 #endif // READ_MEM_H

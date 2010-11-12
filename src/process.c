@@ -141,13 +141,7 @@ process_expire(md5_digest_t *dig)
   page_t *page = mem_get(dig);
   if (page != NULL) {
     statics[slot].udp_hit++;
-    uint64_t level = page->level;
-    mem_release(page);
     mem_del(dig);
-    if (level < 0) { //sticky
-      page = NULL;
-
-    }
   }
 }
 
@@ -200,7 +194,6 @@ process_sticky()
         md5_digest(l, strlen(l), md5f.digest);
         page = file_get(&md5d, &md5f);
         if (page != NULL) {
-          page->level = -18;
           mem_set(&md5f, page);
         }
       } while(1);
@@ -250,6 +243,28 @@ process_fs(request_t *req, int curr_stat)
   return page;
 }
 
+static inline page_t *
+dup_page(page_t *page)
+{
+  if (page == NULL) return NULL;
+  page_t *np = smalloc(page->page_len);
+  memcpy(np, page, page->page_len);
+
+  np->body = (char *)np+sizeof(page_t);
+  char *strpos = (char*)np->body + np->body_len;
+
+  page_head_t *head = &np->head;
+
+  head->keyword = strpos;
+  strpos += strlen(head->keyword)+1;
+  head->ig = strpos;
+  strpos += strlen(head->ig)+1;
+  head->param = strpos;
+
+  SYNC_ADD(&total_pages, 1);
+  return np;
+}
+
 page_t *
 process_get(request_t *req)
 {
@@ -258,31 +273,18 @@ process_get(request_t *req)
 
   page = process_mem(req, curr_stat);
   if (page != NULL) {
-    page->from = MEMORY;
-    return page;
+    return dup_page(page);
   }
 
   if (!cfg.base_dir_ok) return NULL;
 
   page = process_fs(req, curr_stat);
   if (page != NULL) {
-    page->from = FILESYSTEM;
-    return page;
+    mem_set(req->dig_file, page);
+    return dup_page(page);
   }
 
   return NULL;
-}
-
-void
-process_discard(page_t *page)
-{
-  if (page != NULL) {
-    if (page->from == MEMORY) {
-      mem_release(page);
-    } else {
-      sfree(page);
-    }
-  }
 }
 
 bool
@@ -339,11 +341,7 @@ process_cache(request_t *req, page_t *page)
     statics[slot].udp_send ++;
   }
 
-  if (page->from == FILESYSTEM) {
-    mem_set(req->dig_file, page);
-  } else if (page->from == MEMORY) {
-    mem_release(page);
-  }
+  mem_release(page);
 }
 
 static inline void
@@ -385,7 +383,7 @@ process_stat_html(char *result)
          th, td {border: 1px dotted gray;}\n\
          th {text-align: left;} \n\
          </style></head><body>");
-  sprintf(buf,"page use %lu bytes &nbsp; -- &nbsp;", smalloc_used_memory());
+  sprintf(buf,"%lu page use %lu bytes &nbsp; -- &nbsp;", total_pages, smalloc_used_memory());
   strcat(result, buf);
   mem_export(buf, 511);
   strcat(result, buf);
