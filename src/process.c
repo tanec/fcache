@@ -416,7 +416,10 @@ process_stat_html(char *result)
   snprintf(buf, 511, "<tr><td>%s</td><td>%s</td><td></td><td></td><td>%s</td></tr>",
 	   "mfs", cfg.base_dir, cfg.base_dir_ok?"ok":"down");
   strcat(result, buf);
-  server_group_t *grps[] = {&cfg.http, &cfg.udp_notify};
+  snprintf(buf, 511, "<tr><td>pass</td><td></td><td>127.0.0.1</td><td></td><td>%x</td></tr>",
+	   cfg.pass);
+  strcat(result, buf);
+  server_group_t *grps[] = {&cfg.http, &cfg.owner, &cfg.udp_notify};
   int ii, j, n=sizeof(grps)/sizeof(server_group_t *);
   for (ii=0; ii<n; ii++) {
     server_group_t *g = grps[ii];

@@ -50,6 +50,7 @@ typedef struct {
   // from client
   struct evhttp_request *client_req;
   void *arg;
+  bool is_owner;
 
   // pass to other function
   request_t req;
@@ -173,7 +174,14 @@ send_redirect(req_ctx_t *ctx, const char *url)
 static void
 pass_to_upstream(req_ctx_t *ctx)
 {
-  server_t *svr = next_server_in_group(&cfg.http);
+  server_t *svr = NULL;
+  if (ctx->is_owner) {
+    svr = next_server_in_group(&cfg.owner);
+    if (svr == NULL) svr = next_server_in_group(&cfg.http);
+  } else {
+    svr = next_server_in_group(&cfg.http);
+    if (svr == NULL) svr = next_server_in_group(&cfg.owner);
+  }
   if (svr != NULL) {
     uint64_t s;
     int      slot;
@@ -338,30 +346,45 @@ fast_process(gpointer data, gpointer user_data)
   tlog(DEBUG, "host=%s, keyword=%s, url=%s", ctx->req.host, ctx->req.keyword, ctx->req.url);
 
   ctx->page=process_get(&ctx->req);
-  if (ctx->req.force_refresh) {
+  if (ctx->req.force_refresh && (cfg.pass & FFF)) {
     if (ctx->page != NULL) ctx->page->head.valid = 0;
     mem_release(ctx->page);
     ctx->page = NULL;
   } else if(ctx->page!=NULL) {
     uint64_t time_save;
     bool mfs_np_ok = cfg.base_dir_ok;
-    if (mfs_np_ok) mfs_np_ok = is_server_available(&cfg.http);
-    if(mfs_np_ok && current_time_millis() > ctx->page->head.time_dead) {
+    if (mfs_np_ok) mfs_np_ok = is_server_available(&cfg.http) || is_server_available(&cfg.owner);
+    if(mfs_np_ok && (cfg.pass & DEAD) && current_time_millis() > ctx->page->head.time_dead) {
       tlog(ERROR, "static page dead: %s", ctx->page->head.param);
       mem_release(ctx->page);
       ctx->page = NULL;
-    } else if((igid=find_igid(ctx))!=NULL &&
+    } else if((cfg.pass & OWNER) &&
+	      (igid=find_igid(ctx))!=NULL &&
 	      ctx->page->head.ig!=NULL &&
 	      strcmp(igid, ctx->page->head.ig)==0) {
       //owner: pass to upstream
       mem_release(ctx->page);
+      ctx->is_owner = true;
       ctx->page = NULL;
-    } else if (mfs_np_ok
+    } else if (mfs_np_ok && (cfg.pass & SAVE)
 	       &&(time_save=page_save_time(ctx->page->head.page_no))!=UNKNOWN_SAVE_TIME
 	       && time_save>ctx->page->head.time_create) {
       tlog(DEBUG, "static page gen(%llu) before save(%llu): %s", ctx->page->head.time_create, time_save, ctx->page->head.param);
       mem_release(ctx->page);
       ctx->page = NULL;
+    }
+  } else {
+    // ctx->page == NULL
+    if ((cfg.pass & NOTFOUND) == 0) {
+      tlog(ERROR, "do not pass for cfg.pass=%x", cfg.pass);
+      evhttp_add_header(ctx->client_req->output_headers, "Connection", "close");
+      evhttp_add_header(ctx->client_req->output_headers, "Content-Length", "0");
+
+      ctx->resp_code   = HTTP_NOTFOUND;
+      ctx->resp_reason = "Not found";
+
+      send_list_push(ctx);
+      return;
     }
   }
 
@@ -404,14 +427,15 @@ slow_process(gpointer data, gpointer user_data)
     } else {
       // not authorized: redirect to 403 page
       //pass_to_upstream(ctx);
-      char buf[4096];
+		/*char buf[4096];-->char buf[5000]  sprintf-->snprintf*/
+		char buf[5000] = {'\0'};
       tlog(DEBUG, "pass(no permission): %s", ctx->req.url);
       if (is_multi_keyword_domain(ctx->req.host)) {
 	char kw[strlen(ctx->req.keyword)*5+1];
 	http_escape(ctx->req.keyword, kw);
-	sprintf(buf, "http://%s/%s%s", ctx->req.host, kw, cfg.page403);
+	snprintf(buf,4999,"http://%s/%s%s", ctx->req.host, kw, cfg.page403);
       } else {
-	sprintf(buf, "http://%s%s", ctx->req.host, cfg.page403);
+	snprintf(buf,4999,"http://%s%s", ctx->req.host, cfg.page403);
       }
       send_redirect(ctx, buf);
     }
@@ -463,6 +487,7 @@ page_handler(struct evhttp_request *req, void *arg)
   }
   ctx->resp_code   = HTTP_OK;
   ctx->resp_reason = "OK";
+  ctx->is_owner    = false;
 
   ctx->client_req  = req;
   ctx->arg  = arg;
@@ -544,6 +569,26 @@ page_save_handler(struct evhttp_request *req, void *arg)
     }
 
     evbuffer_add_printf(buf, "uri=%s, page=%lld, save_time=%lld\n", req->uri, page_id, save_time);
+    evhttp_send_reply(req, HTTP_OK, "OK", buf);
+    evbuffer_free(buf);
+  }
+}
+void
+pass_mask_handler(struct evhttp_request *req, void *arg)
+{
+  struct evbuffer *buf;
+  if ((buf = evbuffer_new()) == NULL) {
+    printf("failed to create response buffer");
+  } else {
+    if (strcmp("127.0.0.1", req->remote_host)==0) {
+      char *mask = strstr(req->uri, "m=");
+      if (mask!=NULL && mask+2!='\0') {
+	mask+=2; // strlen("m="):2
+	cfg.pass = atoi(mask);
+      }
+    }
+
+    evbuffer_add_printf(buf, "pass mask: %x\n", cfg.pass);
     evhttp_send_reply(req, HTTP_OK, "OK", buf);
     evbuffer_free(buf);
   }
@@ -665,6 +710,8 @@ main(int argc, char**argv)
     evhttp_set_cb(httpd, cfg.read_kw_path,  read_kw_handler,  NULL);
   if (cfg.page_save_path != NULL)
     evhttp_set_cb(httpd, cfg.page_save_path,page_save_handler,NULL);
+  if (cfg.pass_mask_path != NULL)
+    evhttp_set_cb(httpd, cfg.pass_mask_path,pass_mask_handler,NULL);
 
   evhttp_set_cb(httpd, send_start_path,  send_handler,  NULL);
 

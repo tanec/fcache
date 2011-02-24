@@ -24,6 +24,14 @@ typedef struct {
   uint8_t num, idx;
 } server_group_t;
 
+typedef enum {
+  FFF      = 0x0001,
+  OWNER    = 0x0002,
+  DEAD     = 0x0004,
+  SAVE     = 0x0008,
+  NOTFOUND = 0x0010
+} pass_ctrl_t;
+
 typedef struct {
   int daemon;
   const char *log_file;
@@ -37,6 +45,7 @@ typedef struct {
   const char *monitor_path;
   const char *read_kw_path;
   const char *page_save_path;
+  const char *pass_mask_path;
   const char *page403;
 
   const char *pid_file;
@@ -49,6 +58,7 @@ typedef struct {
   int maxconns;
 
   bool base_dir_ok;
+  int  pass;
   //read from file
   const char *base_dir;
   const char *page_encoding;
@@ -69,6 +79,8 @@ typedef struct {
 
   //http upstream;
   server_group_t http;
+  //http upstream, owner;
+  server_group_t owner;
 
   int multi_keyword_domains_len;
   const char **multi_keyword_domains;

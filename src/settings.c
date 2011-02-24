@@ -43,6 +43,7 @@ init_cfg(void)
   cfg.monitor_path = "/fcache/mon";
   cfg.read_kw_path = "/fcache/readkw";
   cfg.page_save_path = "/fcache/save";
+  cfg.pass_mask_path = "/fcache/pass";
   cfg.page403      = "/403.html";
   cfg.pid_file = "/var/run/fcache.pid";
 
@@ -56,6 +57,7 @@ init_cfg(void)
 
   cfg.base_dir = "/tmp";
   cfg.base_dir_ok = true;
+  cfg.pass = 0xFFFF;
 
   //monitor result
   memset(&cfg.monitor_server, 0, sizeof(server_t));
@@ -70,6 +72,8 @@ init_cfg(void)
   init_server_group(&cfg.auth);
   //http
   init_server_group(&cfg.http);
+  //http: owner
+  init_server_group(&cfg.owner);
   cfg.multi_keyword_domains = NULL;
   cfg.multi_keyword_domains_len = 0;
 
@@ -150,6 +154,7 @@ read_cfg(char *file)
     read_server_group(&c, "servers.notify", &cfg.udp_notify);
     read_server_group(&c, "servers.auth",   &cfg.auth);
     read_server_group(&c, "servers.http",   &cfg.http);
+    read_server_group(&c, "servers.owner",  &cfg.owner);
 
 
     config_setting_t *set;

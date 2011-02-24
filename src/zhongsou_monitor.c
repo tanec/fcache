@@ -45,7 +45,7 @@ check_servers(void *data)
   int i, j, n;
   const char *mon;
   server_t mfs;
-  server_group_t *g, *grps[] = {&cfg.http, &cfg.udp_notify};
+  server_group_t *g, *grps[] = {&cfg.http, &cfg.owner, &cfg.udp_notify};
 
   mfs.type = "mfs";
   mfs.url  = cfg.base_dir;
